@@ -1,0 +1,9 @@
+# Test suite dependencies for the MariaDB Claude Code plugin.
+# The plugin runtime itself stays dependency-free; these are dev/test only.
+
+pytest>=8.0
+PyYAML>=6.0          # parse SKILL.md frontmatter and fixture/eval YAML
+PyMySQL>=1.1         # pure-Python MariaDB/MySQL client for the live-DB tier
+
+# Tier 3 (behavioral evals) only — safe to install but unused by static/db tiers.
+anthropic>=0.40

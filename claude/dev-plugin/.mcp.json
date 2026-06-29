@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "mariadb": {
+      "command": "${CLAUDE_PLUGIN_ROOT}/scripts/mariadb-mcp-launcher.sh",
+      "args": ["mcp"],
+      "env": {
+        "MARIADB_SHELL_VERSION": "2026.7.0"
+      }
+    }
+  }
+}

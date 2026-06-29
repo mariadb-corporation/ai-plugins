@@ -1,0 +1,32 @@
+# Behavioral eval cases for the mariadb-create-database skill.
+# Each case prompts Claude with the skill injected as context and asserts the
+# generated SQL takes the MariaDB-preferred form.
+#
+# Schema:
+#   skill: <skill name whose SKILL.md is injected as system context>
+#   cases:
+#     - name: <unique label>
+#       prompt: <user task>
+#       expect_regex:  [<regex that MUST match the response>, ...]   # optional
+#       expect_absent: [<substring that must NOT appear>, ...]       # optional
+
+skill: mariadb-create-database
+cases:
+  - name: reset-in-one-statement uses CREATE OR REPLACE DATABASE
+    prompt: >
+      In MariaDB, I need to reset the database `app` — destroy all of its
+      contents and recreate it empty — in a single SQL statement. Give me only
+      the statement.
+    expect_regex:
+      - "CREATE\\s+OR\\s+REPLACE\\s+DATABASE"
+    expect_absent:
+      - "DROP DATABASE"
+
+  - name: create-if-absent uses IF NOT EXISTS not OR REPLACE
+    prompt: >
+      In MariaDB, create the database `app` only if it does not already exist,
+      without destroying it if it does. Give me only the statement.
+    expect_regex:
+      - "IF\\s+NOT\\s+EXISTS"
+    expect_absent:
+      - "OR REPLACE"
