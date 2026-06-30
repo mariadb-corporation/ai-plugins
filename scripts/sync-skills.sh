@@ -4,12 +4,20 @@
 #
 # Downloads the agent-skills/ tree from mariadb-corporation/mariadb-docs at a
 # pinned ref ONCE, reads its .skills-manifest.json, and copies every skill
-# directory into each plugin's skills/ dir, preserving the upstream layer layout.
-# Re-running is idempotent. Per-plugin provenance is written to skills-source.json.
+# directory into each plugin's skills/ dir. Re-running is idempotent. Per-plugin
+# provenance is written to skills-source.json.
+#
+# Each target declares a skill LAYOUT:
+#   nested — preserve the upstream layer dirs (skills/granular/statements/<skill>/).
+#   flat   — place every skill dir directly under skills/<skill>/. Used for OpenCode,
+#            which discovers skills only one directory deep.
+# In flat mode the vendored .skills-manifest.json is rewritten so each skill `path`
+# points at its flat location, keeping the test suites' manifest-driven loaders valid.
 #
 # Plugins kept in sync (relative to repo root):
-#   - claude/dev-plugin   (Claude Code)
-#   - codex/dev-plugin    (Codex)
+#   - claude/dev-plugin     (Claude Code) — nested
+#   - codex/dev-plugin      (Codex)       — nested
+#   - opencode/dev-plugin   (OpenCode)    — flat
 #
 # Usage:
 #   scripts/sync-skills.sh [REF]
@@ -28,10 +36,11 @@ REF="${1:-$DEFAULT_REF}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
-# Plugins to keep in sync (skills/ dir lives directly under each).
+# Plugins to keep in sync, as "<plugin-dir> <layout>" (layout: nested | flat).
 TARGET_PLUGINS=(
-  "claude/dev-plugin"
-  "codex/dev-plugin"
+  "claude/dev-plugin nested"
+  "codex/dev-plugin nested"
+  "opencode/dev-plugin flat"
 )
 
 command -v jq >/dev/null 2>&1 || { echo "error: jq is required" >&2; exit 1; }
@@ -60,6 +69,7 @@ SYNCED_AT="$(date -u +%Y-%m-%d)"
 # Vendor the downloaded skills into a single plugin's skills/ dir.
 vendor_into() {
   local plugin_dir="$1"
+  local layout="$2"
   local skills_dir="$plugin_dir/skills"
   local provenance="$plugin_dir/skills-source.json"
 
@@ -72,8 +82,8 @@ vendor_into() {
   mkdir -p "$skills_dir"
   find "$skills_dir" -mindepth 1 -maxdepth 1 ! -name '.gitkeep' -exec rm -rf {} +
 
-  # Copy each skill dir, preserving its upstream layer structure
-  # (e.g. skills/granular/statements/mariadb-create-table/).
+  # Copy each skill dir. nested → preserve upstream layer dirs; flat → put each
+  # skill dir directly under skills/ (OpenCode discovers skills one level deep).
   local count=0 name relpath skill_reldir dest_dir
   while IFS=$'\t' read -r name relpath; do
     if [ ! -f "$SRC_SKILLS/$relpath" ]; then
@@ -81,14 +91,27 @@ vendor_into() {
       continue
     fi
     skill_reldir="$(dirname "$relpath")"
-    dest_dir="$skills_dir/$skill_reldir"
+    if [ "$layout" = "flat" ]; then
+      dest_dir="$skills_dir/$(basename "$skill_reldir")"
+    else
+      dest_dir="$skills_dir/$skill_reldir"
+    fi
     mkdir -p "$(dirname "$dest_dir")"
     cp -R "$SRC_SKILLS/$skill_reldir" "$dest_dir"
     count=$((count + 1))
   done < <(jq -r '.layers[].skills[] | [.name, .path] | @tsv' "$MANIFEST")
 
-  # Include the upstream skills manifest alongside the vendored skills.
-  cp "$MANIFEST" "$skills_dir/.skills-manifest.json"
+  # Include the skills manifest alongside the vendored skills. In flat mode,
+  # rewrite each skill `path` to its flattened location (last two segments,
+  # e.g. granular/statements/mariadb-x/SKILL.md -> mariadb-x/SKILL.md) so the
+  # test suites' manifest-driven loaders resolve against the on-disk layout.
+  if [ "$layout" = "flat" ]; then
+    jq '.layers |= map_values(
+          .skills |= map(.path = (.path | split("/") | .[-2:] | join("/")))
+        )' "$MANIFEST" > "$skills_dir/.skills-manifest.json"
+  else
+    cp "$MANIFEST" "$skills_dir/.skills-manifest.json"
+  fi
 
   # Preserve topical-layer attribution files (those skills are vendored under MIT).
   local f
@@ -120,8 +143,9 @@ vendor_into() {
   echo "  $plugin_dir: synced $count skills"
 }
 
-for plugin in "${TARGET_PLUGINS[@]}"; do
-  vendor_into "$REPO_ROOT/$plugin"
+for entry in "${TARGET_PLUGINS[@]}"; do
+  read -r plugin layout <<<"$entry"
+  vendor_into "$REPO_ROOT/$plugin" "$layout"
 done
 
 echo "Done. Synced ${#TARGET_PLUGINS[@]} plugin(s) from $SOURCE_REPO@$REF."

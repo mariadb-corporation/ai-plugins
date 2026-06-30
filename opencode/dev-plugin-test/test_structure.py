@@ -1,0 +1,111 @@
+"""Tier 1 — static / structural checks of the vendored skills.
+
+No DB, no LLM: fast and deterministic, suitable as the always-on CI gate.
+Parametrized over every skill in the manifest (plus a few suite-wide invariants).
+"""
+
+from __future__ import annotations
+
+import pytest
+
+from lib import skills
+
+pytestmark = pytest.mark.static
+
+ALL_SKILLS = skills.load_skills()
+STATEMENT_SKILLS = skills.statement_skills()
+
+
+def _id(s: skills.Skill) -> str:
+    return s.name
+
+
+# --- per-skill frontmatter / naming -----------------------------------------
+
+
+@pytest.mark.parametrize("skill", ALL_SKILLS, ids=_id)
+def test_skill_md_exists(skill: skills.Skill):
+    assert skill.path.is_file(), f"missing SKILL.md at {skill.rel_path}"
+
+
+@pytest.mark.parametrize("skill", ALL_SKILLS, ids=_id)
+def test_frontmatter_has_name_and_description(skill: skills.Skill):
+    fm = skill.frontmatter
+    assert isinstance(fm.get("name"), str) and fm["name"].strip(), "frontmatter missing non-empty `name`"
+    desc = fm.get("description")
+    assert isinstance(desc, str) and len(desc.strip()) >= 20, "frontmatter missing a substantive `description`"
+
+
+@pytest.mark.parametrize("skill", ALL_SKILLS, ids=_id)
+def test_frontmatter_name_matches_dir(skill: skills.Skill):
+    assert skill.frontmatter.get("name") == skill.dir_name, (
+        f"frontmatter name {skill.frontmatter.get('name')!r} != directory {skill.dir_name!r}"
+    )
+
+
+@pytest.mark.parametrize("skill", ALL_SKILLS, ids=_id)
+def test_manifest_name_matches_frontmatter(skill: skills.Skill):
+    assert skill.name == skill.frontmatter.get("name"), (
+        f"manifest name {skill.name!r} != frontmatter name {skill.frontmatter.get('name')!r}"
+    )
+
+
+@pytest.mark.parametrize("skill", ALL_SKILLS, ids=_id)
+def test_description_has_use_when_trigger(skill: skills.Skill):
+    # The discoverability contract: every skill tells the agent when to use it.
+    assert "use when" in skill.frontmatter.get("description", "").lower(), (
+        "description should contain a 'Use when …' trigger clause"
+    )
+
+
+@pytest.mark.parametrize("skill", ALL_SKILLS, ids=_id)
+def test_sql_fences_balanced(skill: skills.Skill):
+    assert skill.fence_count() % 2 == 0, "unbalanced ``` code fences in SKILL.md"
+
+
+@pytest.mark.parametrize("skill", ALL_SKILLS, ids=_id)
+def test_see_also_refs_resolve(skill: skills.Skill):
+    known = skills.skill_names()
+    dangling = {r for r in skill.see_also_refs() if r not in known}
+    assert not dangling, f"See Also references unknown skills: {sorted(dangling)}"
+
+
+# --- statement-skill content contract ---------------------------------------
+
+
+@pytest.mark.parametrize("skill", STATEMENT_SKILLS, ids=_id)
+def test_statement_has_llms_often_miss(skill: skills.Skill):
+    assert skills.has_section(skill.body, "What LLMs Often Miss"), (
+        "statement skills must carry a 'What LLMs Often Miss' section"
+    )
+
+
+@pytest.mark.parametrize("skill", STATEMENT_SKILLS, ids=_id)
+def test_statement_has_runnable_sql(skill: skills.Skill):
+    assert skill.sql_blocks(), "statement skills must include at least one ```sql block"
+
+
+# --- suite-wide invariants ---------------------------------------------------
+
+
+def test_manifest_paths_exist_on_disk():
+    missing = [s.rel_path for s in ALL_SKILLS if not s.path.is_file()]
+    assert not missing, f"manifest lists skills not on disk: {missing}"
+
+
+def test_every_disk_skill_is_in_manifest():
+    manifest_paths = {(skills.SKILLS_ROOT / s.rel_path).resolve() for s in ALL_SKILLS}
+    disk_paths = {p.resolve() for p in skills.discover_disk_skills()}
+    orphans = disk_paths - manifest_paths
+    assert not orphans, f"SKILL.md files on disk but absent from manifest: {sorted(map(str, orphans))}"
+
+
+def test_skill_names_unique():
+    names = [s.name for s in ALL_SKILLS]
+    dupes = {n for n in names if names.count(n) > 1}
+    assert not dupes, f"duplicate skill names: {sorted(dupes)}"
+
+
+def test_expected_statement_skill_count():
+    # Guardrail: the 12 granular statement skills the suite targets.
+    assert len(STATEMENT_SKILLS) == 12, f"expected 12 statement skills, found {len(STATEMENT_SKILLS)}"
