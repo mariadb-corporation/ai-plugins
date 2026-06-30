@@ -1,0 +1,22 @@
+# Behavioral eval cases for the mariadb-create-table skill.
+# Schema documented in mariadb-create-database.yaml.
+
+skill: mariadb-create-table
+cases:
+  - name: atomic replace uses CREATE OR REPLACE TABLE
+    prompt: >
+      In MariaDB, atomically replace table `t` with a new definition
+      (id INT PRIMARY KEY, name VARCHAR(100)) in a single statement, with no
+      window where the table is missing. Give me only the statement.
+    expect_regex:
+      - "CREATE\\s+OR\\s+REPLACE\\s+TABLE"
+    expect_absent:
+      - "DROP TABLE"
+
+  - name: emoji-capable column uses utf8mb4
+    prompt: >
+      Create a MariaDB table `posts` with a VARCHAR `body` column that can store
+      emoji and other 4-byte characters. Give me only the CREATE TABLE statement
+      with the appropriate character set.
+    expect_regex:
+      - "utf8mb4"

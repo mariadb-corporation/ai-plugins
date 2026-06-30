@@ -1,0 +1,66 @@
+name: codex-tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: "0 6 * * *"  # nightly, for the eval tier
+  workflow_dispatch:
+
+defaults:
+  run:
+    working-directory: codex/dev-plugin-test
+
+jobs:
+  static:
+    name: static (Tier 1)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - run: pytest -m static -ra
+
+  db:
+    name: db (Tier 2)
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request' || github.event_name == 'push'
+    services:
+      mariadb:
+        image: mariadb:11.8
+        env:
+          MARIADB_ROOT_PASSWORD: test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="healthcheck.sh --connect --innodb_initialized"
+          --health-interval=3s --health-timeout=5s --health-retries=20
+    env:
+      MARIADB_HOST: 127.0.0.1
+      MARIADB_PORT: "3306"
+      MARIADB_USER: root
+      MARIADB_PASSWORD: test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - run: pytest -m db -ra
+
+  evals:
+    name: evals (Tier 3)
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - run: pytest -m eval -ra
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}

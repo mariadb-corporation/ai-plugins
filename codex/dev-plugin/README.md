@@ -1,13 +1,16 @@
-# MariaDB plugin for Claude Code
+# MariaDB plugin for Codex
 
 Version **0.0.1**
 
-This plugin gives Claude Code first-class MariaDB support through two parts:
+This plugin gives [OpenAI Codex](https://developers.openai.com/codex/) first-class
+MariaDB support through two parts:
 
 1. **Skills** — 24 MariaDB agent skills (SQL statements, functions, client tools,
    and topical deep-dives) vendored from
    [`mariadb-corporation/mariadb-docs/agent-skills`](https://github.com/mariadb-corporation/mariadb-docs/tree/main/agent-skills),
-   baseline **MariaDB 11.8 LTS**.
+   baseline **MariaDB 11.8 LTS**. They follow the open
+   [agent-skills](https://developers.openai.com/codex/skills) standard (`SKILL.md`),
+   so Codex loads them contextually and can invoke them via `/skills` or `$`.
 2. **A native MCP server** — the [`mariadb-shell`](https://github.com/mariadb-corporation/mariadb-shell)
    binary, started automatically by a launcher that downloads the right build for
    your OS and CPU architecture.
@@ -19,8 +22,9 @@ This plugin gives Claude Code first-class MariaDB support through two parts:
 /plugin install dev@mariadb
 ```
 
-On first use of a MariaDB tool, the launcher downloads `mariadb-shell` into your
-user cache (`~/.cache/mariadb/mariadb-shell/<version>/` on macOS/Linux,
+Then reload (`/reload-plugins`) if Codex doesn't pick it up automatically. On first
+use of a MariaDB tool, the launcher downloads `mariadb-shell` into your user cache
+(`~/.cache/mariadb/mariadb-shell/<version>/` on macOS/Linux,
 `%LOCALAPPDATA%\mariadb\mariadb-shell\<version>\` on Windows) and starts it as the
 MCP server. Subsequent runs reuse the cached binary.
 
@@ -30,15 +34,19 @@ Configured in [.mcp.json](.mcp.json):
 
 ```json
 {
-  "mcpServers": {
+  "mcp_servers": {
     "mariadb": {
-      "command": "${CLAUDE_PLUGIN_ROOT}/scripts/mariadb-mcp-launcher.sh",
+      "command": "${CODEX_PLUGIN_ROOT}/scripts/mariadb-mcp-launcher.sh",
       "args": ["mcp"],
       "env": { "MARIADB_SHELL_VERSION": "2026.7.0" }
     }
   }
 }
 ```
+
+`${CODEX_PLUGIN_ROOT}` resolves to this plugin's install directory. (Codex also
+honours the legacy `${CLAUDE_PLUGIN_ROOT}` alias for compatibility with plugins
+authored for Claude Code.)
 
 The launcher ([scripts/mariadb-mcp-launcher.sh](scripts/mariadb-mcp-launcher.sh)):
 

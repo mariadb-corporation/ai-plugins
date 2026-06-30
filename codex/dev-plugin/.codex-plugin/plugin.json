@@ -1,0 +1,20 @@
+{
+  "name": "dev",
+  "version": "0.0.1",
+  "description": "MariaDB skills and the native mariadb-shell MCP server for Codex.",
+  "author": { "name": "MariaDB Corporation", "url": "https://mariadb.com" },
+  "homepage": "https://github.com/mariadb-corporation/ai-plugins",
+  "repository": "https://github.com/mariadb-corporation/ai-plugins",
+  "license": "GPL-2.0",
+  "keywords": ["mariadb", "sql", "database", "mcp", "mariadb-shell"],
+  "skills": "./skills/",
+  "mcpServers": "./.mcp.json",
+  "interface": {
+    "displayName": "MariaDB",
+    "shortDescription": "MariaDB skills + the native mariadb-shell MCP server.",
+    "longDescription": "First-class MariaDB support for Codex: 24 MariaDB agent skills (statements, functions, client tools, topical deep-dives) plus the native mariadb-shell MCP server, downloaded automatically for your OS and CPU architecture.",
+    "developerName": "MariaDB Corporation",
+    "category": "Databases",
+    "websiteURL": "https://mariadb.com"
+  }
+}
