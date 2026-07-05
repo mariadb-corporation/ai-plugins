@@ -4,20 +4,26 @@
 #
 # Downloads the agent-skills/ tree from mariadb-corporation/mariadb-docs at a
 # pinned ref ONCE, reads its .skills-manifest.json, and copies every skill
-# directory into each plugin's skills/ dir. Re-running is idempotent. Per-plugin
-# provenance is written to skills-source.json.
+# directory into each plugin's skills/ dir. It also vendors this repo's own
+# additional-skills/ tree. Re-running is idempotent. Per-plugin provenance is
+# written to skills-source.json.
 #
-# Each target declares a skill LAYOUT:
-#   nested — preserve the upstream layer dirs (skills/granular/statements/<skill>/).
-#   flat   — place every skill dir directly under skills/<skill>/. Used for OpenCode,
-#            which discovers skills only one directory deep.
-# In flat mode the vendored .skills-manifest.json is rewritten so each skill `path`
-# points at its flat location, keeping the test suites' manifest-driven loaders valid.
+# All plugins use a FLAT skill layout: every skill dir is placed directly under
+# skills/<skill>/, regardless of how it is grouped upstream. This is what
+# OpenCode requires (it discovers skills only one directory deep), and it keeps
+# every plugin identical on disk. The vendored .skills-manifest.json is rewritten
+# so each skill `path` points at its flat location, keeping the test suites'
+# manifest-driven loaders valid. The manifest's layer grouping is preserved
+# (only the paths flatten), so tests that key off a skill's layer still work.
 #
-# Plugins kept in sync (relative to repo root):
-#   - claude/dev-plugin     (Claude Code) — nested
-#   - codex/dev-plugin      (Codex)       — nested
-#   - opencode/dev-plugin   (OpenCode)    — flat
+# Local additional-skills/ (this repo's own skills, not from upstream) are copied
+# flat alongside the upstream skills and recorded in the manifest under an
+# "additional" layer so the disk<->manifest consistency tests pass.
+#
+# Plugins kept in sync (relative to repo root), all flat:
+#   - claude/dev-plugin     (Claude Code)
+#   - codex/dev-plugin      (Codex)
+#   - opencode/dev-plugin   (OpenCode)
 #
 # Usage:
 #   scripts/sync-skills.sh [REF]
@@ -36,12 +42,15 @@ REF="${1:-$DEFAULT_REF}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
-# Plugins to keep in sync, as "<plugin-dir> <layout>" (layout: nested | flat).
+# Plugins to keep in sync (relative to repo root). All use a flat layout.
 TARGET_PLUGINS=(
-  "claude/dev-plugin nested"
-  "codex/dev-plugin nested"
-  "opencode/dev-plugin flat"
+  "claude/dev-plugin"
+  "codex/dev-plugin"
+  "opencode/dev-plugin"
 )
+
+# This repo's own skills, vendored flat into every plugin alongside upstream.
+ADDITIONAL_SKILLS_DIR="$REPO_ROOT/additional-skills"
 
 command -v jq >/dev/null 2>&1 || { echo "error: jq is required" >&2; exit 1; }
 command -v curl >/dev/null 2>&1 || { echo "error: curl is required" >&2; exit 1; }
@@ -66,10 +75,9 @@ COMMIT="${COMMIT:-$REF}"
 BASELINE="$(jq -r '.baseline // "unknown"' "$MANIFEST")"
 SYNCED_AT="$(date -u +%Y-%m-%d)"
 
-# Vendor the downloaded skills into a single plugin's skills/ dir.
+# Vendor the downloaded skills into a single plugin's skills/ dir (flat layout).
 vendor_into() {
   local plugin_dir="$1"
-  local layout="$2"
   local skills_dir="$plugin_dir/skills"
   local provenance="$plugin_dir/skills-source.json"
 
@@ -82,36 +90,51 @@ vendor_into() {
   mkdir -p "$skills_dir"
   find "$skills_dir" -mindepth 1 -maxdepth 1 ! -name '.gitkeep' -exec rm -rf {} +
 
-  # Copy each skill dir. nested → preserve upstream layer dirs; flat → put each
-  # skill dir directly under skills/ (OpenCode discovers skills one level deep).
-  local count=0 name relpath skill_reldir dest_dir
+  # Copy each upstream skill dir flat: skills/<skill>/ regardless of its
+  # upstream grouping (OpenCode discovers skills only one level deep, and a flat
+  # layout keeps every plugin identical on disk).
+  local count=0 name relpath skill_reldir
   while IFS=$'\t' read -r name relpath; do
     if [ ! -f "$SRC_SKILLS/$relpath" ]; then
       echo "warning: missing skill '$name' at $relpath — skipping" >&2
       continue
     fi
     skill_reldir="$(dirname "$relpath")"
-    if [ "$layout" = "flat" ]; then
-      dest_dir="$skills_dir/$(basename "$skill_reldir")"
-    else
-      dest_dir="$skills_dir/$skill_reldir"
-    fi
-    mkdir -p "$(dirname "$dest_dir")"
-    cp -R "$SRC_SKILLS/$skill_reldir" "$dest_dir"
+    cp -R "$SRC_SKILLS/$skill_reldir" "$skills_dir/$(basename "$skill_reldir")"
     count=$((count + 1))
   done < <(jq -r '.layers[].skills[] | [.name, .path] | @tsv' "$MANIFEST")
 
-  # Include the skills manifest alongside the vendored skills. In flat mode,
-  # rewrite each skill `path` to its flattened location (last two segments,
-  # e.g. granular/statements/mariadb-x/SKILL.md -> mariadb-x/SKILL.md) so the
-  # test suites' manifest-driven loaders resolve against the on-disk layout.
-  if [ "$layout" = "flat" ]; then
-    jq '.layers |= map_values(
-          .skills |= map(.path = (.path | split("/") | .[-2:] | join("/")))
-        )' "$MANIFEST" > "$skills_dir/.skills-manifest.json"
-  else
-    cp "$MANIFEST" "$skills_dir/.skills-manifest.json"
+  # Copy this repo's local additional-skills/ (flat) and collect their manifest
+  # entries so the disk<->manifest consistency tests still pass.
+  local extra_entries="[]" skill_md sdir sname
+  if [ -d "$ADDITIONAL_SKILLS_DIR" ]; then
+    while IFS= read -r skill_md; do
+      sdir="$(dirname "$skill_md")"
+      sname="$(basename "$sdir")"
+      cp -R "$sdir" "$skills_dir/$sname"
+      count=$((count + 1))
+      extra_entries="$(jq \
+        --arg n "$sname" \
+        --arg p "$sname/SKILL.md" \
+        --arg baseline "$BASELINE" \
+        '. + [{name: $n, path: $p, status: "local", baseline_version: $baseline}]' \
+        <<<"$extra_entries")"
+    done < <(find "$ADDITIONAL_SKILLS_DIR" -mindepth 2 -maxdepth 2 -name SKILL.md | sort)
   fi
+
+  # Write the vendored manifest: flatten every upstream skill `path` to its
+  # flattened location (last two segments, e.g.
+  # granular/statements/mariadb-x/SKILL.md -> mariadb-x/SKILL.md), and append an
+  # "additional" layer for the local skills, so all manifest-driven loaders
+  # resolve against the on-disk flat layout.
+  jq --argjson extra "$extra_entries" '
+        .layers |= map_values(
+          .skills |= map(.path = (.path | split("/") | .[-2:] | join("/")))
+        )
+        | if ($extra | length) > 0
+          then .layers["additional"] = {tier: 3, path: ".", author: "local", skills: $extra}
+          else . end
+      ' "$MANIFEST" > "$skills_dir/.skills-manifest.json"
 
   # Preserve topical-layer attribution files (those skills are vendored under MIT).
   local f
@@ -143,9 +166,8 @@ vendor_into() {
   echo "  $plugin_dir: synced $count skills"
 }
 
-for entry in "${TARGET_PLUGINS[@]}"; do
-  read -r plugin layout <<<"$entry"
-  vendor_into "$REPO_ROOT/$plugin" "$layout"
+for plugin in "${TARGET_PLUGINS[@]}"; do
+  vendor_into "$REPO_ROOT/$plugin"
 done
 
 echo "Done. Synced ${#TARGET_PLUGINS[@]} plugin(s) from $SOURCE_REPO@$REF."
