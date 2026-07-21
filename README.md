@@ -6,7 +6,7 @@ MariaDB capability — a curated set of agent **skills** plus the native
 
 | Agent | Plugin | Test suite | CI workflow |
 | ----- | ------ | ---------- | ----------- |
-| [Claude Code](https://claude.com/claude-code) | [`claude/dev-plugin`](claude/dev-plugin) | [`claude/dev-plugin-tests`](claude/dev-plugin-tests) | [test.yml](.github/workflows/test.yml) |
+| [Claude Code](https://claude.com/claude-code) | [`claude/dev-plugin`](claude/dev-plugin) | [`claude/dev-plugin-tests`](claude/dev-plugin-tests) | [claude-test.yml](.github/workflows/claude-test.yml) |
 | [Codex](https://openai.com/codex) | [`codex/dev-plugin`](codex/dev-plugin) | [`codex/dev-plugin-test`](codex/dev-plugin-test) | [codex-test.yml](.github/workflows/codex-test.yml) |
 | [OpenCode](https://opencode.ai) | [`opencode/dev-plugin`](opencode/dev-plugin) | [`opencode/dev-plugin-test`](opencode/dev-plugin-test) | [opencode-test.yml](.github/workflows/opencode-test.yml) |
 

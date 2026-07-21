@@ -107,5 +107,7 @@ def test_skill_names_unique():
 
 
 def test_expected_statement_skill_count():
-    # Guardrail: the 12 granular statement skills the suite targets.
-    assert len(STATEMENT_SKILLS) == 12, f"expected 12 statement skills, found {len(STATEMENT_SKILLS)}"
+    # Guardrail against an unintended change to the vendored set: the count of
+    # granular statement skills. Bump this when sync-skills.sh pulls a ref that
+    # legitimately adds or removes statement skills.
+    assert len(STATEMENT_SKILLS) == 31, f"expected 31 statement skills, found {len(STATEMENT_SKILLS)}"
