@@ -3,9 +3,9 @@
   "mcp": {
     "mariadb": {
       "type": "local",
-      "command": ["{env:MARIADB_DEV_PLUGIN}/scripts/mariadb-mcp-launcher.sh", "mcp"],
+      "command": ["{env:MARIADB_DEV_PLUGIN}/scripts/mariadb-mcp-launcher.sh"],
       "environment": {
-        "MARIADB_SHELL_VERSION": "2026.7.0"
+        "MARIADB_SHELL_VERSION": "9.7.0"
       },
       "enabled": true
     }

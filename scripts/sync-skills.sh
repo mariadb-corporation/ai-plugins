@@ -21,9 +21,20 @@
 # "additional" layer so the disk<->manifest consistency tests pass.
 #
 # Plugins kept in sync (relative to repo root), all flat:
-#   - claude/dev-plugin     (Claude Code)
-#   - codex/dev-plugin      (Codex)
-#   - opencode/dev-plugin   (OpenCode)
+#   - claude/dev-plugin     (Claude Code)   — all skill layers
+#   - codex/dev-plugin      (Codex)         — all skill layers
+#   - opencode/dev-plugin   (OpenCode)      — all skill layers
+#   - claude/sql-plugin     (Claude Code)   — omits the granular/tools layer
+#   - codex/sql-plugin      (Codex)         — omits the granular/tools layer
+#   - opencode/sql-plugin   (OpenCode)      — omits the granular/tools layer
+#
+# The sql-* plugins are a SQL-focused variant vendored from an explicit
+# include-list of layers: granular/statements, granular/functions, and topical.
+# vendor_into() takes an optional list of manifest layer keys to include; only
+# those layers are copied and written into the vendored .skills-manifest.json
+# (and the local additional-skills/ are included only when the "additional" key
+# is in the list). With NO include list, every upstream layer plus the local
+# additional-skills/ is vendored — the full dev-plugin behavior.
 #
 # Usage:
 #   scripts/sync-skills.sh [REF]
@@ -34,8 +45,8 @@ set -euo pipefail
 
 SOURCE_REPO="mariadb-corporation/mariadb-docs"
 SUBDIR="agent-skills"
-# Pinned upstream ref (commit on main, captured 2026-06-29). Override via $1.
-DEFAULT_REF="c3c7e5c659f47e63cdea35bfe86dadaa911c78da"
+# Pinned upstream ref (commit on main, captured 2026-07-21). Override via $1.
+DEFAULT_REF="7ad845048bdfbbbd42b4667d817c825933458a6e"
 REF="${1:-$DEFAULT_REF}"
 
 # Resolve repo root (parent of this scripts/ dir).
@@ -43,11 +54,22 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 # Plugins to keep in sync (relative to repo root). All use a flat layout.
+# The "dev" plugins vendor every layer; the "sql" plugins vendor only the layers
+# in SQL_INCLUDE_LAYERS below.
 TARGET_PLUGINS=(
   "claude/dev-plugin"
   "codex/dev-plugin"
   "opencode/dev-plugin"
 )
+SQL_PLUGINS=(
+  "claude/sql-plugin"
+  "codex/sql-plugin"
+  "opencode/sql-plugin"
+)
+# Manifest layer keys the sql plugins vendor (see .skills-manifest.json layers):
+# granular/statements, granular/functions, and topical — omitting granular/tools
+# and the local additional-skills/.
+SQL_INCLUDE_LAYERS=("granular-statements" "granular-functions" "topical")
 
 # This repo's own skills, vendored flat into every plugin alongside upstream.
 ADDITIONAL_SKILLS_DIR="$REPO_ROOT/additional-skills"
@@ -77,9 +99,23 @@ SYNCED_AT="$(date -u +%Y-%m-%d)"
 
 # Vendor the downloaded skills into a single plugin's skills/ dir (flat layout).
 vendor_into() {
-  local plugin_dir="$1"
+  local plugin_dir="$1"; shift
   local skills_dir="$plugin_dir/skills"
   local provenance="$plugin_dir/skills-source.json"
+
+  # Remaining args = manifest layer keys to INCLUDE. Empty = include every layer
+  # (and the local additional-skills/). A non-empty list restricts vendoring to
+  # exactly those layer keys; additional-skills/ is included only when the list
+  # contains "additional".
+  local include_json='[]' include_additional=1
+  if [ "$#" -gt 0 ]; then
+    include_json="$(printf '%s\n' "$@" | jq -R . | jq -s .)"
+    if printf '%s\n' "$@" | grep -qx 'additional'; then
+      include_additional=1
+    else
+      include_additional=0
+    fi
+  fi
 
   if [ ! -d "$plugin_dir" ]; then
     echo "warning: plugin dir not found, skipping: $plugin_dir" >&2
@@ -102,12 +138,17 @@ vendor_into() {
     skill_reldir="$(dirname "$relpath")"
     cp -R "$SRC_SKILLS/$skill_reldir" "$skills_dir/$(basename "$skill_reldir")"
     count=$((count + 1))
-  done < <(jq -r '.layers[].skills[] | [.name, .path] | @tsv' "$MANIFEST")
+  done < <(jq -r --argjson include "$include_json" '
+      .layers | to_entries[]
+      | select(($include | length) == 0 or (.key as $k | $include | index($k)))
+      | .value.skills[] | [.name, .path] | @tsv
+    ' "$MANIFEST")
 
   # Copy this repo's local additional-skills/ (flat) and collect their manifest
-  # entries so the disk<->manifest consistency tests still pass.
+  # entries so the disk<->manifest consistency tests still pass. Skipped when an
+  # include-list is given that does not contain "additional".
   local extra_entries="[]" skill_md sdir sname
-  if [ -d "$ADDITIONAL_SKILLS_DIR" ]; then
+  if [ "$include_additional" -eq 1 ] && [ -d "$ADDITIONAL_SKILLS_DIR" ]; then
     while IFS= read -r skill_md; do
       sdir="$(dirname "$skill_md")"
       sname="$(basename "$sdir")"
@@ -127,23 +168,29 @@ vendor_into() {
   # granular/statements/mariadb-x/SKILL.md -> mariadb-x/SKILL.md), and append an
   # "additional" layer for the local skills, so all manifest-driven loaders
   # resolve against the on-disk flat layout.
-  jq --argjson extra "$extra_entries" '
+  jq --argjson extra "$extra_entries" --argjson include "$include_json" '
         .layers |= map_values(
           .skills |= map(.path = (.path | split("/") | .[-2:] | join("/")))
         )
+        | if ($include | length) > 0
+          then .layers |= with_entries(select(.key as $k | $include | index($k)))
+          else . end
         | if ($extra | length) > 0
           then .layers["additional"] = {tier: 3, path: ".", author: "local", skills: $extra}
           else . end
       ' "$MANIFEST" > "$skills_dir/.skills-manifest.json"
 
-  # Preserve topical-layer attribution files (those skills are vendored under MIT).
+  # Preserve topical-layer attribution files (those skills are vendored under
+  # MIT). Only relevant when the topical layer was actually vendored.
   local f
-  for f in LICENSE VENDORED.md; do
-    if [ -f "$SRC_SKILLS/topical/$f" ]; then
-      mkdir -p "$skills_dir/topical"
-      cp "$SRC_SKILLS/topical/$f" "$skills_dir/topical/$f"
-    fi
-  done
+  if [ "$(jq -r '.layers | has("topical")' "$skills_dir/.skills-manifest.json")" = "true" ]; then
+    for f in LICENSE VENDORED.md; do
+      if [ -f "$SRC_SKILLS/topical/$f" ]; then
+        mkdir -p "$skills_dir/topical"
+        cp "$SRC_SKILLS/topical/$f" "$skills_dir/topical/$f"
+      fi
+    done
+  fi
 
   jq -n \
     --arg repo "$SOURCE_REPO" \
@@ -170,4 +217,9 @@ for plugin in "${TARGET_PLUGINS[@]}"; do
   vendor_into "$REPO_ROOT/$plugin"
 done
 
-echo "Done. Synced ${#TARGET_PLUGINS[@]} plugin(s) from $SOURCE_REPO@$REF."
+for plugin in "${SQL_PLUGINS[@]}"; do
+  vendor_into "$REPO_ROOT/$plugin" "${SQL_INCLUDE_LAYERS[@]}"
+done
+
+total_plugins=$(( ${#TARGET_PLUGINS[@]} + ${#SQL_PLUGINS[@]} ))
+echo "Done. Synced $total_plugins plugin(s) from $SOURCE_REPO@$REF."

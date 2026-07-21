@@ -3,29 +3,69 @@
 # mariadb-mcp-launcher.sh — download (if needed) and launch the mariadb-shell
 # native MCP server.
 #
-# Detects OS + CPU arch, downloads the matching release asset from
-# github.com/mariadb-corporation/mariadb-shell into a user cache dir, verifies
-# its checksum, and execs it. All arguments are passed through to the binary
-# (e.g. the "mcp" subcommand from .mcp.json), and stdio is left untouched so the
-# MCP transport works.
+# Resolution order:
+#   1. $MARIADB_SHELL_BIN, if set (explicit override).
+#   2. A mariadb-shell found on $PATH whose version is >= MARIADB_SHELL_VERSION.
+#   3. A previously cached download for MARIADB_SHELL_VERSION.
+#   4. Otherwise download the matching release asset from
+#      github.com/mariadb-corporation/mariadb-shell into a user cache dir and
+#      verify its checksum.
+#
+# However it is resolved, the binary is exec'd as
+#   mariadb-shell -- mcp start-server --transport=stdio
+# so the MCP server runs over stdio (not HTTP). stdio is left untouched so the
+# MCP transport works. The MCP config therefore just points at this launcher
+# with no extra arguments.
 #
 # Environment:
-#   MARIADB_SHELL_VERSION   Release version/tag to use (default below).
-#   MARIADB_SHELL_BIN       Path to a pre-installed binary; skips all download logic.
+#   MARIADB_SHELL_VERSION   Minimum/required version (default below). A PATH
+#                           binary is accepted when equal or higher; the managed
+#                           download pins exactly this version.
+#   MARIADB_SHELL_BIN       Path to a pre-installed binary; skips all other logic.
 #   GH_TOKEN                Optional token for downloading from a private release.
 
 set -euo pipefail
 
-VERSION="${MARIADB_SHELL_VERSION:-2026.7.0}"
+VERSION="${MARIADB_SHELL_VERSION:-9.7.0}"
 REPO="mariadb-corporation/mariadb-shell"
+
+# Arguments that start the mariadb-shell MCP server over stdio. Every resolved
+# binary (override / PATH / cache / download) is launched with exactly these.
+MCP_ARGS=(-- mcp start-server --transport=stdio)
 
 log() { echo "mariadb-mcp-launcher: $*" >&2; }
 die() { log "error: $*"; exit 1; }
 
+# version_ge A B — succeed (return 0) when dotted-numeric version A >= B.
+version_ge() {
+  [ "$1" = "$2" ] && return 0
+  local -a a b; local i x y len
+  IFS=. read -ra a <<<"$1"
+  IFS=. read -ra b <<<"$2"
+  len=${#a[@]}; [ "${#b[@]}" -gt "$len" ] && len=${#b[@]}
+  for ((i = 0; i < len; i++)); do
+    x=${a[i]:-0}; y=${b[i]:-0}
+    if   ((10#$x > 10#$y)); then return 0
+    elif ((10#$x < 10#$y)); then return 1
+    fi
+  done
+  return 0
+}
+
 # Escape hatch: use an explicitly provided binary.
 if [ -n "${MARIADB_SHELL_BIN:-}" ]; then
   [ -x "$MARIADB_SHELL_BIN" ] || die "MARIADB_SHELL_BIN is not executable: $MARIADB_SHELL_BIN"
-  exec "$MARIADB_SHELL_BIN" "$@"
+  exec "$MARIADB_SHELL_BIN" "${MCP_ARGS[@]}"
+fi
+
+# Prefer a mariadb-shell already on PATH when it meets the required version.
+if PATH_BIN="$(command -v mariadb-shell 2>/dev/null)" && [ -n "$PATH_BIN" ]; then
+  PATH_VER="$("$PATH_BIN" --version 2>/dev/null | grep -oE '[0-9]+(\.[0-9]+)+' | head -n1 || true)"
+  if [ -n "$PATH_VER" ] && version_ge "$PATH_VER" "$VERSION"; then
+    log "using mariadb-shell $PATH_VER from PATH: $PATH_BIN (>= required $VERSION)"
+    exec "$PATH_BIN" "${MCP_ARGS[@]}"
+  fi
+  log "mariadb-shell on PATH (${PATH_VER:-unknown version}) does not meet required $VERSION; using managed binary"
 fi
 
 # --- Detect OS ---------------------------------------------------------------
@@ -53,7 +93,7 @@ BIN="$CACHE_BASE/$BIN_NAME"
 
 # Already cached? Run it.
 if [ -x "$BIN" ]; then
-  exec "$BIN" "$@"
+  exec "$BIN" "${MCP_ARGS[@]}"
 fi
 
 # --- Download ----------------------------------------------------------------
@@ -108,4 +148,4 @@ mv -f "$SRC_BIN" "$BIN.partial"
 mv -f "$BIN.partial" "$BIN"
 
 log "installed to $BIN"
-exec "$BIN" "$@"
+exec "$BIN" "${MCP_ARGS[@]}"

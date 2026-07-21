@@ -4,7 +4,7 @@ All notable changes to the MariaDB Codex plugin are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 project adheres to [Semantic Versioning](https://semver.org/).
 
-## [0.0.2] - 2026-07-05
+## [26.7.0] - 2026-07-05
 
 ### Changed
 

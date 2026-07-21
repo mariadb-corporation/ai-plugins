@@ -28,8 +28,12 @@ _FRONTMATTER_RE = re.compile(r"\A---\n(.*?)\n---\n(.*)\Z", re.DOTALL)
 _SQL_FENCE_RE = re.compile(r"```sql\n(.*?)```", re.DOTALL)
 # Any fenced block opener, used to check fences are balanced.
 _FENCE_RE = re.compile(r"^```", re.MULTILINE)
-# A `mariadb-...` or `mysql-...` skill name mentioned in prose.
-_SKILL_REF_RE = re.compile(r"\b((?:mariadb|mysql)-[a-z0-9-]+)\b")
+# A `mariadb-...` / `mysql-...` skill name cross-referenced in inline code.
+# The backticks matter: skills always reference each other in code spans (e.g.
+# `mariadb-dump`), whereas the same token often appears bare inside a
+# mariadb.com/docs URL path (…/mariadb-binlog-options, …/mariadb-command-line-client)
+# — those are documentation slugs, not skills, and must not count as references.
+_SKILL_REF_RE = re.compile(r"`((?:mariadb|mysql)-[a-z0-9-]+)`")
 
 
 @dataclass

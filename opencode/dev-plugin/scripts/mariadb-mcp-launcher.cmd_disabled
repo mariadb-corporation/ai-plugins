@@ -3,20 +3,45 @@ setlocal enabledelayedexpansion
 rem ============================================================================
 rem mariadb-mcp-launcher.cmd — Windows launcher for the mariadb-shell MCP server.
 rem
-rem Detects CPU arch, downloads (if needed) the matching release asset from
-rem github.com/mariadb-corporation/mariadb-shell into %LOCALAPPDATA%, verifies
-rem its checksum, and runs it. All args are passed through to the binary.
+rem Resolution order: (1) %MARIADB_SHELL_BIN% if set; (2) a mariadb-shell on
+rem %PATH% whose version is >= MARIADB_SHELL_VERSION; (3) a cached download for
+rem that version; (4) otherwise download the matching release asset from
+rem github.com/mariadb-corporation/mariadb-shell into %LOCALAPPDATA% and verify
+rem its checksum. However it resolves, the binary is run as
+rem   mariadb-shell -- mcp start-server --transport=stdio
+rem so the MCP server runs over stdio (not HTTP).
 rem
 rem Env: MARIADB_SHELL_VERSION (default below), MARIADB_SHELL_BIN, GH_TOKEN.
 rem ============================================================================
 
-if not defined MARIADB_SHELL_VERSION set "MARIADB_SHELL_VERSION=2026.7.0"
+if not defined MARIADB_SHELL_VERSION set "MARIADB_SHELL_VERSION=9.7.0"
 set "REPO=mariadb-corporation/mariadb-shell"
+
+rem Arguments that start the mariadb-shell MCP server over stdio.
+set "MCP_ARGS=-- mcp start-server --transport=stdio"
 
 rem Escape hatch: explicit binary.
 if defined MARIADB_SHELL_BIN (
-  "%MARIADB_SHELL_BIN%" %*
+  "%MARIADB_SHELL_BIN%" %MCP_ARGS%
   exit /b %errorlevel%
+)
+
+rem Prefer a mariadb-shell already on PATH when it meets the required version.
+set "PATH_BIN="
+for /f "delims=" %%P in ('where mariadb-shell 2^>nul') do if not defined PATH_BIN set "PATH_BIN=%%P"
+if defined PATH_BIN (
+  set "PATH_VER="
+  for /f "usebackq delims=" %%V in (`"%PATH_BIN%" --version 2^>nul`) do if not defined PATH_VER set "PATH_VER=%%V"
+  set "REQ_VER=%MARIADB_SHELL_VERSION%"
+  powershell -NoProfile -Command ^
+    "$m=[regex]::Match($env:PATH_VER,'\d+(\.\d+)+'); if(-not $m.Success){exit 2};" ^
+    "try{ if([version]$m.Value -ge [version]$env:REQ_VER){exit 0}else{exit 1} }catch{exit 2}"
+  if not errorlevel 1 (
+    echo mariadb-mcp-launcher: using mariadb-shell from PATH "%PATH_BIN%" ^(^>= %MARIADB_SHELL_VERSION%^) 1>&2
+    "%PATH_BIN%" %MCP_ARGS%
+    exit /b %errorlevel%
+  )
+  echo mariadb-mcp-launcher: mariadb-shell on PATH does not meet required %MARIADB_SHELL_VERSION%; using managed binary 1>&2
 )
 
 rem Detect arch.
@@ -67,5 +92,5 @@ if not exist "%BIN%" (
   echo mariadb-mcp-launcher: error: %BIN_NAME% not found after install 1>&2
   exit /b 1
 )
-"%BIN%" %*
+"%BIN%" %MCP_ARGS%
 exit /b %errorlevel%

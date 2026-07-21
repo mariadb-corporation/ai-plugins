@@ -1,11 +1,11 @@
 # MariaDB plugin for Codex
 
-Version **0.0.2**
+Version **26.7.0**
 
 This plugin gives [OpenAI Codex](https://developers.openai.com/codex/) first-class
 MariaDB support through two parts:
 
-1. **Skills** — 24 MariaDB agent skills (SQL statements, functions, client tools,
+1. **Skills** — MariaDB agent skills (SQL statements, functions, client tools,
    and topical deep-dives) vendored from
    [`mariadb-corporation/mariadb-docs/agent-skills`](https://github.com/mariadb-corporation/mariadb-docs/tree/main/agent-skills),
    baseline **MariaDB 11.8 LTS**. They follow the open
@@ -37,8 +37,8 @@ Configured in [.mcp.json](.mcp.json):
   "mcp_servers": {
     "mariadb": {
       "command": "${CODEX_PLUGIN_ROOT}/scripts/mariadb-mcp-launcher.sh",
-      "args": ["mcp"],
-      "env": { "MARIADB_SHELL_VERSION": "2026.7.0" }
+      "args": [],
+      "env": { "MARIADB_SHELL_VERSION": "9.7.0" }
     }
   }
 }
@@ -50,7 +50,7 @@ authored for Claude Code.)
 
 The launcher ([scripts/mariadb-mcp-launcher.sh](scripts/mariadb-mcp-launcher.sh)):
 
-- Resolves the version from `MARIADB_SHELL_VERSION` (default `2026.7.0`).
+- Resolves the version from `MARIADB_SHELL_VERSION` (default `9.7.0`).
 - Detects OS (`darwin`/`linux`/`windows`) and arch (`amd64`/`arm64`).
 - Downloads the matching release asset from
   `github.com/mariadb-corporation/mariadb-shell/releases`, verifies its checksum,
@@ -76,11 +76,11 @@ skills/
 ├── granular/
 │   ├── statements/   create-table, alter-table, select, insert, update, delete,
 │   │                 replace, create-view, create-index, drop-table,
-│   │                 create-database, load-data            (12)
-│   ├── functions/    json, string, date-time, numeric, aggregate   (5)
-│   └── tools/        dump, import                                   (2)
+│   │                 create-database, load-data
+│   ├── functions/    json, string, date-time, numeric, aggregate
+│   └── tools/        dump, import
 └── topical/          features, query-optimization, system-versioned-tables,
-                      mysql-to-mariadb, vector                       (5)
+                      mysql-to-mariadb, vector
                       (LICENSE + VENDORED.md — MIT attribution)
 ```
 
