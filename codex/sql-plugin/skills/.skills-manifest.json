@@ -94,133 +94,133 @@
         {
           "name": "mariadb-transactions",
           "path": "mariadb-transactions/SKILL.md",
-          "status": "draft",
+          "status": "pilot",
           "last_reviewed": "2026-07-20",
           "baseline_version": "11.8"
         },
         {
           "name": "mariadb-set-transaction",
           "path": "mariadb-set-transaction/SKILL.md",
-          "status": "draft",
+          "status": "pilot",
           "last_reviewed": "2026-07-20",
           "baseline_version": "11.8"
         },
         {
           "name": "mariadb-lock-tables",
           "path": "mariadb-lock-tables/SKILL.md",
-          "status": "draft",
+          "status": "pilot",
           "last_reviewed": "2026-07-20",
           "baseline_version": "11.8"
         },
         {
           "name": "mariadb-create-user",
           "path": "mariadb-create-user/SKILL.md",
-          "status": "draft",
+          "status": "pilot",
           "last_reviewed": "2026-07-20",
           "baseline_version": "11.8"
         },
         {
           "name": "mariadb-grant",
           "path": "mariadb-grant/SKILL.md",
-          "status": "draft",
+          "status": "pilot",
           "last_reviewed": "2026-07-20",
           "baseline_version": "11.8"
         },
         {
           "name": "mariadb-revoke",
           "path": "mariadb-revoke/SKILL.md",
-          "status": "draft",
+          "status": "pilot",
           "last_reviewed": "2026-07-20",
           "baseline_version": "11.8"
         },
         {
           "name": "mariadb-alter-user",
           "path": "mariadb-alter-user/SKILL.md",
-          "status": "draft",
+          "status": "pilot",
           "last_reviewed": "2026-07-20",
           "baseline_version": "11.8"
         },
         {
           "name": "mariadb-drop-user",
           "path": "mariadb-drop-user/SKILL.md",
-          "status": "draft",
+          "status": "pilot",
           "last_reviewed": "2026-07-20",
           "baseline_version": "11.8"
         },
         {
           "name": "mariadb-create-procedure",
           "path": "mariadb-create-procedure/SKILL.md",
-          "status": "draft",
+          "status": "pilot",
           "last_reviewed": "2026-07-20",
           "baseline_version": "11.8"
         },
         {
           "name": "mariadb-create-function",
           "path": "mariadb-create-function/SKILL.md",
-          "status": "draft",
+          "status": "pilot",
           "last_reviewed": "2026-07-20",
           "baseline_version": "11.8"
         },
         {
           "name": "mariadb-create-trigger",
           "path": "mariadb-create-trigger/SKILL.md",
-          "status": "draft",
+          "status": "pilot",
           "last_reviewed": "2026-07-20",
           "baseline_version": "11.8"
         },
         {
           "name": "mariadb-call",
           "path": "mariadb-call/SKILL.md",
-          "status": "draft",
+          "status": "pilot",
           "last_reviewed": "2026-07-20",
           "baseline_version": "11.8"
         },
         {
           "name": "mariadb-create-sequence",
           "path": "mariadb-create-sequence/SKILL.md",
-          "status": "draft",
+          "status": "pilot",
           "last_reviewed": "2026-07-20",
           "baseline_version": "11.8"
         },
         {
           "name": "mariadb-truncate-table",
           "path": "mariadb-truncate-table/SKILL.md",
-          "status": "draft",
+          "status": "pilot",
           "last_reviewed": "2026-07-20",
           "baseline_version": "11.8"
         },
         {
           "name": "mariadb-rename-table",
           "path": "mariadb-rename-table/SKILL.md",
-          "status": "draft",
+          "status": "pilot",
           "last_reviewed": "2026-07-20",
           "baseline_version": "11.8"
         },
         {
           "name": "mariadb-set",
           "path": "mariadb-set/SKILL.md",
-          "status": "draft",
+          "status": "pilot",
           "last_reviewed": "2026-07-20",
           "baseline_version": "11.8"
         },
         {
           "name": "mariadb-show",
           "path": "mariadb-show/SKILL.md",
-          "status": "draft",
+          "status": "pilot",
           "last_reviewed": "2026-07-20",
           "baseline_version": "11.8"
         },
         {
           "name": "mariadb-explain",
           "path": "mariadb-explain/SKILL.md",
-          "status": "draft",
+          "status": "pilot",
           "last_reviewed": "2026-07-20",
           "baseline_version": "11.8"
         },
         {
           "name": "mariadb-prepare",
           "path": "mariadb-prepare/SKILL.md",
-          "status": "draft",
+          "status": "pilot",
           "last_reviewed": "2026-07-20",
           "baseline_version": "11.8"
         }
@@ -269,35 +269,35 @@
         {
           "name": "mariadb-control-flow-functions",
           "path": "mariadb-control-flow-functions/SKILL.md",
-          "status": "draft",
+          "status": "pilot",
           "last_reviewed": "2026-07-20",
           "baseline_version": "11.8"
         },
         {
           "name": "mariadb-window-functions",
           "path": "mariadb-window-functions/SKILL.md",
-          "status": "draft",
+          "status": "pilot",
           "last_reviewed": "2026-07-20",
           "baseline_version": "11.8"
         },
         {
           "name": "mariadb-information-functions",
           "path": "mariadb-information-functions/SKILL.md",
-          "status": "draft",
+          "status": "pilot",
           "last_reviewed": "2026-07-20",
           "baseline_version": "11.8"
         },
         {
           "name": "mariadb-vector-functions",
           "path": "mariadb-vector-functions/SKILL.md",
-          "status": "draft",
+          "status": "pilot",
           "last_reviewed": "2026-07-20",
           "baseline_version": "11.8"
         },
         {
           "name": "mariadb-encryption-functions",
           "path": "mariadb-encryption-functions/SKILL.md",
-          "status": "draft",
+          "status": "pilot",
           "last_reviewed": "2026-07-20",
           "baseline_version": "11.8"
         }

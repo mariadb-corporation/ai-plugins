@@ -24,17 +24,22 @@
 #   - claude/dev-plugin     (Claude Code)   — all skill layers
 #   - codex/dev-plugin      (Codex)         — all skill layers
 #   - opencode/dev-plugin   (OpenCode)      — all skill layers
-#   - claude/sql-plugin     (Claude Code)   — omits the granular/tools layer
-#   - codex/sql-plugin      (Codex)         — omits the granular/tools layer
-#   - opencode/sql-plugin   (OpenCode)      — omits the granular/tools layer
+#   - claude/sql-plugin     (Claude Code)   — statements + functions + topical only
+#   - codex/sql-plugin      (Codex)         — statements + functions + topical only
+#   - opencode/sql-plugin   (OpenCode)      — statements + functions + topical only
+#
+# The dev-* plugins vendor EVERY upstream layer — granular/statements,
+# granular/functions, granular/tools (client tools), granular/connectors
+# (database connector skills), topical — plus the local additional-skills/.
 #
 # The sql-* plugins are a SQL-focused variant vendored from an explicit
 # include-list of layers: granular/statements, granular/functions, and topical.
-# vendor_into() takes an optional list of manifest layer keys to include; only
-# those layers are copied and written into the vendored .skills-manifest.json
-# (and the local additional-skills/ are included only when the "additional" key
-# is in the list). With NO include list, every upstream layer plus the local
-# additional-skills/ is vendored — the full dev-plugin behavior.
+# So the client-tool and connector layers (and the local additional-skills/) are
+# dev-only. vendor_into() takes an optional list of manifest layer keys to
+# include; only those layers are copied and written into the vendored
+# .skills-manifest.json (and the local additional-skills/ are included only when
+# the "additional" key is in the list). With NO include list, every upstream
+# layer plus the local additional-skills/ is vendored — the full dev behavior.
 #
 # Usage:
 #   scripts/sync-skills.sh [REF]
@@ -45,8 +50,9 @@ set -euo pipefail
 
 SOURCE_REPO="mariadb-corporation/mariadb-docs"
 SUBDIR="agent-skills"
-# Pinned upstream ref (commit on main, captured 2026-07-21). Override via $1.
-DEFAULT_REF="7ad845048bdfbbbd42b4667d817c825933458a6e"
+# Pinned upstream ref (commit on main, captured 2026-07-22; adds the
+# granular/connectors layer). Override via $1.
+DEFAULT_REF="1513b3b234ae95b5381b10272645198ec8792a8b"
 REF="${1:-$DEFAULT_REF}"
 
 # Resolve repo root (parent of this scripts/ dir).
@@ -67,8 +73,8 @@ SQL_PLUGINS=(
   "opencode/sql-plugin"
 )
 # Manifest layer keys the sql plugins vendor (see .skills-manifest.json layers):
-# granular/statements, granular/functions, and topical — omitting granular/tools
-# and the local additional-skills/.
+# granular/statements, granular/functions, and topical — omitting granular/tools,
+# granular/connectors, and the local additional-skills/ (all dev-only).
 SQL_INCLUDE_LAYERS=("granular-statements" "granular-functions" "topical")
 
 # This repo's own skills, vendored flat into every plugin alongside upstream.
