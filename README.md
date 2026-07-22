@@ -4,21 +4,33 @@ First-class **MariaDB** support for AI coding agents. This repo packages the sam
 MariaDB capability — a curated set of agent **skills** plus the native
 **`mariadb-shell` MCP server** — for three agent tools:
 
-| Agent | Plugin | Test suite | CI workflow |
-| ----- | ------ | ---------- | ----------- |
-| [Claude Code](https://claude.com/claude-code) | [`claude/dev-plugin`](claude/dev-plugin) | [`claude/dev-plugin-tests`](claude/dev-plugin-tests) | [claude-test.yml](.github/workflows/claude-test.yml) |
-| [Codex](https://openai.com/codex) | [`codex/dev-plugin`](codex/dev-plugin) | [`codex/dev-plugin-test`](codex/dev-plugin-test) | [codex-test.yml](.github/workflows/codex-test.yml) |
-| [OpenCode](https://opencode.ai) | [`opencode/dev-plugin`](opencode/dev-plugin) | [`opencode/dev-plugin-test`](opencode/dev-plugin-test) | [opencode-test.yml](.github/workflows/opencode-test.yml) |
+| Agent | Plugin Folder | Test suite | CI workflow |
+| ----- | ------------- | ---------- | ----------- |
+| [Claude Code](https://claude.com/claude-code) | [`claude`](claude) | [`claude/dev-plugin-tests`](claude/dev-plugin-tests) | [claude-test.yml](.github/workflows/claude-test.yml) |
+| [Codex](https://openai.com/codex) | [`codex`](codex) | [`codex/dev-plugin-test`](codex/dev-plugin-test) | [codex-test.yml](.github/workflows/codex-test.yml) |
+| [OpenCode](https://opencode.ai) | [`opencode`](opencode) | [`opencode/dev-plugin-test`](opencode/dev-plugin-test) | [opencode-test.yml](.github/workflows/opencode-test.yml) |
 
-Each plugin ships **25 skills** (24 vendored from upstream + 1 local), baseline
-**MariaDB 11.8 LTS**, and the same auto-downloading `mariadb-shell` MCP server.
+Each agent ships the plugin variants below — all built by the same
+[scripts/sync-skills.sh](scripts/sync-skills.sh):
+
+| Plugin | Skills | MCP server | Skills source |
+| ------ | ------ | ---------- | ------------- |
+| `dev` | full set — statements, functions, client tools, connectors, topical (+ local `mariadb-schema-create-script`) | yes | `mariadb-docs` + `additional-skills/` |
+| `sql` | SQL-focused subset — statements, functions, topical | yes | `mariadb-docs` |
+| `contributor` | skills for **contributing to MariaDB tooling** | no | [`mariadb-shell`](https://github.com/mariadb-corporation/mariadb-shell) `.claude/skills/` (private) |
+
+The folders are `<agent>/{dev,sql,contributor}-plugin/` for each of `claude/`,
+`codex/`, and `opencode/`. Skills are baseline **MariaDB 11.8 LTS**; the `dev` and
+`sql` plugins share the same auto-downloading `mariadb-shell` MCP server, while
+`contributor` is skills-only for now.
 
 ## What each plugin provides
 
 1. **Skills** — MariaDB agent skills (`SKILL.md` docs) covering SQL statements,
-   functions, client tools, and topical deep-dives. 24 are vendored from
+   functions, client tools, connectors, and topical deep-dives. Most are vendored
+   from
    [`mariadb-corporation/mariadb-docs/agent-skills`](https://github.com/mariadb-corporation/mariadb-docs/tree/main/agent-skills);
-   1 (`mariadb-schema-create-script`) is maintained locally in
+   `mariadb-schema-create-script` is maintained locally in
    [additional-skills/](additional-skills). The agent surfaces the right skill by
    its `description` "Use when …" trigger.
 2. **A native MCP server** — the [`mariadb-shell`](https://github.com/mariadb-corporation/mariadb-shell)
@@ -68,16 +80,22 @@ ai-plugins/
 │   └── mariadb-schema-create-script/
 ├── claude/
 │   ├── dev-plugin/                    # the Claude Code plugin (skills/, scripts/, .mcp.json)
+│   ├── sql-plugin/                    # SQL-focused variant (no client-tool/connector skills)
+│   ├── contributor-plugin/           # mariadb-shell contributor skills (skills only)
 │   └── dev-plugin-tests/              # its 3-tier pytest suite
 ├── codex/
 │   ├── dev-plugin/
+│   ├── sql-plugin/
+│   ├── contributor-plugin/
 │   └── dev-plugin-test/
 ├── opencode/
 │   ├── dev-plugin/
+│   ├── sql-plugin/
+│   ├── contributor-plugin/
 │   └── dev-plugin-test/
 ├── scripts/
-│   └── sync-skills.sh                 # vendors skills into all three plugins
-└── .github/workflows/                 # one CI workflow per plugin
+│   └── sync-skills.sh                 # vendors skills into every plugin
+└── .github/workflows/                 # one CI workflow per agent
 ```
 
 ## Skills sync
@@ -92,8 +110,11 @@ scripts/sync-skills.sh <ref>    # override with a tag / branch / commit
 ```
 
 It downloads the upstream `agent-skills/` tree once at a pinned ref, copies every
-skill plus the local `additional-skills/` into each plugin's `skills/` dir, and
-writes per-plugin provenance to `skills-source.json`.
+skill plus the local `additional-skills/` into each `dev`/`sql` plugin's `skills/`
+dir, and writes per-plugin provenance to `skills-source.json`. It also vendors the
+`contributor` plugins from a separate source — the `mariadb-shell` repo's
+`.claude/skills/` tree; since that repo is private, this step needs `GH_TOKEN`
+(or `gh auth token`) and is skipped with a warning when no credentials are present.
 
 **Flat layout.** All three plugins vendor skills flat — `skills/<skill>/SKILL.md`
 — regardless of how they are grouped upstream. This is what OpenCode requires (it

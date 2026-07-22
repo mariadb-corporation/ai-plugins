@@ -1,0 +1,19 @@
+{
+  "name": "contributor",
+  "version": "26.7.0",
+  "description": "Skills for contributing to MariaDB tooling, for Codex.",
+  "author": { "name": "MariaDB Corporation", "url": "https://mariadb.com" },
+  "homepage": "https://github.com/mariadb-corporation/ai-plugins",
+  "repository": "https://github.com/mariadb-corporation/ai-plugins",
+  "license": "GPL-2.0",
+  "keywords": ["mariadb", "contributor", "skills", "mariadb-shell"],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "MariaDB Contributor",
+    "shortDescription": "Skills for contributing to MariaDB tooling.",
+    "longDescription": "Agent skills for contributing to MariaDB tooling, vendored from the mariadb-shell repository's .claude/skills tree.",
+    "developerName": "MariaDB Corporation",
+    "category": "Databases",
+    "websiteURL": "https://mariadb.com"
+  }
+}
