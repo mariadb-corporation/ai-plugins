@@ -444,6 +444,36 @@
       "author": "local",
       "skills": [
         {
+          "name": "mariadb-rest-service-authorization",
+          "path": "mariadb-rest-service-authorization/SKILL.md",
+          "status": "local",
+          "baseline_version": "11.8 LTS"
+        },
+        {
+          "name": "mariadb-rest-service-create",
+          "path": "mariadb-rest-service-create/SKILL.md",
+          "status": "local",
+          "baseline_version": "11.8 LTS"
+        },
+        {
+          "name": "mariadb-rest-service-drop",
+          "path": "mariadb-rest-service-drop/SKILL.md",
+          "status": "local",
+          "baseline_version": "11.8 LTS"
+        },
+        {
+          "name": "mariadb-rest-service-show",
+          "path": "mariadb-rest-service-show/SKILL.md",
+          "status": "local",
+          "baseline_version": "11.8 LTS"
+        },
+        {
+          "name": "mariadb-rest-service-update-endpoints",
+          "path": "mariadb-rest-service-update-endpoints/SKILL.md",
+          "status": "local",
+          "baseline_version": "11.8 LTS"
+        },
+        {
           "name": "mariadb-schema-create-script",
           "path": "mariadb-schema-create-script/SKILL.md",
           "status": "local",
