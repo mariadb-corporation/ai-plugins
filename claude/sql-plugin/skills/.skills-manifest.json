@@ -346,6 +346,19 @@
           "baseline_version": "11.8"
         }
       ]
+    },
+    "additional": {
+      "tier": 3,
+      "path": ".",
+      "author": "local",
+      "skills": [
+        {
+          "name": "mariadb-schema-create-script",
+          "path": "mariadb-schema-create-script/SKILL.md",
+          "status": "local",
+          "baseline_version": "11.8 LTS"
+        }
+      ]
     }
   }
 }

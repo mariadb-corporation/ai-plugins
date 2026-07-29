@@ -444,6 +444,12 @@
       "author": "local",
       "skills": [
         {
+          "name": "mariadb-schema-create-script",
+          "path": "mariadb-schema-create-script/SKILL.md",
+          "status": "local",
+          "baseline_version": "11.8 LTS"
+        },
+        {
           "name": "mariadb-rest-service-authorization",
           "path": "mariadb-rest-service-authorization/SKILL.md",
           "status": "local",
@@ -474,8 +480,32 @@
           "baseline_version": "11.8 LTS"
         },
         {
-          "name": "mariadb-schema-create-script",
-          "path": "mariadb-schema-create-script/SKILL.md",
+          "name": "mariadb-schema-management-create",
+          "path": "mariadb-schema-management-create/SKILL.md",
+          "status": "local",
+          "baseline_version": "11.8 LTS"
+        },
+        {
+          "name": "mariadb-schema-management-deploy",
+          "path": "mariadb-schema-management-deploy/SKILL.md",
+          "status": "local",
+          "baseline_version": "11.8 LTS"
+        },
+        {
+          "name": "mariadb-schema-management-develop",
+          "path": "mariadb-schema-management-develop/SKILL.md",
+          "status": "local",
+          "baseline_version": "11.8 LTS"
+        },
+        {
+          "name": "mariadb-schema-management-release",
+          "path": "mariadb-schema-management-release/SKILL.md",
+          "status": "local",
+          "baseline_version": "11.8 LTS"
+        },
+        {
+          "name": "mariadb-schema-management",
+          "path": "mariadb-schema-management/SKILL.md",
           "status": "local",
           "baseline_version": "11.8 LTS"
         }

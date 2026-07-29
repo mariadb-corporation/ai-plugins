@@ -15,8 +15,8 @@ Each agent ships the plugin variants below — all built by the same
 
 | Plugin | Skills | MCP server | Skills source |
 | ------ | ------ | ---------- | ------------- |
-| `dev` | full set — statements, functions, client tools, connectors, topical (+ local `mariadb-schema-create-script`) | yes | `mariadb-docs` + `additional-skills/` |
-| `sql` | SQL-focused subset — statements, functions, topical | yes | `mariadb-docs` |
+| `dev` | full set — statements, functions, client tools, connectors, topical (+ all local `additional-skills/`: `sql`, `rest`, `schema-management`) | yes | `mariadb-docs` + `additional-skills/` |
+| `sql` | SQL-focused subset — statements, functions, topical (+ local `additional-skills/sql`) | yes | `mariadb-docs` + `additional-skills/sql/` |
 | `contributor` | skills for **contributing to MariaDB tooling** | no | [`mariadb-shell`](https://github.com/mariadb-corporation/mariadb-shell) `.claude/skills/` (private) |
 
 The folders are `<agent>/{dev,sql,contributor}-plugin/` for each of `claude/`,
@@ -30,9 +30,12 @@ The folders are `<agent>/{dev,sql,contributor}-plugin/` for each of `claude/`,
    functions, client tools, connectors, and topical deep-dives. Most are vendored
    from
    [`mariadb-corporation/mariadb-docs/agent-skills`](https://github.com/mariadb-corporation/mariadb-docs/tree/main/agent-skills);
-   `mariadb-schema-create-script` is maintained locally in
-   [additional-skills/](additional-skills). The agent surfaces the right skill by
-   its `description` "Use when …" trigger.
+   additional repo-local skills are maintained in
+   [additional-skills/](additional-skills), grouped into `sql/` (e.g.
+   `mariadb-schema-create-script`), `rest/` (MariaDB REST Service) and
+   `schema-management/` (MSM lifecycle) subfolders. The `dev` plugin vendors all
+   of them; the `sql` plugin vendors only `additional-skills/sql/`. The agent
+   surfaces the right skill by its `description` "Use when …" trigger.
 2. **A native MCP server** — the [`mariadb-shell`](https://github.com/mariadb-corporation/mariadb-shell)
    binary, launched by [scripts/mariadb-mcp-launcher.sh](claude/dev-plugin/scripts/mariadb-mcp-launcher.sh)
    (and `.cmd` for native Windows). On first use it detects OS/arch, downloads the
@@ -76,8 +79,10 @@ flat `skills/` into an OpenCode skills directory. Full steps in
 ai-plugins/
 ├── .claude-plugin/marketplace.json    # Claude Code marketplace entry
 ├── .codex-plugin/marketplace.json     # Codex marketplace entry
-├── additional-skills/                 # repo-local skills, vendored into every plugin
-│   └── mariadb-schema-create-script/
+├── additional-skills/                 # repo-local skills, grouped by topic subfolder
+│   ├── sql/                            # vendored into dev + sql (e.g. mariadb-schema-create-script)
+│   ├── rest/                           # MariaDB REST Service skills (dev only)
+│   └── schema-management/              # MSM lifecycle skills (dev only)
 ├── claude/
 │   ├── dev-plugin/                    # the Claude Code plugin (skills/, scripts/, .mcp.json)
 │   ├── sql-plugin/                    # SQL-focused variant (no client-tool/connector skills)
@@ -109,9 +114,13 @@ scripts/sync-skills.sh          # use the pinned upstream ref
 scripts/sync-skills.sh <ref>    # override with a tag / branch / commit
 ```
 
-It downloads the upstream `agent-skills/` tree once at a pinned ref, copies every
-skill plus the local `additional-skills/` into each `dev`/`sql` plugin's `skills/`
-dir, and writes per-plugin provenance to `skills-source.json`. It also vendors the
+It downloads the upstream `agent-skills/` tree once at a pinned ref and copies the
+selected skills into each `dev`/`sql` plugin's `skills/` dir, writing per-plugin
+provenance to `skills-source.json`. The `dev` plugins get every upstream layer
+plus all `additional-skills/` subfolders; the `sql` plugins get the SQL-focused
+upstream layers plus only `additional-skills/sql/` (`rest/` and
+`schema-management/` are dev-only — see `SQL_INCLUDE_LAYERS` in the script). It
+also vendors the
 `contributor` plugins from a separate source — the `mariadb-shell` repo's
 `.claude/skills/` tree; since that repo is private, this step needs `GH_TOKEN`
 (or `gh auth token`) and is skipped with a warning when no credentials are present.

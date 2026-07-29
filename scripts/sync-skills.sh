@@ -40,13 +40,17 @@
 # (database connector skills), topical — plus the local additional-skills/.
 #
 # The sql-* plugins are a SQL-focused variant vendored from an explicit
-# include-list of layers: granular/statements, granular/functions, and topical.
-# So the client-tool and connector layers (and the local additional-skills/) are
-# dev-only. vendor_into() takes an optional list of manifest layer keys to
-# include; only those layers are copied and written into the vendored
-# .skills-manifest.json (and the local additional-skills/ are included only when
-# the "additional" key is in the list). With NO include list, every upstream
-# layer plus the local additional-skills/ is vendored — the full dev behavior.
+# include-list: the upstream layers granular/statements, granular/functions and
+# topical, plus the local additional-skills/sql subfolder. So the client-tool and
+# connector layers, and the additional-skills/rest and
+# additional-skills/schema-management subfolders, are dev-only.
+# vendor_into() takes an optional list of include keys; upstream layers are picked
+# by their manifest layer key, and local additional-skills/ subfolders by an
+# "additional-<subfolder>" key (or "additional" for every subfolder). Only the
+# selected upstream layers are written into the vendored .skills-manifest.json,
+# and only the selected additional-skills/ subfolders are copied. With NO include
+# list, every upstream layer plus every additional-skills/ subfolder is vendored
+# — the full dev behavior.
 #
 # Usage:
 #   scripts/sync-skills.sh [REF]
@@ -79,13 +83,20 @@ SQL_PLUGINS=(
   "codex/sql-plugin"
   "opencode/sql-plugin"
 )
-# Manifest layer keys the sql plugins vendor (see .skills-manifest.json layers):
-# granular/statements, granular/functions, and topical — omitting granular/tools,
-# granular/connectors, and the local additional-skills/ (all dev-only).
-SQL_INCLUDE_LAYERS=("granular-statements" "granular-functions" "topical")
+# Include keys the sql plugins vendor: the upstream manifest layers
+# granular/statements, granular/functions and topical, plus the local
+# additional-skills/sql subfolder ("additional-sql"). The additional-skills/rest
+# and additional-skills/schema-management subfolders are omitted from sql (they
+# are dev-only), as are the granular/tools + connectors layers. Use
+# "additional-<subfolder>" to pick a subfolder, or "additional" for all of them.
+SQL_INCLUDE_LAYERS=("granular-statements" "granular-functions" "topical" "additional-sql")
 
 # This repo's own skills, vendored flat into every plugin alongside upstream.
+# They are grouped in per-topic subfolders; dev vendors all of them, while the
+# sql plugins select a subset (see SQL_INCLUDE_LAYERS). Add a new subfolder here
+# to make it selectable via the "additional-<subfolder>" include key.
 ADDITIONAL_SKILLS_DIR="$REPO_ROOT/additional-skills"
+ADDITIONAL_SUBDIRS=("sql" "rest" "schema-management")
 
 # The "contributor" plugins vendor a DIFFERENT source: the skills tracked in the
 # mariadb-shell repository under .claude/skills/ (no manifest — every SKILL.md
@@ -130,17 +141,26 @@ vendor_into() {
   local skills_dir="$plugin_dir/skills"
   local provenance="$plugin_dir/skills-source.json"
 
-  # Remaining args = manifest layer keys to INCLUDE. Empty = include every layer
-  # (and the local additional-skills/). A non-empty list restricts vendoring to
-  # exactly those layer keys; additional-skills/ is included only when the list
-  # contains "additional".
-  local include_json='[]' include_additional=1
-  if [ "$#" -gt 0 ]; then
+  # Remaining args = INCLUDE keys. Empty = the full dev set: every upstream
+  # manifest layer plus every local additional-skills/ subfolder. A non-empty list
+  # restricts vendoring to exactly those upstream layer keys, and selects local
+  # additional-skills/ subfolders via "additional-<subfolder>" keys (or
+  # "additional" for every subfolder).
+  local include_json='[]'
+  local -a add_subdirs=()
+  if [ "$#" -eq 0 ]; then
+    add_subdirs=("${ADDITIONAL_SUBDIRS[@]}")
+  else
     include_json="$(printf '%s\n' "$@" | jq -R . | jq -s .)"
     if printf '%s\n' "$@" | grep -qx 'additional'; then
-      include_additional=1
+      add_subdirs=("${ADDITIONAL_SUBDIRS[@]}")
     else
-      include_additional=0
+      local sub
+      for sub in "${ADDITIONAL_SUBDIRS[@]}"; do
+        if printf '%s\n' "$@" | grep -qx "additional-$sub"; then
+          add_subdirs+=("$sub")
+        fi
+      done
     fi
   fi
 
@@ -171,23 +191,27 @@ vendor_into() {
       | .value.skills[] | [.name, .path] | @tsv
     ' "$MANIFEST")
 
-  # Copy this repo's local additional-skills/ (flat) and collect their manifest
-  # entries so the disk<->manifest consistency tests still pass. Skipped when an
-  # include-list is given that does not contain "additional".
-  local extra_entries="[]" skill_md sdir sname
-  if [ "$include_additional" -eq 1 ] && [ -d "$ADDITIONAL_SKILLS_DIR" ]; then
-    while IFS= read -r skill_md; do
-      sdir="$(dirname "$skill_md")"
-      sname="$(basename "$sdir")"
-      cp -R "$sdir" "$skills_dir/$sname"
-      count=$((count + 1))
-      extra_entries="$(jq \
-        --arg n "$sname" \
-        --arg p "$sname/SKILL.md" \
-        --arg baseline "$BASELINE" \
-        '. + [{name: $n, path: $p, status: "local", baseline_version: $baseline}]' \
-        <<<"$extra_entries")"
-    done < <(find "$ADDITIONAL_SKILLS_DIR" -mindepth 2 -maxdepth 2 -name SKILL.md | sort)
+  # Copy this repo's local additional-skills/ (flat) from the selected subfolders
+  # and collect their manifest entries so the disk<->manifest consistency tests
+  # still pass. dev vendors every subfolder; the sql plugins omit "rest".
+  local extra_entries="[]" skill_md sdir sname sub base
+  if [ "${#add_subdirs[@]}" -gt 0 ]; then
+    for sub in "${add_subdirs[@]}"; do
+      base="$ADDITIONAL_SKILLS_DIR/$sub"
+      [ -d "$base" ] || continue
+      while IFS= read -r skill_md; do
+        sdir="$(dirname "$skill_md")"
+        sname="$(basename "$sdir")"
+        cp -R "$sdir" "$skills_dir/$sname"
+        count=$((count + 1))
+        extra_entries="$(jq \
+          --arg n "$sname" \
+          --arg p "$sname/SKILL.md" \
+          --arg baseline "$BASELINE" \
+          '. + [{name: $n, path: $p, status: "local", baseline_version: $baseline}]' \
+          <<<"$extra_entries")"
+      done < <(find "$base" -mindepth 2 -maxdepth 2 -name SKILL.md | sort)
+    done
   fi
 
   # Write the vendored manifest: flatten every upstream skill `path` to its

@@ -4,7 +4,7 @@ description: Save a compressed summary of this session so a future session can r
 
 # Checkpoint Command
 
-Review this conversation and the current state of files, then write (overwrite) `.claude/PROJECT_CONTEXT.md` with a compressed summary structured as:
+Review this conversation and the current state of files, then read the file `.claude/PROJECT_CONTEXT.md` that holds a compressed summary structured as the following. Finally, update the file with the latest changes.
 
 ## Project
 
