@@ -113,13 +113,14 @@ never edited by hand. [scripts/sync-skills.sh](scripts/sync-skills.sh) is the
 single source of truth:
 
 ```sh
-scripts/sync-skills.sh          # use the pinned upstream ref
-scripts/sync-skills.sh <ref>    # override with a tag / branch / commit
+scripts/sync-skills.sh          # sync the latest upstream (default branch head)
+scripts/sync-skills.sh <ref>    # or a specific tag / branch / commit
 ```
 
-It downloads the upstream `agent-skills/` tree once at a pinned ref and copies the
+It downloads the upstream `agent-skills/` tree once at the chosen ref — the
+latest commit on the upstream default branch unless you pass one — and copies the
 selected skills into each `dev`/`sql` plugin's `skills/` dir, writing per-plugin
-provenance to `skills-source.json`. The `dev` plugins get every upstream layer
+provenance (including the exact commit SHA synced) to `skills-source.json`. The `dev` plugins get every upstream layer
 plus all `additional-skills/` subfolders; the `sql` plugins get the SQL-focused
 upstream layers plus only `additional-skills/sql/` (`rest/` and
 `schema-management/` are dev-only — see `SQL_INCLUDE_LAYERS` in the script). It

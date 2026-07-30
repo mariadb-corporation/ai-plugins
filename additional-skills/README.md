@@ -12,7 +12,8 @@ plugin are recorded in that plugin's `skills/skills-source.json`.
 
 1. **MariaDB docs — agent skills** —
    [`mariadb-corporation/mariadb-docs`](https://github.com/mariadb-corporation/mariadb-docs),
-   `agent-skills/` (pinned commit). Supplies the statement, function, client-tool,
+   `agent-skills/` (latest by default; the exact synced commit is in
+   `skills-source.json`). Supplies the statement, function, client-tool,
    connector, and topical skill layers for the `dev` and `sql` plugins.
 2. **MariaDB Shell — contributor skills** —
    [`mariadb-corporation/mariadb-shell`](https://github.com/mariadb-corporation/mariadb-shell),

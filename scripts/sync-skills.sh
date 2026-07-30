@@ -3,7 +3,7 @@
 # sync-skills.sh — vendor MariaDB agent skills into every plugin in this repo.
 #
 # Downloads the agent-skills/ tree from mariadb-corporation/mariadb-docs at a
-# pinned ref ONCE, reads its .skills-manifest.json, and copies every skill
+# given ref ONCE, reads its .skills-manifest.json, and copies every skill
 # directory into each plugin's skills/ dir. It also vendors this repo's own
 # additional-skills/ tree. Re-running is idempotent. Per-plugin provenance is
 # written to skills-source.json.
@@ -56,15 +56,19 @@
 # Usage:
 #   scripts/sync-skills.sh [REF]
 #
-# REF defaults to the pinned commit below; pass a tag/branch/commit to override.
+# REF defaults to the latest commit on the upstream default branch (main); pass a
+# tag/branch/commit to sync a specific version. The resolved commit SHA that was
+# synced is always recorded in each plugin's skills-source.json.
 
 set -euo pipefail
 
 SOURCE_REPO="mariadb-corporation/mariadb-docs"
 SUBDIR="agent-skills"
-# Pinned upstream ref (commit on main, captured 2026-07-22; adds the
-# granular/connectors layer). Override via $1.
-DEFAULT_REF="1513b3b234ae95b5381b10272645198ec8792a8b"
+# Upstream ref to vendor. NOT pinned: defaults to the latest commit on the
+# upstream default branch (main). Pass a tag/branch/commit as $1 to sync a
+# specific version instead. Either way, the resolved commit SHA is recorded per
+# plugin in skills-source.json ("commit").
+DEFAULT_REF="main"
 REF="${1:-$DEFAULT_REF}"
 
 # Resolve repo root (parent of this scripts/ dir).

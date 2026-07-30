@@ -124,7 +124,7 @@ tool is first used.
 Skills are **vendored** — never hand-edited here. They are copied in flat by
 [scripts/sync-skills.sh](../../scripts/sync-skills.sh) at the repo root, which is
 the single source of truth; see [skills-source.json](skills-source.json) for the
-pinned upstream commit and count.
+upstream commit that was synced and the skill count.
 
 ## License
 

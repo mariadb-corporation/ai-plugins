@@ -60,8 +60,9 @@ so the launcher can authenticate to the GitHub release download.
 Skills are vendored under [skills/](skills/), preserving the upstream layer
 layout. They are kept in sync across all plugins by the repo-wide updater
 [scripts/sync-skills.sh](../../scripts/sync-skills.sh) — to refresh from upstream,
-edit its pinned `REF` and run it from the repo root; per-plugin provenance is
-recorded in [skills-source.json](skills-source.json).
+run it from the repo root (it syncs the latest upstream by default; pass a ref to
+sync a specific version); per-plugin provenance is recorded in
+[skills-source.json](skills-source.json).
 
 ```text
 skills/
