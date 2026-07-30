@@ -24,6 +24,7 @@
 #   - claude/dev-plugin     (Claude Code)   — all skill layers
 #   - codex/dev-plugin      (Codex)         — all skill layers
 #   - opencode/dev-plugin   (OpenCode)      — all skill layers
+#   - pi/dev-plugin         (Pi / pi.dev)   — all skill layers
 #   - claude/sql-plugin     (Claude Code)   — statements + functions + topical only
 #   - codex/sql-plugin      (Codex)         — statements + functions + topical only
 #   - opencode/sql-plugin   (OpenCode)      — statements + functions + topical only
@@ -77,6 +78,7 @@ TARGET_PLUGINS=(
   "claude/dev-plugin"
   "codex/dev-plugin"
   "opencode/dev-plugin"
+  "pi/dev-plugin"
 )
 SQL_PLUGINS=(
   "claude/sql-plugin"
@@ -230,18 +232,6 @@ vendor_into() {
           then .layers["additional"] = {tier: 3, path: ".", author: "local", skills: $extra}
           else . end
       ' "$MANIFEST" > "$skills_dir/.skills-manifest.json"
-
-  # Preserve topical-layer attribution files (those skills are vendored under
-  # MIT). Only relevant when the topical layer was actually vendored.
-  local f
-  if [ "$(jq -r '.layers | has("topical")' "$skills_dir/.skills-manifest.json")" = "true" ]; then
-    for f in LICENSE VENDORED.md; do
-      if [ -f "$SRC_SKILLS/topical/$f" ]; then
-        mkdir -p "$skills_dir/topical"
-        cp "$SRC_SKILLS/topical/$f" "$skills_dir/topical/$f"
-      fi
-    done
-  fi
 
   jq -n \
     --arg repo "$SOURCE_REPO" \

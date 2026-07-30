@@ -97,13 +97,13 @@ skills/
 │                replace, create-view, create-index, drop-table,
 │                create-database, load-data
 ├── functions    json, string, date-time, numeric, aggregate
-├── topical      features, query-optimization, system-versioned-tables,
-│                mysql-to-mariadb, vector
-└── topical/     LICENSE + VENDORED.md (MIT attribution; not a skill)
+└── topical      features, query-optimization, system-versioned-tables,
+                 mysql-to-mariadb, vector
 ```
 
 ## License
 
-GPL-2.0 — see [LICENSE](LICENSE). The five topical skills are vendored from
-[MariaDB/skills](https://github.com/MariaDB/skills) under the MIT license; their
-original license/attribution is preserved in [skills/topical/](skills/topical/).
+Plugin code is **GPL-2.0** — see [LICENSE](LICENSE). The bundled skills are
+vendored from several source repositories and retain their original licenses;
+see [additional-skills/README.md](../../additional-skills/README.md) for the full list of sources and their
+licensing.

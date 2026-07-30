@@ -98,6 +98,9 @@ ai-plugins/
 │   ├── sql-plugin/
 │   ├── contributor-plugin/
 │   └── dev-plugin-test/
+├── package.json                        # repo-root pi manifest (`pi` field → pi/dev-plugin/); pi-mcp-adapter dep
+├── pi/                                 # Pi (pi.dev) extension sources
+│   └── dev-plugin/                     # extension (src/index.ts), setup + launcher scripts, vendored skills
 ├── scripts/
 │   └── sync-skills.sh                 # vendors skills into every plugin
 └── .github/workflows/                 # one CI workflow per agent
@@ -158,5 +161,6 @@ nightly / on demand.
 ## License
 
 Plugin code is **GPL-2.0** (see each plugin's `LICENSE`). Skills vendored from the
-topical layer are redistributed under **MIT** — see the `skills/topical/LICENSE`
-and `VENDORED.md` inside each plugin.
+topical layer are redistributed under **MIT** — see the topical layer's `LICENSE`
+and `VENDORED.md` in the upstream source,
+[`mariadb-corporation/mariadb-docs/agent-skills/topical`](https://github.com/mariadb-corporation/mariadb-docs/tree/main/agent-skills/topical).

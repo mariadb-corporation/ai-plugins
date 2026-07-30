@@ -37,4 +37,7 @@ Per-plugin provenance is recorded in [skills-source.json](skills-source.json).
 
 ## License
 
-GPL-2.0 — see [LICENSE](LICENSE).
+Plugin code is **GPL-2.0** — see [LICENSE](LICENSE). The bundled skills are
+vendored from several source repositories and retain their original licenses;
+see [additional-skills/README.md](../../additional-skills/README.md) for the full list of sources and their
+licensing.

@@ -80,11 +80,11 @@ skills/
 │   └── functions/    json, string, date-time, numeric, aggregate
 └── topical/          features, query-optimization, system-versioned-tables,
                       mysql-to-mariadb, vector
-                      (LICENSE + VENDORED.md — MIT attribution)
 ```
 
 ## License
 
-GPL-2.0 — see [LICENSE](LICENSE). The five topical skills are vendored from
-[MariaDB/skills](https://github.com/MariaDB/skills) under the MIT license; their
-original license/attribution is preserved within their skill directories.
+Plugin code is **GPL-2.0** — see [LICENSE](LICENSE). The bundled skills are
+vendored from several source repositories and retain their original licenses;
+see [additional-skills/README.md](../../additional-skills/README.md) for the full list of sources and their
+licensing.
