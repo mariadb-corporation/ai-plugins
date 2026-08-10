@@ -1,8 +1,14 @@
 """Shared pytest fixtures.
 
 Makes ``lib`` importable and provides the live-MariaDB connection used by the
-``db`` tier. The static tier needs none of the DB machinery, so PyMySQL is
-imported lazily inside the fixtures.
+``db`` tier. By default that server is a throwaway **sandbox instance** this
+suite deploys itself through the mariadb-shell MCP server (see
+``lib/sandbox.py``), so the tier needs nothing running beforehand. Pointing any
+``MARIADB_*`` variable at an existing server (CI's service container,
+``docker-compose.yml``) uses that instead.
+
+The static tier needs none of the DB machinery, so both PyMySQL and the sandbox
+are only touched from inside the fixtures.
 """
 
 from __future__ import annotations
@@ -17,8 +23,15 @@ import pytest
 # Make `from lib import skills` work regardless of where pytest is invoked.
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
+# The variables that name an already-running server. Any of them switches the
+# db tier off the sandbox and onto that server.
+_SERVER_ENV_VARS = ("MARIADB_HOST", "MARIADB_PORT", "MARIADB_USER", "MARIADB_PASSWORD")
 
-def _db_config() -> dict:
+
+def _explicit_server() -> dict | None:
+    """The connection to a pre-existing server, or None to use a sandbox."""
+    if not any(os.environ.get(var) for var in _SERVER_ENV_VARS):
+        return None
     return {
         "host": os.environ.get("MARIADB_HOST", "127.0.0.1"),
         "port": int(os.environ.get("MARIADB_PORT", "3306")),
@@ -28,28 +41,62 @@ def _db_config() -> dict:
 
 
 @pytest.fixture(scope="session")
-def mariadb_connection():
+def mariadb_server():
+    """The MariaDB the db tier runs against, for the whole session.
+
+    A sandbox instance is deployed on a free port and deleted afterwards, unless
+    ``MARIADB_*`` points at a server that is already running. Skips the tier when
+    no sandbox can be deployed (no mariadb-shell, no server binary, an MCP server
+    without the sandbox tools) — a deploy that fails outright is an error.
+
+    Yields:
+        A dict with the PyMySQL connect() kwargs plus ``explicit``, which says
+        whether the server was handed to us or deployed here.
+    """
+    explicit = _explicit_server()
+    if explicit is not None:
+        yield {**explicit, "explicit": True}
+        return
+
+    from lib import sandbox
+
+    try:
+        with sandbox.deployed_sandbox() as instance:
+            yield {**instance.dsn, "explicit": False}
+    except sandbox.SandboxUnavailable as exc:
+        pytest.skip(
+            f"cannot deploy a MariaDB sandbox for the db tier ({exc}); "
+            f"or point {'/'.join(_SERVER_ENV_VARS)} at a running server"
+        )
+
+
+@pytest.fixture(scope="session")
+def mariadb_connection(mariadb_server):
     """A session-scoped connection to the test MariaDB server.
 
-    Skips the entire db tier if PyMySQL is missing or the server is unreachable,
-    so the static tier never depends on a database.
+    Skips the tier if PyMySQL is missing, or if a server that was configured
+    externally turns out to be unreachable. A sandbox we just deployed and can't
+    reach is a failure, not a skip.
     """
     try:
         import pymysql
     except ImportError:
         pytest.skip("PyMySQL not installed — skipping the live-DB tier")
 
-    cfg = _db_config()
+    dsn = {k: v for k, v in mariadb_server.items() if k != "explicit"}
     try:
         conn = pymysql.connect(
             autocommit=True,
             charset="utf8mb4",
-            **cfg,
+            **dsn,
         )
     except Exception as exc:  # pragma: no cover - environment dependent
+        if not mariadb_server["explicit"]:
+            raise
         pytest.skip(
-            f"MariaDB unreachable at {cfg['host']}:{cfg['port']} ({exc}); "
-            "set MARIADB_* env vars or start the docker-compose service"
+            f"MariaDB unreachable at {dsn['host']}:{dsn['port']} ({exc}); "
+            "unset the MARIADB_* variables to use a sandbox instead, or start "
+            "the docker-compose service"
         )
     try:
         yield conn

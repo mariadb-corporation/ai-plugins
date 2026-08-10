@@ -2,8 +2,9 @@
 
 Each golden-fixture case (fixtures/<skill>.yaml) becomes its own
 parametrized test, so a failure points straight at the skill claim it verifies.
-Requires a reachable MariaDB (see docker-compose.yml); skipped otherwise via the
-`mariadb_connection` fixture.
+The server comes from the `mariadb_connection` fixture, which deploys a
+throwaway sandbox instance unless MARIADB_* names one that is already running
+(see conftest.py and lib/sandbox.py).
 """
 
 from __future__ import annotations

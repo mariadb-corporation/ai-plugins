@@ -146,11 +146,24 @@ Each plugin has a parallel **3-tier pytest suite**:
 | Tier | Marker | Needs | Checks |
 | ---- | ------ | ----- | ------ |
 | 1. Static / structural | `static` | nothing | frontmatter, manifest↔disk consistency, cross-references, SQL fences, statement-skill contract |
-| 2. SQL execution | `db` | MariaDB 11.8 | the skills' recommended DDL runs on a live server with the documented effect |
+| 2. SQL execution | `db` | `mariadb-shell` + a server binary | the skills' recommended DDL runs on a live server with the documented effect |
 | 3. Behavioral evals | `eval` | an LLM API key | the skill steers the model toward the MariaDB-preferred form (opt-in; deselected by default) |
 
 The Claude suite adds a fourth tier — `e2e`, a real `claude` CLI run with the
 plugin and MCP server loaded (also opt-in).
+
+The `db` tier needs no server running beforehand: it deploys a throwaway
+**sandbox instance** on a free port through the `mariadb-shell` MCP server's
+`sandbox.*` tools, the way `mysql-shell-plugins/mcp_plugin/tests` does, and
+deletes it afterwards. The shell's user config home is isolated to a temp dir for
+the run (with the real one's plugins symlinked in, and the sandbox dir
+allow-listed), so nothing touches `~/.mariadb-shell`. Setting any of
+`MARIADB_HOST` / `MARIADB_PORT` / `MARIADB_USER` / `MARIADB_PASSWORD` switches the
+tier onto that already-running server instead — which is what CI and
+`docker-compose.yml` do. `MARIADB_SANDBOX_MARIADBD` pins the server binary the
+sandbox starts. The tier skips only when no sandbox can be deployed at all (no
+`mariadb-shell`, no `mariadbd`/`mysqld`, or an MCP server without the sandbox
+tools).
 
 ### The unified runner
 
