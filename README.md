@@ -2,13 +2,14 @@
 
 First-class **MariaDB** support for AI coding agents. This repo packages the same
 MariaDB capability — a curated set of agent **skills** plus the native
-**`mariadb-shell` MCP server** — for three agent tools:
+**`mariadb-shell` MCP server** — for four agent tools:
 
 | Agent | Plugin Folder | Test suite | CI workflow |
 | ----- | ------------- | ---------- | ----------- |
 | [Claude Code](https://claude.com/claude-code) | [`claude`](claude) | [`claude/dev-plugin-tests`](claude/dev-plugin-tests) | [claude-test.yml](.github/workflows/claude-test.yml) |
 | [Codex](https://openai.com/codex) | [`codex`](codex) | [`codex/dev-plugin-test`](codex/dev-plugin-test) | [codex-test.yml](.github/workflows/codex-test.yml) |
 | [OpenCode](https://opencode.ai) | [`opencode`](opencode) | [`opencode/dev-plugin-test`](opencode/dev-plugin-test) | [opencode-test.yml](.github/workflows/opencode-test.yml) |
+| [Pi](https://pi.dev) | [`pi`](pi) | — (not yet) | — (not yet) |
 
 Each agent ships the plugin variants below — all built by the same
 [scripts/sync-skills.sh](scripts/sync-skills.sh):
@@ -20,9 +21,18 @@ Each agent ships the plugin variants below — all built by the same
 | `contributor` | skills for **contributing to MariaDB tooling** | no | [`mariadb-shell`](https://github.com/mariadb-corporation/mariadb-shell) `.claude/skills/` (private) |
 
 The folders are `<agent>/{dev,sql,contributor}-plugin/` for each of `claude/`,
-`codex/`, and `opencode/`. Skills are baseline **MariaDB 11.8 LTS**; the `dev` and
-`sql` plugins share the same auto-downloading `mariadb-shell` MCP server, while
-`contributor` is skills-only for now.
+`codex/`, and `opencode/`; `pi/` ships `dev` only for now. Skills are baseline
+**MariaDB 11.8 LTS**; the `dev` and `sql` plugins share the same auto-downloading
+`mariadb-shell` MCP server, while `contributor` is skills-only for now.
+
+Pi differs from the other three in *how* it packages the same content: it has no
+marketplace file and no built-in MCP support. A pi package is any directory with
+a `package.json` carrying a `pi` field, so the **repo-root
+[package.json](package.json)** is the manifest (its `pi` field points into
+[pi/dev-plugin/](pi/dev-plugin)) and the whole repo installs as one pi package.
+The MCP server is surfaced through the community
+[`pi-mcp-adapter`](https://pi.dev/packages/pi-mcp-adapter) extension, declared as
+an npm dependency. See [pi/README.md](pi/README.md).
 
 ## What each plugin provides
 
@@ -40,7 +50,9 @@ The folders are `<agent>/{dev,sql,contributor}-plugin/` for each of `claude/`,
    binary, launched by [scripts/mariadb-mcp-launcher.sh](claude/dev-plugin/scripts/mariadb-mcp-launcher.sh)
    (and `.cmd` for native Windows). On first use it detects OS/arch, downloads the
    matching release into a user cache, verifies its checksum, and runs it as the
-   MCP server over stdio. Subsequent runs reuse the cached binary.
+   MCP server over stdio. Subsequent runs reuse the cached binary. Pi uses the
+   same launcher, registered with `pi-mcp-adapter` by
+   [pi/dev-plugin/scripts/setup-pi-mcp.sh](pi/dev-plugin/scripts/setup-pi-mcp.sh).
 
 > NOTE: The MCP server configuration/loading scripts are currently disabled until the MariaDB Shell is available.
 > While the `mariadb-shell` repo is private, set `GH_TOKEN` so the launcher can
@@ -73,6 +85,26 @@ OpenCode has no central marketplace. Merge the `mcp` block from
 flat `skills/` into an OpenCode skills directory. Full steps in
 [opencode/dev-plugin/README.md](opencode/dev-plugin/README.md).
 
+### Pi
+
+Pi installs the repo itself as a package (the `pi` field in the root
+`package.json`), then the MCP server is registered once with the adapter:
+
+```sh
+pi install npm:pi-mcp-adapter                              # once — connects pi to MCP servers
+pi install git:github.com/mariadb-corporation/ai-plugins   # this repo (pulls in pi-mcp-adapter)
+# …or from a local checkout, at the repo root: pi install .
+```
+
+```text
+/mariadb-mcp-setup            # in pi: writes the global ~/.config/mcp/mcp.json
+/mariadb-mcp-setup --project  # or ./.mcp.json for just this project
+```
+
+Then `/mcp reconnect mariadb` (or restart pi). The extension also prints a
+one-line reminder at session start while the server isn't configured. Full steps
+in [pi/dev-plugin/README.md](pi/dev-plugin/README.md).
+
 ## Repository layout
 
 ```text
@@ -98,9 +130,9 @@ ai-plugins/
 │   ├── sql-plugin/
 │   ├── contributor-plugin/
 │   └── dev-plugin-test/
-├── package.json                        # repo-root pi manifest (`pi` field → pi/dev-plugin/); pi-mcp-adapter dep + test scripts
-├── pi/                                 # Pi (pi.dev) extension sources
-│   └── dev-plugin/                     # extension (src/index.ts), setup + launcher scripts, vendored skills
+├── pi/                                # Pi (pi.dev) extension sources — dev only for now
+│   └── dev-plugin/                    # src/index.ts extension, scripts/ (setup-pi-mcp + launchers), skills/
+├── package.json                       # repo-root pi manifest (`pi` field → pi/dev-plugin/); pi-mcp-adapter dep + test scripts
 ├── run_tests.py                        # runs every suite with the mariadb-shell Python + coverage
 ├── pytest-coverage.ini                 # shared pytest config used by run_tests.py
 ├── .coveragerc                         # coverage config (reports in test-results/ + htmlcov/)
@@ -132,16 +164,21 @@ also vendors the
 `.claude/skills/` tree; since that repo is private, this step needs `GH_TOKEN`
 (or `gh auth token`) and is skipped with a warning when no credentials are present.
 
-**Flat layout.** All three plugins vendor skills flat — `skills/<skill>/SKILL.md`
-— regardless of how they are grouped upstream. This is what OpenCode requires (it
-discovers skills only one directory deep) and it keeps every plugin identical on
-disk. The vendored `.skills-manifest.json` is rewritten to flat paths while
+**Flat layout.** Every plugin — including `pi/dev-plugin` — vendors skills flat,
+`skills/<skill>/SKILL.md`, regardless of how they are grouped upstream. This is
+what OpenCode requires (it discovers skills only one directory deep) and it keeps
+every plugin identical on disk. It also keeps pi's loader happy: `skills/` must
+contain nothing but skill directories plus the manifest and
+`skills-source.json` — a stray dir without a `SKILL.md` makes pi's loader fail. The vendored `.skills-manifest.json` is rewritten to flat paths while
 preserving each skill's layer grouping, so the manifest-driven test suites still
 resolve. Requires `jq` and `curl`.
 
 ## Testing
 
-Each plugin has a parallel **3-tier pytest suite**:
+The Claude, Codex and OpenCode plugins each have a parallel **3-tier pytest
+suite** (the pi plugin has none yet — [run_tests.py](run_tests.py) discovers
+suites by `*/dev-plugin-test*/conftest.py`, so it will pick one up as soon as it
+exists):
 
 | Tier | Marker | Needs | Checks |
 | ---- | ------ | ----- | ------ |
