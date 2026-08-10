@@ -5,6 +5,12 @@ __pycache__/
 .pytest_cache/
 .ruff_cache/
 
+# Test + coverage output (run_tests.py)
+.coverage
+.coverage.*
+htmlcov/
+test-results/
+
 # Local env
 .env
 

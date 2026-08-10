@@ -7,6 +7,14 @@
   "repository": "https://github.com/mariadb-corporation/ai-plugins",
   "license": "GPL-2.0",
   "type": "module",
+  "scripts": {
+    "test": "./run_tests.py",
+    "test:static": "./run_tests.py -m static",
+    "test:db": "./run_tests.py -m db",
+    "test:eval": "./run_tests.py -m eval",
+    "test:e2e": "./run_tests.py -m e2e",
+    "test:shell": "mariadb-shell --py -f run_tests.py"
+  },
   "keywords": ["mariadb", "sql", "database", "mcp", "mariadb-shell", "pi-package"],
   "dependencies": {
     "pi-mcp-adapter": "^2.15.0"

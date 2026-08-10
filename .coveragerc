@@ -1,0 +1,32 @@
+# Coverage configuration for the plugin test suites (see run_tests.py).
+#
+# What is measured here is the suites' own Python — the shared `lib/` helpers
+# and conftest.py fixtures. The plugins themselves ship skills (Markdown), shell
+# scripts and a TypeScript extension, none of which coverage can see; the test
+# modules are excluded because "did the test file run" is what the pytest report
+# already says.
+#
+# Unlike mysql-shell-plugins/mcp_plugin/.coveragerc there is no parallel/sigterm
+# setup and no sitecustomize bootstrap: no Python of ours runs in a subprocess.
+# The e2e tier does spawn the agent CLI and the mariadb-shell MCP server, but
+# that code lives in other repos and is measured there.
+[run]
+# Keep the data file's paths repo-relative so the reports read the same however
+# the run was invoked. run_tests.py always runs pytest from the repo root.
+relative_files = True
+omit =
+    run_tests.py
+    */test_*.py
+    */evals/*
+    */__init__.py
+    */.venv/*
+    */site-packages/*
+
+[report]
+exclude_also =
+    if TYPE_CHECKING:
+    raise NotImplementedError
+    if __name__ == .__main__.:
+
+[html]
+directory = htmlcov

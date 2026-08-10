@@ -2,6 +2,7 @@
 # The plugin runtime itself stays dependency-free; these are dev/test only.
 
 pytest>=8.0
+pytest-cov>=2.10.1    # coverage reports for ../../run_tests.py
 PyYAML>=6.0          # parse SKILL.md frontmatter and fixture/eval YAML
 PyMySQL>=1.1         # pure-Python MariaDB/MySQL client for the live-DB tier
 

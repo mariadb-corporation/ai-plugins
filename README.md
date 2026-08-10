@@ -87,7 +87,7 @@ ai-plugins/
 │   ├── dev-plugin/                    # the Claude Code plugin (skills/, scripts/, .mcp.json)
 │   ├── sql-plugin/                    # SQL-focused variant (no client-tool/connector skills)
 │   ├── contributor-plugin/           # mariadb-shell contributor skills (skills only)
-│   └── dev-plugin-tests/              # its 3-tier pytest suite
+│   └── dev-plugin-tests/              # its pytest suite (4 tiers — adds e2e)
 ├── codex/
 │   ├── dev-plugin/
 │   ├── sql-plugin/
@@ -98,9 +98,12 @@ ai-plugins/
 │   ├── sql-plugin/
 │   ├── contributor-plugin/
 │   └── dev-plugin-test/
-├── package.json                        # repo-root pi manifest (`pi` field → pi/dev-plugin/); pi-mcp-adapter dep
+├── package.json                        # repo-root pi manifest (`pi` field → pi/dev-plugin/); pi-mcp-adapter dep + test scripts
 ├── pi/                                 # Pi (pi.dev) extension sources
 │   └── dev-plugin/                     # extension (src/index.ts), setup + launcher scripts, vendored skills
+├── run_tests.py                        # runs every suite with the mariadb-shell Python + coverage
+├── pytest-coverage.ini                 # shared pytest config used by run_tests.py
+├── .coveragerc                         # coverage config (reports in test-results/ + htmlcov/)
 ├── scripts/
 │   └── sync-skills.sh                 # vendors skills into every plugin
 └── .github/workflows/                 # one CI workflow per agent
@@ -145,6 +148,46 @@ Each plugin has a parallel **3-tier pytest suite**:
 | 1. Static / structural | `static` | nothing | frontmatter, manifest↔disk consistency, cross-references, SQL fences, statement-skill contract |
 | 2. SQL execution | `db` | MariaDB 11.8 | the skills' recommended DDL runs on a live server with the documented effect |
 | 3. Behavioral evals | `eval` | an LLM API key | the skill steers the model toward the MariaDB-preferred form (opt-in; deselected by default) |
+
+The Claude suite adds a fourth tier — `e2e`, a real `claude` CLI run with the
+plugin and MCP server loaded (also opt-in).
+
+### The unified runner
+
+[run_tests.py](run_tests.py) runs every suite with **the Python that ships inside
+`mariadb-shell`** (`mariadb-shell --pym pytest`), the same way
+`mysql-shell-plugins/mcp_plugin/run_tests.py` does, so the tests execute against
+the same interpreter and packages as the MCP server they exercise. It installs
+each suite's `requirements.txt` into that Python, runs one pytest process per
+suite (their same-named modules and `lib` packages can't share a process), and
+appends coverage across the runs into one combined report.
+
+```sh
+./run_tests.py                  # every suite, default tiers (static + db)
+./run_tests.py claude           # one suite (named after its top-level dir)
+./run_tests.py -m static        # a single tier, all suites
+./run_tests.py claude -m e2e    # the opt-in end-to-end tier
+./run_tests.py -k manifest      # only tests matching a pattern
+./run_tests.py -- --lf -x       # anything after `--` is passed to pytest
+
+npm test                        # same, via package.json (also test:static/db/eval/e2e)
+```
+
+The binary comes from `--shell`, else `$MARIADB_SHELL`, else `PATH`, and its
+directory is prepended to the PATH the suites see so the e2e tier's MCP launcher
+resolves the same one. `--no-install` skips the dependency install,
+`--no-coverage` the measurement, `--userhome` relocates the shell's user config
+home (by default the real one is left alone — the e2e tests that need isolation
+create their own).
+
+Config lives in [pytest-coverage.ini](pytest-coverage.ini) (markers, default tier
+selection, report formats) and [.coveragerc](.coveragerc). Reports land in
+`test-results/` (`coverage.xml`, `<suite>-tests.xml`) and `htmlcov/`, all
+git-ignored. Coverage measures the suites' own Python — the `lib/` helpers and
+`conftest.py` fixtures; the skills themselves are Markdown, which the static tier
+checks instead.
+
+### Per-suite, without the runner
 
 ```sh
 cd claude/dev-plugin-tests      # or codex/ , opencode/ dev-plugin-test
