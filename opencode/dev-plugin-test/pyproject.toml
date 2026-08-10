@@ -1,0 +1,10 @@
+[tool.pytest.ini_options]
+# Run from the opencode/dev-plugin-test/ directory (or point pytest at it).
+testpaths = ["."]
+markers = [
+    "static: structural/static checks of the skills (no DB, no LLM) — the always-on CI gate",
+    "db: SQL executed against a live MariaDB 11.8 (needs a reachable server)",
+    "eval: behavioral LLM evals (needs ANTHROPIC_API_KEY; deselected by default)",
+]
+# By default skip the slow/expensive eval tier; opt in with `-m eval`.
+addopts = "-m 'not eval' -ra"

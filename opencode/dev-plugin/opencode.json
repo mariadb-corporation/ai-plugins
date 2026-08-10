@@ -1,0 +1,13 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "mariadb": {
+      "type": "local",
+      "command": ["{env:MARIADB_DEV_PLUGIN}/scripts/mariadb-mcp-launcher.sh"],
+      "environment": {
+        "MARIADB_SHELL_VERSION": "9.7.0"
+      },
+      "enabled": true
+    }
+  }
+}

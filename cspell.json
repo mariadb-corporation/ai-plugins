@@ -1,0 +1,17 @@
+{
+    "version": "0.2",
+    "words": [
+        "VARCHAR"
+    ],
+    "ignoreWords": [
+        "LOCALAPPDATA",
+        "venv",
+        "opencode",
+        "pytest",
+        "frontmatter",
+        "evals"
+    ],
+    "ignorePaths": [
+        ".venv"
+    ]
+}

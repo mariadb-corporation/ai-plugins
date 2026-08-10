@@ -1,0 +1,29 @@
+{
+  "name": "@mariadb/ai-plugins",
+  "version": "26.7.0",
+  "description": "MariaDB skills and the native mariadb-shell MCP server for the Pi coding agent (pi.dev).",
+  "author": { "name": "MariaDB Corporation", "url": "https://mariadb.com" },
+  "homepage": "https://github.com/mariadb-corporation/ai-plugins",
+  "repository": "https://github.com/mariadb-corporation/ai-plugins",
+  "license": "GPL-2.0",
+  "type": "module",
+  "scripts": {
+    "test": "./run_tests.py",
+    "test:static": "./run_tests.py -m static",
+    "test:db": "./run_tests.py -m db",
+    "test:eval": "./run_tests.py -m eval",
+    "test:e2e": "./run_tests.py -m e2e",
+    "test:shell": "mariadb-shell --py -f run_tests.py"
+  },
+  "keywords": ["mariadb", "sql", "database", "mcp", "mariadb-shell", "pi-package"],
+  "dependencies": {
+    "pi-mcp-adapter": "^2.15.0"
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-coding-agent": "*"
+  },
+  "pi": {
+    "extensions": ["./pi/dev-plugin/src/index.ts"],
+    "skills": ["./pi/dev-plugin/skills"]
+  }
+}

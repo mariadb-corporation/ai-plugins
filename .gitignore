@@ -1,0 +1,19 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+
+# Test + coverage output (run_tests.py)
+.coverage
+.coverage.*
+htmlcov/
+test-results/
+
+# Local env
+.env
+
+# Node / pi extensions (pi install runs `npm install` into the plugin dir)
+node_modules/
+package-lock.json
