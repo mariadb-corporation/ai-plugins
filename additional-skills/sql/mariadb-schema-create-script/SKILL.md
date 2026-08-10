@@ -18,7 +18,7 @@ The SQL script should always start with the following block, to set the correct 
 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0;
 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0;
 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO,STRICT_TRANS_TABLES';
-SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0;
+SET @OLD_NOTE_VERBOSITY=@@NOTE_VERBOSITY, NOTE_VERBOSITY=0;
 
 -- Preserve current charset/collation settings, then switch to utf8mb4 for the import
 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT, @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS;
@@ -31,7 +31,7 @@ The SQL script should always end with the following block, to restore the previo
 ```sql
 -- Restore original settings
 SET SQL_MODE=@OLD_SQL_MODE, FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS;
-SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS, SQL_NOTES=@OLD_SQL_NOTES;
+SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS, NOTE_VERBOSITY=@OLD_NOTE_VERBOSITY;
 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT, CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS;
 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION;
 ```
@@ -48,7 +48,9 @@ Read the `mariadb-create-database` skill before creating the SQL command.
 
 ## Tables
 
-Unless told otherwise, use UUID as the datatype for primary key columns in order to prevent enumeration attacks, hide business intelligence and prevent information leakage about record creation order.
+Unless told otherwise, use the MariaDB native UUID datatype for primary key columns for tables that will most likely be exposed directly to client applications. This is done in order to prevent enumeration attacks, hide business intelligence and prevent information leakage about record creation order.
+
+> **Important**: For UUIDs always use the native MariaDB UUID datatype, usage: `UUID NOT NULL DEFAULT UUID_v7()`. Never use `CHAR(36)`.
 
 Always use `CREATE OR REPLACE TABLE` unless told otherwise.
 

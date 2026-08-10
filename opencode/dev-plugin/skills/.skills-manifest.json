@@ -338,58 +338,107 @@
       ]
     },
     "granular-connectors": {
-      "$comment": "Tier 1 (connectors) — one skill per client connector, focused on application-development usage (connect, query, params, transactions, pooling, error handling) rather than install/config. Consumed by the AI Plugin (DOCS-6345). baseline_version tracks the connector release line, which is independent of the MariaDB server version.",
+      "$comment": "Tier 1 (connectors) — two skills per client connector, split by task (DOCS-6379): `-install` covers installation, packaging, and configuration; `-usage` covers application-development usage (connect, query, params, transactions, pooling, error handling). Consumed by the AI Plugin (DOCS-6345). baseline_version tracks the connector release line, which is independent of the MariaDB server version.",
       "tier": 1,
       "path": "granular/connectors",
       "author": "docs-team",
       "skills": [
         {
-          "name": "mariadb-connector-python",
-          "path": "mariadb-connector-python/SKILL.md",
-          "status": "pilot",
-          "last_reviewed": "2026-07-21",
+          "name": "mariadb-connector-python-install",
+          "path": "mariadb-connector-python-install/SKILL.md",
+          "status": "draft",
+          "last_reviewed": "2026-08-10",
           "baseline_version": "1.1"
         },
         {
-          "name": "mariadb-connector-j",
-          "path": "mariadb-connector-j/SKILL.md",
+          "name": "mariadb-connector-python-usage",
+          "path": "mariadb-connector-python-usage/SKILL.md",
           "status": "pilot",
-          "last_reviewed": "2026-07-21",
+          "last_reviewed": "2026-08-10",
+          "baseline_version": "1.1"
+        },
+        {
+          "name": "mariadb-connector-j-install",
+          "path": "mariadb-connector-j-install/SKILL.md",
+          "status": "draft",
+          "last_reviewed": "2026-08-10",
           "baseline_version": "3.5"
         },
         {
-          "name": "mariadb-connector-nodejs",
-          "path": "mariadb-connector-nodejs/SKILL.md",
+          "name": "mariadb-connector-j-usage",
+          "path": "mariadb-connector-j-usage/SKILL.md",
           "status": "pilot",
-          "last_reviewed": "2026-07-21",
+          "last_reviewed": "2026-08-10",
           "baseline_version": "3.5"
         },
         {
-          "name": "mariadb-connector-odbc",
-          "path": "mariadb-connector-odbc/SKILL.md",
+          "name": "mariadb-connector-nodejs-install",
+          "path": "mariadb-connector-nodejs-install/SKILL.md",
+          "status": "draft",
+          "last_reviewed": "2026-08-10",
+          "baseline_version": "3.5"
+        },
+        {
+          "name": "mariadb-connector-nodejs-usage",
+          "path": "mariadb-connector-nodejs-usage/SKILL.md",
           "status": "pilot",
-          "last_reviewed": "2026-07-21",
+          "last_reviewed": "2026-08-10",
+          "baseline_version": "3.5"
+        },
+        {
+          "name": "mariadb-connector-odbc-install",
+          "path": "mariadb-connector-odbc-install/SKILL.md",
+          "status": "draft",
+          "last_reviewed": "2026-08-10",
           "baseline_version": "3.2"
         },
         {
-          "name": "mariadb-connector-r2dbc",
-          "path": "mariadb-connector-r2dbc/SKILL.md",
+          "name": "mariadb-connector-odbc-usage",
+          "path": "mariadb-connector-odbc-usage/SKILL.md",
           "status": "pilot",
-          "last_reviewed": "2026-07-21",
+          "last_reviewed": "2026-08-10",
+          "baseline_version": "3.2"
+        },
+        {
+          "name": "mariadb-connector-r2dbc-install",
+          "path": "mariadb-connector-r2dbc-install/SKILL.md",
+          "status": "draft",
+          "last_reviewed": "2026-08-10",
           "baseline_version": "1.4"
         },
         {
-          "name": "mariadb-connector-cpp",
-          "path": "mariadb-connector-cpp/SKILL.md",
+          "name": "mariadb-connector-r2dbc-usage",
+          "path": "mariadb-connector-r2dbc-usage/SKILL.md",
           "status": "pilot",
-          "last_reviewed": "2026-07-21",
+          "last_reviewed": "2026-08-10",
+          "baseline_version": "1.4"
+        },
+        {
+          "name": "mariadb-connector-cpp-install",
+          "path": "mariadb-connector-cpp-install/SKILL.md",
+          "status": "draft",
+          "last_reviewed": "2026-08-10",
           "baseline_version": "1.0"
         },
         {
-          "name": "mariadb-connector-c",
-          "path": "mariadb-connector-c/SKILL.md",
+          "name": "mariadb-connector-cpp-usage",
+          "path": "mariadb-connector-cpp-usage/SKILL.md",
           "status": "pilot",
-          "last_reviewed": "2026-07-21",
+          "last_reviewed": "2026-08-10",
+          "baseline_version": "1.0"
+        },
+        {
+          "name": "mariadb-connector-c-install",
+          "path": "mariadb-connector-c-install/SKILL.md",
+          "status": "draft",
+          "last_reviewed": "2026-08-10",
+          "baseline_version": "3.4"
+        },
+        {
+          "name": "mariadb-connector-c-usage",
+          "path": "mariadb-connector-c-usage/SKILL.md",
+          "status": "pilot",
+          "last_reviewed": "2026-08-10",
           "baseline_version": "3.4"
         }
       ]
