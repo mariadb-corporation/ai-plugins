@@ -65,7 +65,7 @@ pi install npm:pi-mcp-adapter
 **2. Install this plugin** straight from GitHub:
 
 ```sh
-pi install git:github.com/mariadb-corporation/ai-plugins
+pi install git:github.com/mariadb/ai-plugins
 # …or from a local checkout of this repo (run at the repo root):
 pi install .
 ```

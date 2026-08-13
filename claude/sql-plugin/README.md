@@ -15,7 +15,7 @@ This plugin gives Claude Code first-class MariaDB SQL support through two parts:
 ## Installation
 
 ```text
-/plugin marketplace add mariadb-corporation/ai-plugins
+/plugin marketplace add mariadb/ai-plugins
 /plugin install sql@mariadb
 ```
 
