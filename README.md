@@ -1,64 +1,23 @@
 # MariaDB AI Plugins
 
-First-class **MariaDB** support for AI coding agents. This repo packages the same
-MariaDB capability — a curated set of agent **skills** plus the native
-**`mariadb-shell` MCP server** — for four agent tools:
+First-class **MariaDB** support for AI coding agents. This repo packages a
+curated set of agent **skills** and wires up the native, high-performance
+**`mariadb-shell` MCP server** for the following harnesses:
 
-| Agent | Plugin Folder | Test suite | CI workflow |
-| ----- | ------------- | ---------- | ----------- |
+| Harness | Plugin Folder | Test suite | CI workflow |
+| ------- | ------------- | ---------- | ----------- |
 | [Claude Code](https://claude.com/claude-code) | [`claude`](claude) | [`claude/dev-plugin-tests`](claude/dev-plugin-tests) | [claude-test.yml](.github/workflows/claude-test.yml) |
 | [Codex](https://openai.com/codex) | [`codex`](codex) | [`codex/dev-plugin-test`](codex/dev-plugin-test) | [codex-test.yml](.github/workflows/codex-test.yml) |
 | [OpenCode](https://opencode.ai) | [`opencode`](opencode) | [`opencode/dev-plugin-test`](opencode/dev-plugin-test) | [opencode-test.yml](.github/workflows/opencode-test.yml) |
 | [Pi](https://pi.dev) | [`pi`](pi) | — (not yet) | — (not yet) |
 
-Each agent ships the plugin variants below — all built by the same
-[scripts/sync-skills.sh](scripts/sync-skills.sh):
-
-| Plugin | Skills | MCP server | Skills source |
-| ------ | ------ | ---------- | ------------- |
-| `dev` | full set — statements, functions, client tools, connectors, topical (+ all local `additional-skills/`: `sql`, `rest`, `schema-management`) | yes | `mariadb-docs` + `additional-skills/` |
-| `sql` | SQL-focused subset — statements, functions, topical (+ local `additional-skills/sql`) | yes | `mariadb-docs` + `additional-skills/sql/` |
-| `contributor` | skills for **contributing to MariaDB tooling** | no | [`mariadb-shell`](https://github.com/mariadb-corporation/mariadb-shell) `.claude/skills/` (private) |
-
-The folders are `<agent>/{dev,sql,contributor}-plugin/` for each of `claude/`,
-`codex/`, and `opencode/`; `pi/` ships `dev` only for now. Skills are baseline
-**MariaDB 11.8 LTS**; the `dev` and `sql` plugins share the same auto-downloading
-`mariadb-shell` MCP server, while `contributor` is skills-only for now.
-
-Pi differs from the other three in *how* it packages the same content: it has no
-marketplace file and no built-in MCP support. A pi package is any directory with
-a `package.json` carrying a `pi` field, so the **repo-root
-[package.json](package.json)** is the manifest (its `pi` field points into
-[pi/dev-plugin/](pi/dev-plugin)) and the whole repo installs as one pi package.
-The MCP server is surfaced through the community
-[`pi-mcp-adapter`](https://pi.dev/packages/pi-mcp-adapter) extension, declared as
-an npm dependency. See [pi/README.md](pi/README.md).
-
-## What each plugin provides
-
-1. **Skills** — MariaDB agent skills (`SKILL.md` docs) covering SQL statements,
-   functions, client tools, connectors, and topical deep-dives. Most are vendored
-   from
-   [`mariadb-corporation/mariadb-docs/agent-skills`](https://github.com/mariadb-corporation/mariadb-docs/tree/main/agent-skills);
-   additional repo-local skills are maintained in
-   [additional-skills/](additional-skills), grouped into `sql/` (e.g.
-   `mariadb-schema-create-script`), `rest/` (MariaDB REST Service) and
-   `schema-management/` (MSM lifecycle) subfolders. The `dev` plugin vendors all
-   of them; the `sql` plugin vendors only `additional-skills/sql/`. The agent
-   surfaces the right skill by its `description` "Use when …" trigger.
-2. **A native MCP server** — the [`mariadb-shell`](https://github.com/mariadb-corporation/mariadb-shell)
-   binary, launched by [scripts/mariadb-mcp-launcher.sh](claude/dev-plugin/scripts/mariadb-mcp-launcher.sh)
-   (and `.cmd` for native Windows). On first use it detects OS/arch, downloads the
-   matching release into a user cache, verifies its checksum, and runs it as the
-   MCP server over stdio. Subsequent runs reuse the cached binary. Pi uses the
-   same launcher, registered with `pi-mcp-adapter` by
-   [pi/dev-plugin/scripts/setup-pi-mcp.sh](pi/dev-plugin/scripts/setup-pi-mcp.sh).
+## Installation
 
 > NOTE: The MCP server configuration/loading scripts are currently disabled until the MariaDB Shell is available.
-> While the `mariadb-shell` repo is private, set `GH_TOKEN` so the launcher can
-> authenticate to the GitHub release download.
-
-## Installation
+> While the `mariadb-shell` repo is private, set `GH_TOKEN` (or run `gh auth login`)
+> so both the installer download and the release download can authenticate; and
+> set `MARIADB_SHELL_PRERELEASE=1` until a stable release is published, since the
+> installer skips prereleases.
 
 ### Claude Code
 
@@ -92,7 +51,7 @@ Pi installs the repo itself as a package (the `pi` field in the root
 
 ```sh
 pi install npm:pi-mcp-adapter                              # once — connects pi to MCP servers
-pi install git:github.com/mariadb-corporation/ai-plugins   # this repo (pulls in pi-mcp-adapter)
+pi install git:github.com/mariadb-corporation/ai-plugins   # this repo (skills + extension)
 # …or from a local checkout, at the repo root: pi install .
 ```
 
@@ -104,6 +63,73 @@ pi install git:github.com/mariadb-corporation/ai-plugins   # this repo (pulls in
 Then `/mcp reconnect mariadb` (or restart pi). The extension also prints a
 one-line reminder at session start while the server isn't configured. Full steps
 in [pi/dev-plugin/README.md](pi/dev-plugin/README.md).
+
+### Configure the MCP server (all harnesses)
+
+The skills work on their own. The MCP server, however, starts out allowed to reach
+nothing — installing a plugin wires it up, but does not tell it what it may touch.
+Run this once per machine:
+
+```sh
+mariadb-shell -- mcp setup     # or mcp.setup() from an interactive shell
+```
+
+If `mariadb-shell` isn't on your `PATH`, use the copy the launcher installed —
+`~/.local/bin/mariadb-shell`, or
+`%LOCALAPPDATA%\Programs\mariadb-shell\bin\mariadb-shell.cmd` on Windows. The
+installer only prints a `PATH` hint; it never edits your shell profile. That copy
+appears the first time a plugin starts the MCP server, so either let the agent run
+once first, or install the shell yourself before configuring it.
+
+## Plugin variants
+
+Each agent ships the plugin variants below — all built by the same
+[scripts/sync-skills.sh](scripts/sync-skills.sh):
+
+| Plugin | Skills | MCP server | Skills source |
+| ------ | ------ | ---------- | ------------- |
+| `dev` | full set — statements, functions, client tools, connectors, topical (+ all local `additional-skills/`: `sql`, `rest`, `schema-management`) | yes | `mariadb-docs` + `additional-skills/` |
+| `sql` | SQL-focused subset — statements, functions, topical (+ local `additional-skills/sql`) | yes | `mariadb-docs` + `additional-skills/sql/` |
+| `contributor` | skills for **contributing to MariaDB tooling** | no | [`mariadb-shell`](https://github.com/mariadb-corporation/mariadb-shell) `.claude/skills/` (private) |
+
+The folders are `<agent>/{dev,sql,contributor}-plugin/` for each of `claude/`,
+`codex/`, and `opencode/`; `pi/` ships `dev` only for now. Skills are baseline
+**MariaDB 11.8 LTS**; the `dev` and `sql` plugins share the same auto-downloading
+`mariadb-shell` MCP server, while `contributor` is skills-only for now.
+
+Pi differs from the other three in *how* it packages the same content: it has no
+marketplace file and no built-in MCP support. A pi package is any directory with
+a `package.json` carrying a `pi` field, so the **repo-root
+[package.json](package.json)** is the manifest (its `pi` field points into
+[pi/dev-plugin/](pi/dev-plugin)) and the whole repo installs as one pi package.
+The MCP server is surfaced through the community
+[`pi-mcp-adapter`](https://pi.dev/packages/pi-mcp-adapter) extension, which pi
+loads only as a package in its own right — so it is installed alongside this one,
+not pulled in by it. See [pi/README.md](pi/README.md).
+
+## What each plugin provides
+
+1. **Skills** — MariaDB agent skills (`SKILL.md` docs) covering SQL statements,
+   functions, client tools, connectors, and topical deep-dives. Most are vendored
+   from
+   [`mariadb-corporation/mariadb-docs/agent-skills`](https://github.com/mariadb-corporation/mariadb-docs/tree/main/agent-skills);
+   additional repo-local skills are maintained in
+   [additional-skills/](additional-skills), grouped into `sql/` (e.g.
+   `mariadb-schema-create-script`), `rest/` (MariaDB REST Service) and
+   `schema-management/` (MSM lifecycle) subfolders. The `dev` plugin vendors all
+   of them; the `sql` plugin vendors only `additional-skills/sql/`. The agent
+   surfaces the right skill by its `description` "Use when …" trigger.
+2. **A native MCP server** — the [`mariadb-shell`](https://github.com/mariadb-corporation/mariadb-shell)
+   binary, launched by [scripts/mariadb-mcp-launcher.sh](claude/dev-plugin/scripts/mariadb-mcp-launcher.sh)
+   (and `.cmd` for native Windows). On first use it runs the first
+   `mariadb-shell` that satisfies `MARIADB_SHELL_VERSION` — `$MARIADB_SHELL_BIN`,
+   one on `PATH`, or an install in `~/.local/bin`
+   (`%LOCALAPPDATA%\Programs\mariadb-shell\bin` on Windows) — and otherwise runs
+   the shell's own `install.sh` / `install.ps1` to put the newest release there
+   first. Either way it execs that binary as the MCP server over stdio, and later
+   runs reuse the install. Pi uses the same launcher, registered with
+   `pi-mcp-adapter` by
+   [pi/dev-plugin/scripts/setup-pi-mcp.sh](pi/dev-plugin/scripts/setup-pi-mcp.sh).
 
 ## Repository layout
 
@@ -254,7 +280,13 @@ nightly / on demand.
 
 ## License
 
-Plugin code is **GPL-2.0** (see each plugin's `LICENSE`). Skills vendored from the
-topical layer are redistributed under **MIT** — see the topical layer's `LICENSE`
-and `VENDORED.md` in the upstream source,
+Plugin code largely depends on the MariaDB Shell MCP plugin and is therefore
+licensed under **GPL-2.0** — see [LICENSE](LICENSE); each plugin ships an
+identical copy.
+
+The bundled skills are vendored from several source repositories and retain their
+original licenses. The topical layer, for instance, carries its own `LICENSE` and
+`VENDORED.md` upstream in
 [`mariadb-corporation/mariadb-docs/agent-skills/topical`](https://github.com/mariadb-corporation/mariadb-docs/tree/main/agent-skills/topical).
+See [additional-skills/README.md](additional-skills/README.md) for the full list
+of sources and their licensing.

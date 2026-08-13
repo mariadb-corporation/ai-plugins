@@ -1,36 +1,58 @@
 #!/usr/bin/env bash
 #
-# mariadb-mcp-launcher.sh — download (if needed) and launch the mariadb-shell
-# native MCP server.
+# mariadb-mcp-launcher.sh — resolve (installing if needed) and launch the
+# mariadb-shell native MCP server.
 #
 # Resolution order:
 #   1. $MARIADB_SHELL_BIN, if set (explicit override).
 #   2. A mariadb-shell found on $PATH whose version is >= MARIADB_SHELL_VERSION.
-#   3. A previously cached download for MARIADB_SHELL_VERSION.
-#   4. Otherwise download the matching release asset from
-#      github.com/mariadb-corporation/mariadb-shell into a user cache dir and
-#      verify its checksum.
+#   3. A local install at $MARIADB_SHELL_BINDIR/mariadb-shell (default
+#      ~/.local/bin/mariadb-shell) at that version or newer.
+#   4. Otherwise fetch and run the official installer,
+#      https://raw.githubusercontent.com/mariadb-corporation/mariadb-shell/main/install.sh,
+#      which unpacks the newest release into ~/.local/share/mariadb-shell/<version>
+#      and links it into ~/.local/bin — then launch what it installed.
+#
+# Installing is delegated to install.sh rather than reimplemented here: it picks
+# the package matching the local OS, CPU and glibc version, reads the asset list
+# from the release's own SHA256SUMS and verifies the checksum. Nothing in this
+# launcher needs to know how release assets are named.
 #
 # However it is resolved, the binary is exec'd as
 #   mariadb-shell -- mcp start-server --transport=stdio
-# so the MCP server runs over stdio (not HTTP). stdio is left untouched so the
-# MCP transport works. The MCP config therefore just points at this launcher
-# with no extra arguments.
+# so the MCP server runs over stdio (not HTTP). stdout therefore belongs to the
+# MCP transport alone: every message from this script, and from the installer it
+# runs, goes to stderr instead. The MCP config just points at this launcher with
+# no extra arguments.
 #
 # Environment:
-#   MARIADB_SHELL_VERSION   Minimum/required version (default below). A PATH
-#                           binary is accepted when equal or higher; the managed
-#                           download pins exactly this version.
-#   MARIADB_SHELL_BIN       Path to a pre-installed binary; skips all other logic.
-#   GH_TOKEN                Optional token for downloading from a private release.
+#   MARIADB_SHELL_VERSION     Minimum acceptable version (default below). A PATH
+#                             or locally installed binary is accepted when equal
+#                             or higher; anything lower triggers an install of
+#                             the newest release.
+#   MARIADB_SHELL_BIN         Path to a pre-installed binary; skips all other logic.
+#   MARIADB_SHELL_BINDIR      Where install.sh links the binary (default ~/.local/bin);
+#                             this is also where step 3 looks.
+#   MARIADB_SHELL_PREFIX      Passed through: where install.sh unpacks releases.
+#   MARIADB_SHELL_TAG         Passed through: install this release tag rather than
+#                             the newest.
+#   MARIADB_SHELL_PRERELEASE  Set to 1 to let the installer pick a prerelease
+#                             (install.sh skips prereleases by default).
+#   MARIADB_SHELL_REPO        Passed through: owner/repo to install from.
+#   MARIADB_SHELL_TOKEN       Token for a private repository. GH_TOKEN and
+#                             GITHUB_TOKEN are consulted too, then `gh auth token`
+#                             — the same order install.sh itself uses.
 
 set -euo pipefail
 
-VERSION="${MARIADB_SHELL_VERSION:-9.7.0}"
-REPO="mariadb-corporation/mariadb-shell"
+VERSION="${MARIADB_SHELL_VERSION:-26.8.0}"
+REPO="${MARIADB_SHELL_REPO:-mariadb-corporation/mariadb-shell}"
+BINDIR="${MARIADB_SHELL_BINDIR:-$HOME/.local/bin}"
+INSTALLER_URL="https://raw.githubusercontent.com/$REPO/main/install.sh"
 
 # Arguments that start the mariadb-shell MCP server over stdio. Every resolved
-# binary (override / PATH / cache / download) is launched with exactly these.
+# binary (override / PATH / local install / fresh install) is launched with
+# exactly these.
 MCP_ARGS=(-- mcp start-server --transport=stdio)
 
 log() { echo "mariadb-mcp-launcher: $*" >&2; }
@@ -52,6 +74,20 @@ version_ge() {
   return 0
 }
 
+# shell_version BIN — print the version BIN reports, or nothing.
+#
+# The version line looks like "mariadb-shell   Ver 26.8.0 for macos ...", so the
+# number after "Ver" is read first; a bare numeric match is only the fallback,
+# since the leading path may itself carry digits.
+shell_version() {
+  local out ver
+  out="$("$1" --version 2>/dev/null | head -n1 || true)"
+  [ -n "$out" ] || return 0
+  ver="$(printf '%s\n' "$out" | grep -oiE 'ver[[:space:]]+[0-9]+(\.[0-9]+)+' | head -n1 | grep -oE '[0-9]+(\.[0-9]+)+' || true)"
+  [ -n "$ver" ] || ver="$(printf '%s\n' "$out" | grep -oE '[0-9]+(\.[0-9]+)+' | head -n1 || true)"
+  printf '%s' "$ver"
+}
+
 # Escape hatch: use an explicitly provided binary.
 if [ -n "${MARIADB_SHELL_BIN:-}" ]; then
   [ -x "$MARIADB_SHELL_BIN" ] || die "MARIADB_SHELL_BIN is not executable: $MARIADB_SHELL_BIN"
@@ -60,92 +96,107 @@ fi
 
 # Prefer a mariadb-shell already on PATH when it meets the required version.
 if PATH_BIN="$(command -v mariadb-shell 2>/dev/null)" && [ -n "$PATH_BIN" ]; then
-  PATH_VER="$("$PATH_BIN" --version 2>/dev/null | grep -oE '[0-9]+(\.[0-9]+)+' | head -n1 || true)"
+  PATH_VER="$(shell_version "$PATH_BIN")"
   if [ -n "$PATH_VER" ] && version_ge "$PATH_VER" "$VERSION"; then
     log "using mariadb-shell $PATH_VER from PATH: $PATH_BIN (>= required $VERSION)"
     exec "$PATH_BIN" "${MCP_ARGS[@]}"
   fi
-  log "mariadb-shell on PATH (${PATH_VER:-unknown version}) does not meet required $VERSION; using managed binary"
+  log "mariadb-shell on PATH (${PATH_VER:-unknown version}) does not meet required $VERSION; looking for a managed install"
 fi
 
-# --- Detect OS ---------------------------------------------------------------
+# --- Where a managed install lives -------------------------------------------
+# Git-Bash/MSYS is a Windows host: install.sh refuses to run there (there is no
+# glibc/macOS package to pick), and install.ps1 shims the binary under
+# %LOCALAPPDATA% as a .cmd. Look there, but leave installing to the .cmd launcher.
 case "$(uname -s)" in
-  Darwin)            OS="darwin" ;;
-  Linux)             OS="linux" ;;
-  MINGW*|MSYS*|CYGWIN*) OS="windows" ;;
-  *)                 die "unsupported OS: $(uname -s)" ;;
+  MINGW*|MSYS*|CYGWIN*) WINDOWS=1 ;;
+  *)                    WINDOWS=0 ;;
 esac
 
-# --- Detect arch -------------------------------------------------------------
-case "$(uname -m)" in
-  x86_64|amd64)   ARCH="amd64" ;;
-  arm64|aarch64)  ARCH="arm64" ;;
-  *)              die "unsupported arch: $(uname -m)" ;;
-esac
-
-# --- Asset + cache paths -----------------------------------------------------
-# NOTE: adjust EXT / asset naming to match the real mariadb-shell release assets.
-if [ "$OS" = "windows" ]; then EXT="zip"; BIN_NAME="mariadb-shell.exe"; else EXT="tar.gz"; BIN_NAME="mariadb-shell"; fi
-ASSET="mariadb-shell_${VERSION}_${OS}_${ARCH}.${EXT}"
-
-CACHE_BASE="${XDG_CACHE_HOME:-$HOME/.cache}/mariadb/mariadb-shell/${VERSION}"
-BIN="$CACHE_BASE/$BIN_NAME"
-
-# Already cached? Run it.
-if [ -x "$BIN" ]; then
-  exec "$BIN" "${MCP_ARGS[@]}"
+if [ "$WINDOWS" = 1 ]; then
+  LOCAL_BIN="${LOCALAPPDATA:-$HOME/AppData/Local}/Programs/mariadb-shell/bin/mariadb-shell.cmd"
+else
+  LOCAL_BIN="$BINDIR/mariadb-shell"
 fi
 
-# --- Download ----------------------------------------------------------------
-mkdir -p "$CACHE_BASE"
-BASE_URL="https://github.com/$REPO/releases/download/$VERSION"
+# --- Step 3: an existing local install ---------------------------------------
+if [ -x "$LOCAL_BIN" ]; then
+  LOCAL_VER="$(shell_version "$LOCAL_BIN")"
+  if [ -n "$LOCAL_VER" ] && version_ge "$LOCAL_VER" "$VERSION"; then
+    log "using installed mariadb-shell $LOCAL_VER: $LOCAL_BIN (>= required $VERSION)"
+    exec "$LOCAL_BIN" "${MCP_ARGS[@]}"
+  fi
+  log "installed mariadb-shell (${LOCAL_VER:-unknown version}) at $LOCAL_BIN does not meet required $VERSION; installing the newest release"
+fi
 
-# Pick a downloader.
+if [ "$WINDOWS" = 1 ]; then
+  die "no mariadb-shell at $LOCAL_BIN.
+  This launcher does not install on Windows — install.sh has no Windows package.
+  Either run scripts/mariadb-mcp-launcher.cmd instead (it uses install.ps1), or
+  install once by hand:
+      irm https://github.com/$REPO/raw/main/install.ps1 | iex"
+fi
+
+# --- Step 4: install the newest release --------------------------------------
+# The token is resolved here as well as inside install.sh because fetching the
+# installer from a private repository needs it too — raw.githubusercontent.com
+# answers 404, not 401, without credentials.
+TOKEN="${MARIADB_SHELL_TOKEN:-${GH_TOKEN:-${GITHUB_TOKEN:-}}}"
+if [ -z "$TOKEN" ] && command -v gh >/dev/null 2>&1; then
+  TOKEN="$(gh auth token 2>/dev/null || true)"
+fi
+
 if command -v curl >/dev/null 2>&1; then
-  dl() { curl -fsSL ${GH_TOKEN:+-H "Authorization: Bearer $GH_TOKEN"} -o "$2" "$1"; }
+  fetch() { curl -fsSL --retry 3 ${TOKEN:+-H "Authorization: Bearer $TOKEN"} -o "$2" "$1"; }
 elif command -v wget >/dev/null 2>&1; then
-  dl() { wget -q ${GH_TOKEN:+--header="Authorization: Bearer $GH_TOKEN"} -O "$2" "$1"; }
+  fetch() { wget -q ${TOKEN:+--header="Authorization: Bearer $TOKEN"} -O "$2" "$1"; }
 else
-  die "neither curl nor wget is available"
+  die "neither curl nor wget is available; cannot fetch the mariadb-shell installer"
 fi
 
 TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
 
-log "downloading $ASSET ($OS/$ARCH) ..."
-dl "$BASE_URL/$ASSET" "$TMP/$ASSET" || die "failed to download $BASE_URL/$ASSET"
+install_failed=0
+log "no suitable mariadb-shell found; installing from $REPO ..."
+if fetch "$INSTALLER_URL" "$TMP/install.sh"; then
+  INSTALL_ARGS=()
+  case "${MARIADB_SHELL_PRERELEASE:-}" in
+    ""|0|false|no) ;;
+    *) INSTALL_ARGS+=(--pre-release) ;;
+  esac
 
-# --- Verify checksum (best effort; fails loudly on mismatch) -----------------
-if dl "$BASE_URL/checksums.txt" "$TMP/checksums.txt" 2>/dev/null; then
-  expected="$(grep " ${ASSET}\$\|  ${ASSET}\$" "$TMP/checksums.txt" | awk '{print $1}' | head -n1 || true)"
-  if [ -n "$expected" ]; then
-    if command -v sha256sum >/dev/null 2>&1; then
-      actual="$(sha256sum "$TMP/$ASSET" | awk '{print $1}')"
-    else
-      actual="$(shasum -a 256 "$TMP/$ASSET" | awk '{print $1}')"
-    fi
-    [ "$expected" = "$actual" ] || die "checksum mismatch for $ASSET (expected $expected, got $actual)"
-    log "checksum verified"
+  # BINDIR is exported so the installer links where step 3 looks. Its own
+  # progress output would corrupt the MCP stream, hence the redirect to stderr.
+  if MARIADB_SHELL_BINDIR="$BINDIR" \
+     MARIADB_SHELL_TOKEN="$TOKEN" \
+     sh "$TMP/install.sh" ${INSTALL_ARGS[@]+"${INSTALL_ARGS[@]}"} >&2; then
+    :
   else
-    log "warning: $ASSET not listed in checksums.txt — skipping verification"
+    install_failed=1
+    log "the mariadb-shell installer failed"
   fi
 else
-  log "warning: checksums.txt not available — skipping verification"
+  install_failed=1
+  log "could not download the installer from $INSTALLER_URL"
+  [ -n "$TOKEN" ] || log "no token found — while $REPO is private, set MARIADB_SHELL_TOKEN (or GH_TOKEN), or run 'gh auth login'"
 fi
 
-# --- Extract -----------------------------------------------------------------
-case "$EXT" in
-  tar.gz) tar -xzf "$TMP/$ASSET" -C "$TMP" ;;
-  zip)    (command -v unzip >/dev/null 2>&1 && unzip -q "$TMP/$ASSET" -d "$TMP") || die "unzip required for $ASSET" ;;
-esac
+# A concurrent launcher may have completed the install that this one lost the
+# race for, so the binary — not the installer's exit status — is the last word.
+if [ ! -x "$LOCAL_BIN" ]; then
+  die "no mariadb-shell at $LOCAL_BIN after installing.
+  Install it by hand and retry, or point MARIADB_SHELL_BIN at an existing binary:
+      curl -fsSL https://github.com/$REPO/raw/main/install.sh | bash"
+fi
+[ "$install_failed" = 0 ] || log "using the mariadb-shell already present at $LOCAL_BIN"
 
-SRC_BIN="$(find "$TMP" -type f -name "$BIN_NAME" | head -n1)"
-[ -n "$SRC_BIN" ] || die "$BIN_NAME not found in $ASSET"
+# Below the required version is worth saying, but not worth refusing to start
+# over: the newest published release is the best that can be had.
+NEW_VER="$(shell_version "$LOCAL_BIN")"
+if [ -n "$NEW_VER" ] && ! version_ge "$NEW_VER" "$VERSION"; then
+  log "warning: installed mariadb-shell $NEW_VER is below the required $VERSION; starting it anyway"
+fi
 
-# Atomic install into the cache.
-chmod +x "$SRC_BIN"
-mv -f "$SRC_BIN" "$BIN.partial"
-mv -f "$BIN.partial" "$BIN"
-
-log "installed to $BIN"
-exec "$BIN" "${MCP_ARGS[@]}"
+log "starting mariadb-shell ${NEW_VER:-} MCP server: $LOCAL_BIN"
+exec "$LOCAL_BIN" "${MCP_ARGS[@]}"

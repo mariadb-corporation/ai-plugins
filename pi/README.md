@@ -20,7 +20,7 @@ pi package straight from Git.
 
 ```sh
 pi install npm:pi-mcp-adapter                          # once — connects pi to MCP servers
-pi install git:github.com/mariadb-corporation/ai-plugins   # this repo (pulls in pi-mcp-adapter)
+pi install git:github.com/mariadb-corporation/ai-plugins   # this repo (skills + extension)
 # …or from a local checkout, at the repo root: pi install .
 ```
 

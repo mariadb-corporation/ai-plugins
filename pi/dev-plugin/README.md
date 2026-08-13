@@ -12,8 +12,8 @@ support as a **pi extension**, through two parts:
    field, so pi loads them contextually.
 2. **A native MCP server** — the [`mariadb-shell`](https://github.com/mariadb-corporation/mariadb-shell)
    binary, started by [scripts/mariadb-mcp-launcher.sh](scripts/mariadb-mcp-launcher.sh),
-   surfaced to pi through [`pi-mcp-adapter`](https://pi.dev/packages/pi-mcp-adapter)
-   (a dependency of this package).
+   surfaced to pi through [`pi-mcp-adapter`](https://pi.dev/packages/pi-mcp-adapter),
+   which is installed as its own pi package.
 
 Pi has no bundled MCP support — the community `pi-mcp-adapter` extension is what
 connects pi to MCP servers, exposing them through a single token-cheap `mcp`
@@ -33,7 +33,7 @@ ai-plugins/
     ├── src/index.ts     # the extension (default-export factory): /mariadb-mcp-setup + session hint
     ├── scripts/
     │   ├── setup-pi-mcp.sh          # registers the mariadb server with pi-mcp-adapter
-    │   ├── mariadb-mcp-launcher.sh  # downloads + launches mariadb-shell as the MCP server
+    │   ├── mariadb-mcp-launcher.sh  # installs (if needed) + launches mariadb-shell as the MCP server
     │   └── mariadb-mcp-launcher.cmd # native-Windows launcher
     ├── skills/          # vendored MariaDB skills (flat: skills/<skill>/SKILL.md)
     └── skills-source.json
@@ -92,11 +92,13 @@ pi/dev-plugin/scripts/setup-pi-mcp.sh --project  # ./.mcp.json
 Then `/mcp reconnect mariadb` (or restart pi). The extension also prints a
 one-line reminder at session start whenever the server isn't configured yet.
 
-On first use of a MariaDB tool, the launcher downloads `mariadb-shell` into your
-user cache (`~/.cache/mariadb/mariadb-shell/<version>/` on macOS/Linux,
-`%LOCALAPPDATA%\mariadb\mariadb-shell\<version>\` on Windows) and starts it as the
-MCP server. Subsequent runs reuse the cached binary. Set `GH_TOKEN` while the
-`mariadb-shell` release is private so the launcher can download it.
+On first use of a MariaDB tool, the launcher looks for a `mariadb-shell` it can
+run — `$MARIADB_SHELL_BIN`, one on `PATH`, or an existing install in
+`~/.local/bin` (`%LOCALAPPDATA%\Programs\mariadb-shell\bin` on Windows) — and
+otherwise installs the newest release there with the shell's own installer. Then
+it starts that binary as the MCP server. Later runs reuse the install. Set
+`GH_TOKEN` (or run `gh auth login`) while `mariadb-shell` is private, and
+`MARIADB_SHELL_PRERELEASE=1` until a stable release is published.
 
 ## The MCP server entry
 
@@ -109,7 +111,7 @@ else already there):
     "mariadb": {
       "command": "<plugin>/scripts/mariadb-mcp-launcher.sh",
       "args": [],
-      "env": { "MARIADB_SHELL_VERSION": "9.7.0" },
+      "env": { "MARIADB_SHELL_VERSION": "26.8.0" },
       "lifecycle": "lazy"
     }
   }
@@ -118,6 +120,23 @@ else already there):
 
 `lifecycle: "lazy"` tells the adapter to spawn mariadb-shell only when a MariaDB
 tool is first used.
+
+### Configure what the server may access
+
+The skills work on their own. The MCP server, however, starts out allowed to reach
+nothing — installing this plugin wires it up, but does not tell it what it may
+touch. Run this once per machine:
+
+```sh
+mariadb-shell -- mcp setup     # or mcp.setup() from an interactive shell
+```
+
+If `mariadb-shell` isn't on your `PATH`, use the copy the launcher installed —
+`~/.local/bin/mariadb-shell`, or
+`%LOCALAPPDATA%\Programs\mariadb-shell\bin\mariadb-shell.cmd` on Windows. The
+installer only prints a `PATH` hint; it never edits your shell profile. That copy
+appears the first time this plugin starts the MCP server, so either let the agent
+run once first, or install the shell yourself before configuring it.
 
 ## Skills
 
