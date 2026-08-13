@@ -4,6 +4,25 @@ All notable changes to the MariaDB SQL Codex plugin are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 project adheres to [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Changed
+
+- The `mariadb-shell` launcher no longer downloads and unpacks release assets
+  itself. It now runs the first shell that satisfies `MARIADB_SHELL_VERSION`
+  (`$MARIADB_SHELL_BIN`, one on `PATH`, or an existing install in `~/.local/bin`
+  / `%LOCALAPPDATA%\Programs\mariadb-shell\bin`), and otherwise delegates to the
+  shell's own `install.sh` / `install.ps1` — which selects the package for this
+  OS, CPU and glibc version and verifies it against the release's `SHA256SUMS`.
+  Asset naming is no longer duplicated here, so the launcher cannot go stale as
+  releases change.
+- `MARIADB_SHELL_VERSION` now means the *minimum* acceptable version and defaults
+  to `26.8.0`, matching the published release series.
+- New pass-through settings: `MARIADB_SHELL_BINDIR`, `MARIADB_SHELL_PREFIX`,
+  `MARIADB_SHELL_TAG`, `MARIADB_SHELL_PRERELEASE` (needed while the only
+  published release is a prerelease) and `MARIADB_SHELL_TOKEN` (`GH_TOKEN`,
+  `GITHUB_TOKEN` and `gh auth token` are still honoured).
+
 ## [26.7.0] - 2026-07-20
 
 ### Added

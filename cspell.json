@@ -5,6 +5,13 @@
     ],
     "ignoreWords": [
         "LOCALAPPDATA",
+        "BINDIR",
+        "PRERELEASE",
+        "prerelease",
+        "prereleases",
+        "usebackq",
+        "githubusercontent",
+        "glibc",
         "venv",
         "opencode",
         "pytest",

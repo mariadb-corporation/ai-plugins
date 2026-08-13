@@ -12,8 +12,8 @@ MariaDB SQL support through two parts:
    [agent-skills](https://developers.openai.com/codex/skills) standard (`SKILL.md`),
    so Codex loads them contextually and can invoke them via `/skills` or `$`.
 2. **A native MCP server** — the [`mariadb-shell`](https://github.com/mariadb-corporation/mariadb-shell)
-   binary, started automatically by a launcher that downloads the right build for
-   your OS and CPU architecture.
+   binary, started automatically by a launcher that finds a suitable install or,
+   failing that, runs the shell's own installer to get one.
 
 ## Installation
 
@@ -23,10 +23,11 @@ MariaDB SQL support through two parts:
 ```
 
 Then reload (`/reload-plugins`) if Codex doesn't pick it up automatically. On first
-use of a MariaDB tool, the launcher downloads `mariadb-shell` into your user cache
-(`~/.cache/mariadb/mariadb-shell/<version>/` on macOS/Linux,
-`%LOCALAPPDATA%\mariadb\mariadb-shell\<version>\` on Windows) and starts it as the
-MCP server. Subsequent runs reuse the cached binary.
+use of a MariaDB tool, the launcher looks for a `mariadb-shell` it can run —
+`$MARIADB_SHELL_BIN`, one on `PATH`, or an existing install in `~/.local/bin`
+(`%LOCALAPPDATA%\Programs\mariadb-shell\bin` on Windows) — and otherwise installs
+the newest release there with the shell's own installer. Then it starts that
+binary as the MCP server. Later runs reuse the install.
 
 ## The MCP server
 
@@ -38,7 +39,7 @@ Configured in [.mcp.json](.mcp.json):
     "mariadb": {
       "command": "${CODEX_PLUGIN_ROOT}/scripts/mariadb-mcp-launcher.sh",
       "args": [],
-      "env": { "MARIADB_SHELL_VERSION": "9.7.0" }
+      "env": { "MARIADB_SHELL_VERSION": "26.8.0" }
     }
   }
 }
@@ -50,18 +51,49 @@ authored for Claude Code.)
 
 The launcher ([scripts/mariadb-mcp-launcher.sh](scripts/mariadb-mcp-launcher.sh)):
 
-- Resolves the version from `MARIADB_SHELL_VERSION` (default `9.7.0`).
-- Detects OS (`darwin`/`linux`/`windows`) and arch (`amd64`/`arm64`).
-- Downloads the matching release asset from
-  `github.com/mariadb-corporation/mariadb-shell/releases`, verifies its checksum,
-  caches it, and execs it as the MCP server over stdio.
+- Resolves the minimum version from `MARIADB_SHELL_VERSION` (default `26.8.0`).
+- Runs the first `mariadb-shell` that meets it: `$MARIADB_SHELL_BIN`, then one on
+  `PATH`, then a local install at `~/.local/bin/mariadb-shell`
+  (`%LOCALAPPDATA%\Programs\mariadb-shell\bin\mariadb-shell.cmd` on Windows).
+- Failing all three, runs the shell's own installer — `install.sh`, or
+  `install.ps1` on Windows, fetched from
+  `raw.githubusercontent.com/mariadb-corporation/mariadb-shell/main/`. It picks
+  the package matching this OS, CPU and glibc version, verifies it against the
+  release's `SHA256SUMS`, unpacks it under `~/.local/share/mariadb-shell/` and
+  links the binary into `~/.local/bin`. Later starts reuse that install.
+- Execs whichever binary it settled on as
+  `mariadb-shell -- mcp start-server --transport=stdio`. stdout belongs to the
+  MCP transport alone, so the launcher's own messages — and the installer's — go
+  to stderr.
 
 **Windows:** `.mcp.json` cannot branch per OS. The `.sh` launcher works on
 macOS/Linux and under Git-Bash; native Windows users should point the `command`
 at [scripts/mariadb-mcp-launcher.cmd](scripts/mariadb-mcp-launcher.cmd).
 
-**Private releases:** while the `mariadb-shell` repo is private, set `GH_TOKEN`
-so the launcher can authenticate to the GitHub release download.
+**Private repository:** while `mariadb-shell` is private, set `GH_TOKEN` (or
+`MARIADB_SHELL_TOKEN`, or simply run `gh auth login`). The token is needed twice:
+to fetch the installer, and for the installer to download the release.
+
+**Prereleases:** the installer skips prereleases, as `releases/latest` does. Set
+`MARIADB_SHELL_PRERELEASE=1` to let it pick one — necessary until a stable
+`mariadb-shell` release is published.
+
+### Configure what the server may access
+
+The skills work on their own. The MCP server, however, starts out allowed to reach
+nothing — installing this plugin wires it up, but does not tell it what it may
+touch. Run this once per machine:
+
+```sh
+mariadb-shell -- mcp setup     # or mcp.setup() from an interactive shell
+```
+
+If `mariadb-shell` isn't on your `PATH`, use the copy the launcher installed —
+`~/.local/bin/mariadb-shell`, or
+`%LOCALAPPDATA%\Programs\mariadb-shell\bin\mariadb-shell.cmd` on Windows. The
+installer only prints a `PATH` hint; it never edits your shell profile. That copy
+appears the first time this plugin starts the MCP server, so either let the agent
+run once first, or install the shell yourself before configuring it.
 
 ## Skills
 

@@ -1,0 +1,4 @@
+# Batch files must keep CRLF endings: cmd.exe mis-parses `goto` labels and `^`
+# line continuations in an LF-only .cmd, both of which the MCP launcher uses.
+*.cmd text eol=crlf
+*.cmd_disabled text eol=crlf
