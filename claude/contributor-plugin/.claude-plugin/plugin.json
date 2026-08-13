@@ -3,7 +3,7 @@
   "version": "26.7.0",
   "description": "Skills for contributing to MariaDB tooling, for Claude Code.",
   "author": { "name": "MariaDB Corporation", "url": "https://mariadb.com" },
-  "homepage": "https://github.com/mariadb-corporation/ai-plugins",
+  "homepage": "https://github.com/mariadb/ai-plugins",
   "license": "GPL-2.0",
   "keywords": ["mariadb", "contributor", "skills", "mariadb-shell"]
 }

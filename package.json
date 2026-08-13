@@ -3,8 +3,8 @@
   "version": "26.7.0",
   "description": "MariaDB skills and the native mariadb-shell MCP server for the Pi coding agent (pi.dev).",
   "author": { "name": "MariaDB Corporation", "url": "https://mariadb.com" },
-  "homepage": "https://github.com/mariadb-corporation/ai-plugins",
-  "repository": "https://github.com/mariadb-corporation/ai-plugins",
+  "homepage": "https://github.com/mariadb/ai-plugins",
+  "repository": "https://github.com/mariadb/ai-plugins",
   "license": "GPL-2.0",
   "type": "module",
   "scripts": {

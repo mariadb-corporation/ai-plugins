@@ -22,14 +22,14 @@ curated set of agent **skills** and wires up the native, high-performance
 ### Claude Code
 
 ```text
-/plugin marketplace add mariadb-corporation/ai-plugins
+/plugin marketplace add mariadb/ai-plugins
 /plugin install dev@mariadb
 ```
 
 ### Codex
 
 ```text
-/plugin marketplace add mariadb-corporation/ai-plugins
+/plugin marketplace add mariadb/ai-plugins
 /plugin install dev@mariadb
 ```
 
@@ -51,7 +51,7 @@ Pi installs the repo itself as a package (the `pi` field in the root
 
 ```sh
 pi install npm:pi-mcp-adapter                              # once — connects pi to MCP servers
-pi install git:github.com/mariadb-corporation/ai-plugins   # this repo (skills + extension)
+pi install git:github.com/mariadb/ai-plugins   # this repo (skills + extension)
 # …or from a local checkout, at the repo root: pi install .
 ```
 
