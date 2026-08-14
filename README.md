@@ -9,7 +9,7 @@ curated set of agent **skills** and wires up the native, high-performance
 | [Claude Code](https://claude.com/claude-code) | [`claude`](claude) | [`claude/dev-plugin-tests`](claude/dev-plugin-tests) | [claude-test.yml](.github/workflows/claude-test.yml) |
 | [Codex](https://openai.com/codex) | [`codex`](codex) | [`codex/dev-plugin-test`](codex/dev-plugin-test) | [codex-test.yml](.github/workflows/codex-test.yml) |
 | [OpenCode](https://opencode.ai) | [`opencode`](opencode) | [`opencode/dev-plugin-test`](opencode/dev-plugin-test) | [opencode-test.yml](.github/workflows/opencode-test.yml) |
-| [Pi](https://pi.dev) | [`pi`](pi) | — (not yet) | — (not yet) |
+| [Pi](https://pi.dev) | [`pi`](pi) | [`pi/dev-plugin-tests`](pi/dev-plugin-tests) | — (not yet) |
 
 ## Installation
 
@@ -165,7 +165,8 @@ ai-plugins/
 │   ├── contributor-plugin/
 │   └── dev-plugin-test/
 ├── pi/                                # Pi (pi.dev) extension sources — dev only for now
-│   └── dev-plugin/                    # src/index.ts extension, scripts/ (setup-pi-mcp + launchers), skills/
+│   ├── dev-plugin/                    # src/index.ts extension, scripts/ (setup-pi-mcp + launchers), skills/
+│   └── dev-plugin-tests/              # its pytest suite (static + db + e2e; no eval tier)
 ├── package.json                       # repo-root pi manifest (`pi` field → pi/dev-plugin/); pi-mcp-adapter dep + test scripts
 ├── run_tests.py                        # runs every suite with the mariadb-shell Python + coverage
 ├── pytest-coverage.ini                 # shared pytest config used by run_tests.py
@@ -209,23 +210,40 @@ resolve. Requires `jq` and `curl`.
 
 ## Testing
 
-The Claude, Codex and OpenCode plugins each have a parallel **3-tier pytest
-suite** (the pi plugin has none yet — [run_tests.py](run_tests.py) discovers
-suites by `*/dev-plugin-test*/conftest.py`, so it will pick one up as soon as it
-exists):
+All four harness plugins have a parallel pytest suite;
+[run_tests.py](run_tests.py) discovers them by `*/dev-plugin-test*/conftest.py`:
 
 | Tier | Marker | Needs | Checks |
 | ---- | ------ | ----- | ------ |
 | 1. Static / structural | `static` | nothing | frontmatter, manifest↔disk consistency, cross-references, SQL fences, statement-skill contract |
 | 2. SQL execution | `db` | `mariadb-shell` + a server binary | the skills' recommended DDL runs on a live server with the documented effect |
 | 3. Behavioral evals | `eval` | an LLM API key | the skill steers the model toward the MariaDB-preferred form (opt-in; deselected by default) |
+| 4. End-to-end | `e2e` | the harness CLI, authenticated | drives the real CLI with the plugin loaded, then asserts the side effects (opt-in) |
 
-The Claude suite adds a fourth tier — `e2e`, a real `claude` CLI run with the
-plugin and MCP server loaded (also opt-in).
+Tiers 1 and 2 are the same everywhere. The opt-in tiers differ by harness,
+because what there is to drive differs:
+
+- **Claude** — `eval` (Anthropic SDK) plus two `e2e` modules: the REST workflow
+  (sandbox, schema, REST DDL) and the MSM schema-lifecycle workflow.
+- **Codex** — `eval` (OpenAI SDK) plus the same two `e2e` workflows, and two
+  token-free checks that Codex resolves this repo's *Codex* plugin and that
+  `setup-codex-mcp.sh` registers a server it can actually spawn.
+- **OpenCode** — `eval` only; no `e2e` yet.
+- **Pi** — `e2e` only, and **no `eval` tier**: pi has no SDK of its own to prompt,
+  so driving the `pi` binary *is* the behavioural test. Its e2e installs this repo
+  as a project-local pi package (`pi install -l`, which pi honours only when the
+  run passes `--approve`), checks that the vendored skills reached the model and
+  that the generated schema script carries the Start Block its skill mandates, and
+  verifies `setup-pi-mcp.sh` registers the MariaDB server with `pi-mcp-adapter`
+  idempotently. There are no MCP tool-call assertions: pi has no built-in MCP, and
+  the adapter that provides it is installed separately from this package.
+
+The `e2e` tiers self-skip rather than fail when their toolchain is absent — no
+CLI, no authenticated provider, or no resolvable `mariadb-shell`.
 
 The `db` tier needs no server running beforehand: it deploys a throwaway
 **sandbox instance** on a free port through the `mariadb-shell` MCP server's
-`sandbox.*` tools, the way `mysql-shell-plugins/mcp_plugin/tests` does, and
+`sandbox.*` tools, the way `mariadb-shell-plugins/mcp_plugin/tests` does, and
 deletes it afterwards. The shell's user config home is isolated to a temp dir for
 the run (with the real one's plugins symlinked in, and the sandbox dir
 allow-listed), so nothing touches `~/.mariadb-shell`. Setting any of
@@ -274,17 +292,20 @@ checks instead.
 ### Per-suite, without the runner
 
 ```sh
-cd claude/dev-plugin-tests      # or codex/ , opencode/ dev-plugin-test
+cd claude/dev-plugin-tests      # or pi/dev-plugin-tests , codex/ , opencode/ dev-plugin-test
 pip install -r requirements.txt
 pytest -m static                # fast, no services
 pytest -m db                    # needs a MariaDB 11.8 server (docker-compose.yml provided)
-pytest -m eval                  # opt-in, calls the LLM API
+pytest -m eval                  # opt-in, calls the LLM API      (not in the pi suite)
+pytest -m e2e                   # opt-in, drives the harness CLI (claude, codex, pi)
 ```
 
 The eval tier uses the SDK matching its agent: the Claude and OpenCode suites call
 the Anthropic SDK (`claude-opus-4-8`, needs `ANTHROPIC_API_KEY`); the Codex suite
-calls the OpenAI SDK. CI runs `static` on every push/PR, `db` on PRs, and `eval`
-nightly / on demand.
+calls the OpenAI SDK. The pi suite has no eval tier at all — see the tier notes
+above. CI runs `static` on every push/PR, `db` on PRs, and `eval` nightly / on
+demand; the `e2e` tiers are local-only, since they need an authenticated CLI and a
+`mariadb-shell` on the machine.
 
 ## License
 
