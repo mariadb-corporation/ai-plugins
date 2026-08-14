@@ -17,7 +17,11 @@ project adheres to [Semantic Versioning](https://semver.org/).
   - Codex resolves `dev@mariadb` through `.agents/plugins/marketplace.json`,
     falling back to `.claude-plugin/marketplace.json`, and never reads
     `.codex-plugin/marketplace.json` — so installing from this repo gave Codex the
-    *Claude* plugin. The repo now ships `.agents/plugins/marketplace.json`.
+    *Claude* plugin. The repo now ships `.agents/plugins/marketplace.json`, and the
+    unread `.codex-plugin/marketplace.json` has been deleted rather than left to
+    drift out of sync with it. (The per-plugin `.codex-plugin/plugin.json` stays —
+    Codex does read that, and without it the installed version degrades to
+    `local`.)
 - **New `scripts/setup-codex-mcp.sh`.** Codex expands no placeholder when it
   spawns a plugin's MCP server, so a plugin cannot register a working one; the
   script does it with `codex mcp add` and an absolute path. Registering is now a

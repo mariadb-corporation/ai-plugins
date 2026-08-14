@@ -144,8 +144,7 @@ not pulled in by it. See [pi/README.md](pi/README.md).
 ```text
 ai-plugins/
 ├── .claude-plugin/marketplace.json    # Claude Code marketplace entry
-├── .agents/plugins/marketplace.json   # Codex marketplace entry (the file codex reads)
-├── .codex-plugin/marketplace.json     # Codex plugin metadata (not read by codex 0.147)
+├── .agents/plugins/marketplace.json   # Codex marketplace entry (Codex reads this, not .codex-plugin/)
 ├── additional-skills/                 # repo-local skills, grouped by topic subfolder
 │   ├── sql/                            # vendored into dev + sql (e.g. mariadb-schema-create-script)
 │   ├── rest/                           # MariaDB REST Service skills (dev only)
