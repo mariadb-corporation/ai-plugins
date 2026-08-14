@@ -1,5 +1,20 @@
 @echo off
 setlocal
+rem Copyright (c) 2026, MariaDB plc.
+rem
+rem This program is free software; you can redistribute it and/or modify
+rem it under the terms of the GNU General Public License, version 2.0,
+rem as published by the Free Software Foundation.
+rem
+rem This program is distributed in the hope that it will be useful, but
+rem WITHOUT ANY WARRANTY; without even the implied warranty of
+rem MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See
+rem the GNU General Public License, version 2.0, for more details.
+rem
+rem You should have received a copy of the GNU General Public License
+rem along with this program; if not, write to the Free Software Foundation, Inc.,
+rem 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
+
 rem ============================================================================
 rem mariadb-mcp-launcher.cmd -- Windows launcher for the mariadb-shell MCP server.
 rem
