@@ -155,3 +155,32 @@ def test_additional_skill_matches_its_source(skill: skills.Skill):
         f"vendored {skill.rel_path} differs from {source.relative_to(skills.REPO_ROOT)} — "
         "re-run scripts/sync-skills.sh from the repo root"
     )
+
+
+# --- Codex MCP wiring (static: the file shape Codex 0.147 actually reads) -----
+#
+# Two mistakes here register nothing and are invisible until a tool call fails:
+# Codex reads the camelCase `mcpServers` key (a `mcp_servers` key is ignored
+# outright), and it substitutes no placeholder at all when spawning the server —
+# `${CODEX_PLUGIN_ROOT}` is not a variable it knows.
+
+
+def test_mcp_config_uses_the_key_codex_reads():
+    import json
+
+    config = json.loads((skills.PLUGIN_ROOT / ".mcp.json").read_text(encoding="utf-8"))
+    assert "mcpServers" in config, (
+        "codex/dev-plugin/.mcp.json must declare `mcpServers` (camelCase); codex 0.147 "
+        f"ignores any other key, so it would register no server at all. Found: {list(config)}"
+    )
+    servers = config["mcpServers"]
+    assert "mariadb" in servers, f"no `mariadb` server in .mcp.json: {list(servers)}"
+
+
+def test_mcp_config_avoids_a_placeholder_codex_cannot_expand():
+    raw = (skills.PLUGIN_ROOT / ".mcp.json").read_text(encoding="utf-8")
+    assert "${CODEX_PLUGIN_ROOT}" not in raw, (
+        "codex/dev-plugin/.mcp.json uses ${CODEX_PLUGIN_ROOT}, which codex does not know. "
+        "Use ${CLAUDE_PLUGIN_ROOT} (the only one it recognises) and register the working "
+        "server with scripts/setup-codex-mcp.sh."
+    )
