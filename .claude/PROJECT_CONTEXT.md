@@ -62,7 +62,7 @@
   - **New static test `test_additional_skill_matches_its_source`** (×3 suites, 11 params) closes exactly that hole: each vendored `additional`-layer skill must be byte-identical to its `additional-skills/*/<name>/SKILL.md` source. `lib/skills.py` gained `additional_skills()` + `additional_sources(name)` (lookup is **by name** — the manifest records the layer but not the `sql`/`rest`/`schema-management` subfolder; returns a *list*, since the same name in two subfolders is itself a fault). Three distinct failure messages (no source / >1 source / content differs → "re-run scripts/sync-skills.sh"). **Verified it actually fails** by perturbing a vendored copy. Only `additional-skills/` is covered — upstream-sourced skills have no local source to compare against.
   - **GPL-2.0 copyright header on all 46 source files** (+ `SECURITY.md` added): 23 Python modules above the docstring (keeps `__doc__` intact), `run_tests.py` + 11 shell scripts after the shebang (merged into the existing comment block), 3 empty `lib/__init__.py` header-only, 7 batch launchers as `rem` **after `@echo off`**, `pi/dev-plugin/src/index.ts` as `//`. Block = the MariaDB shell plugins' one **minus the `SPDX-License-Identifier` line and its `#` spacer** (user's call). Pure insertion: +696 / −0. YAML (`.github/workflows/*.yml`, `docker-compose.yml`), `requirements.txt` and the JSON manifests have **no** header.
 - **In progress:** the pi suite on `wip/piTests` (this commit). (pi harness is dev only; sql/contributor pi variants not yet created, and pi has no test suite — `run_tests.py` will pick one up automatically once `pi/dev-plugin-test*/conftest.py` exists.)
-- **CI left alone on purpose:** `.github/workflows/*-test.yml` still use `setup-python` + a per-suite `pytest`; GitHub runners have no `mariadb-shell`, so the shell-Python runner is a local/dev-machine path only. The per-suite `pyproject.toml` files stay authoritative for that.
+- **CI left alone on purpose:** `.github/workflows/*-test.yml` (now four, incl. `pi-test.yml` — static + db only, no eval job) still use `setup-python` + a per-suite `pytest`; GitHub runners have no `mariadb-shell`, so the shell-Python runner is a local/dev-machine path only. The per-suite `pyproject.toml` files stay authoritative for that.
 - **Known issues:** none blocking.
 
 ## Files that matter
@@ -92,8 +92,7 @@
 3. **Confirm `github.com/mariadb/ai-plugins` exists** — the READMEs now tell users `/plugin marketplace add mariadb/ai-plugins`, which fails until the tracking fork is there. (`origin` here is still `mariadb-corporation/ai-plugins`.)
 4. (Optional) Delete the stale `wip/updateMcpLauncher` branch, local and remote — its content is in `main` under different SHAs.
 5. (Optional) Propagate the REST/MSM e2e steps to the opencode suite (codex has them now; pi cannot until `pi-mcp-adapter` is part of the test wiring).
-6. (Optional) A `pi-test.yml` CI workflow — pi is the one harness with a suite but no workflow.
-7. (Optional) Teach CI to use `run_tests.py` — needs a `mariadb-shell` on the runner; until then the workflows keep calling `pytest` per suite (see "CI left alone on purpose").
+6. (Optional) Teach CI to use `run_tests.py` — needs a `mariadb-shell` on the runner; until then the workflows keep calling `pytest` per suite (see "CI left alone on purpose").
 
 ## Gotchas / things not to repeat
 

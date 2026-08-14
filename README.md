@@ -9,7 +9,7 @@ curated set of agent **skills** and wires up the native, high-performance
 | [Claude Code](https://claude.com/claude-code) | [`claude`](claude) | [`claude/dev-plugin-tests`](claude/dev-plugin-tests) | [claude-test.yml](.github/workflows/claude-test.yml) |
 | [Codex](https://openai.com/codex) | [`codex`](codex) | [`codex/dev-plugin-test`](codex/dev-plugin-test) | [codex-test.yml](.github/workflows/codex-test.yml) |
 | [OpenCode](https://opencode.ai) | [`opencode`](opencode) | [`opencode/dev-plugin-test`](opencode/dev-plugin-test) | [opencode-test.yml](.github/workflows/opencode-test.yml) |
-| [Pi](https://pi.dev) | [`pi`](pi) | [`pi/dev-plugin-tests`](pi/dev-plugin-tests) | — (not yet) |
+| [Pi](https://pi.dev) | [`pi`](pi) | [`pi/dev-plugin-tests`](pi/dev-plugin-tests) | [pi-test.yml](.github/workflows/pi-test.yml) |
 
 ## Installation
 
@@ -173,7 +173,7 @@ ai-plugins/
 ├── .coveragerc                         # coverage config (reports in test-results/ + htmlcov/)
 ├── scripts/
 │   └── sync-skills.sh                 # vendors skills into every plugin
-└── .github/workflows/                 # one CI workflow per agent
+└── .github/workflows/                 # one CI workflow per harness (pi has no eval job)
 ```
 
 ## Skills sync
@@ -303,9 +303,9 @@ pytest -m e2e                   # opt-in, drives the harness CLI (claude, codex,
 The eval tier uses the SDK matching its agent: the Claude and OpenCode suites call
 the Anthropic SDK (`claude-opus-4-8`, needs `ANTHROPIC_API_KEY`); the Codex suite
 calls the OpenAI SDK. The pi suite has no eval tier at all — see the tier notes
-above. CI runs `static` on every push/PR, `db` on PRs, and `eval` nightly / on
-demand; the `e2e` tiers are local-only, since they need an authenticated CLI and a
-`mariadb-shell` on the machine.
+above. CI runs `static` on every push/PR and `db` on PRs for all four suites, and `eval`
+nightly / on demand for the three that have it; the `e2e` tiers are local-only,
+since they need an authenticated CLI and a `mariadb-shell` on the machine.
 
 ## License
 
