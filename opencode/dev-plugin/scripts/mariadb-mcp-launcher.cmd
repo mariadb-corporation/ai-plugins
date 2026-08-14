@@ -46,8 +46,10 @@ rem   MARIADB_SHELL_BINDIR      Where install.ps1 writes its shims, and where
 rem                             step 3 looks.
 rem   MARIADB_SHELL_PREFIX      Passed through: where install.ps1 unpacks releases.
 rem   MARIADB_SHELL_TAG         Passed through: install this release tag.
-rem   MARIADB_SHELL_PRERELEASE  Passed through: set to 1 to allow a prerelease
-rem                             (install.ps1 skips prereleases by default).
+rem   MARIADB_SHELL_PRERELEASE  Normally unset: a stable release is preferred, and
+rem                             a prerelease installed only when there is no stable
+rem                             one. Set to 1 to go straight for a prerelease, or
+rem                             to 0 to refuse one entirely.
 rem   MARIADB_SHELL_REPO        Passed through: owner/repo to install from.
 rem   MARIADB_SHELL_TOKEN       Token for a private repository. GH_TOKEN and
 rem                             GITHUB_TOKEN are consulted too, then
@@ -120,10 +122,42 @@ powershell -NoProfile -ExecutionPolicy Bypass -Command ^
 if errorlevel 1 goto download_failed
 
 rem MARIADB_SHELL_BINDIR is already in this process's environment, so the shims
-rem land exactly where step 3 looks; MARIADB_SHELL_PRERELEASE and
-rem MARIADB_SHELL_TAG are read by the installer from there too.
+rem land exactly where step 3 looks; MARIADB_SHELL_TAG is read by the installer
+rem from there too.
+rem
+rem Prereleases: wanted when they are all there is, but not preferred over a
+rem stable release. install.ps1 skips them exactly as /releases/latest does, so a
+rem repository whose only release is a prerelease has nothing to install and this
+rem first attempt fails -- the retry below then gets it, with no decision needed
+rem from whoever is running this. MARIADB_SHELL_PRERELEASE short-circuits the
+rem choice: truthy goes straight for the prerelease, an explicit 0/false/no keeps
+rem the install stable-only.
+if not defined MARIADB_SHELL_PRERELEASE goto install_stable_first
+if /i "%MARIADB_SHELL_PRERELEASE%"=="0" goto install_stable_only
+if /i "%MARIADB_SHELL_PRERELEASE%"=="false" goto install_stable_only
+if /i "%MARIADB_SHELL_PRERELEASE%"=="no" goto install_stable_only
+if /i "%MARIADB_SHELL_PRERELEASE%"=="off" goto install_stable_only
+rem Truthy: the installer reads MARIADB_SHELL_PRERELEASE itself, so one run does it.
 powershell -NoProfile -ExecutionPolicy Bypass -File "%PS_INSTALLER%" 1>&2
 if errorlevel 1 goto installer_failed
+goto installer_done
+
+:install_stable_only
+set "MARIADB_SHELL_PRERELEASE="
+powershell -NoProfile -ExecutionPolicy Bypass -File "%PS_INSTALLER%" 1>&2
+if errorlevel 1 goto installer_failed
+goto installer_done
+
+:install_stable_first
+powershell -NoProfile -ExecutionPolicy Bypass -File "%PS_INSTALLER%" 1>&2
+if not errorlevel 1 goto installer_done
+echo mariadb-mcp-launcher: no stable release to install; retrying with a prerelease 1>&2
+set "MARIADB_SHELL_PRERELEASE=1"
+powershell -NoProfile -ExecutionPolicy Bypass -File "%PS_INSTALLER%" 1>&2
+if errorlevel 1 goto installer_failed
+echo mariadb-mcp-launcher: installed a prerelease -- no stable %MARIADB_SHELL_REPO% release is published yet 1>&2
+
+:installer_done
 del /q "%PS_INSTALLER%" >nul 2>&1
 goto after_install
 

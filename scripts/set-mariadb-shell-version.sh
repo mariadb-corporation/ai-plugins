@@ -19,9 +19,10 @@
 # every plugin in this repo.
 #
 # Updates the MARIADB_SHELL_VERSION value in each plugin's MCP config
-# (.mcp.json / opencode.json, and the entry setup-pi-mcp.sh writes for pi) AND
+# (.mcp.json / opencode.json, and the entries the setup-*-mcp scripts write for
+# codex and pi) AND
 # the fallback default baked into the launcher scripts (mariadb-mcp-launcher.sh/
-# .cmd and their _disabled variants), for both the dev-* and sql-* plugins across
+# .cmd), for both the dev-* and sql-* plugins across
 # claude/, codex/, opencode/ and pi/.
 # Keeping all of them on the same version means every plugin accepts the same
 # binary (see scripts/mariadb-mcp-launcher.sh — the version is the minimum each
@@ -56,9 +57,9 @@ while IFS= read -r f; do files+=("$f"); done < <(
        -type f \( \
          -name 'mariadb-mcp-launcher.sh' -o \
          -name 'mariadb-mcp-launcher.cmd' -o \
-         -name 'mariadb-mcp-launcher.sh_disabled' -o \
-         -name 'mariadb-mcp-launcher.cmd_disabled' -o \
          -name 'setup-pi-mcp.sh' -o \
+         -name 'setup-codex-mcp.sh' -o \
+         -name 'setup-codex-mcp.cmd' -o \
          -name '.mcp.json' -o \
          -name 'opencode.json' -o \
          -name 'README.md' \

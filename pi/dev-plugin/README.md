@@ -97,8 +97,9 @@ run — `$MARIADB_SHELL_BIN`, one on `PATH`, or an existing install in
 `~/.local/bin` (`%LOCALAPPDATA%\Programs\mariadb-shell\bin` on Windows) — and
 otherwise installs the newest release there with the shell's own installer. Then
 it starts that binary as the MCP server. Later runs reuse the install. Set
-`GH_TOKEN` (or run `gh auth login`) while `mariadb-shell` is private, and
-`MARIADB_SHELL_PRERELEASE=1` until a stable release is published.
+`GH_TOKEN` (or run `gh auth login`) while `mariadb-shell` is private; the release
+channel needs no setting, as the launcher falls back to a prerelease while no
+stable `mariadb-shell` is published.
 
 ## The MCP server entry
 

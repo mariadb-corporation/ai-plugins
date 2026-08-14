@@ -13,11 +13,10 @@ curated set of agent **skills** and wires up the native, high-performance
 
 ## Installation
 
-> NOTE: The MCP server configuration/loading scripts are currently disabled until the MariaDB Shell is available.
-> While the `mariadb-shell` repo is private, set `GH_TOKEN` (or run `gh auth login`)
-> so both the installer download and the release download can authenticate; and
-> set `MARIADB_SHELL_PRERELEASE=1` until a stable release is published, since the
-> installer skips prereleases.
+> NOTE: While the `mariadb-shell` repo is private, set `GH_TOKEN` (or run
+> `gh auth login`) so both the installer download and the release download can
+> authenticate. No release-channel setting is needed: the launcher prefers a
+> stable release and falls back to a prerelease when there is no stable one yet.
 
 ### Claude Code
 
@@ -39,6 +38,13 @@ server would fail to start:
 
 ```sh
 codex/dev-plugin/scripts/setup-codex-mcp.sh     # --remove to unregister
+```
+
+On native Windows run the batch counterpart instead — it registers the `.cmd`
+launcher, which is the one Codex can actually spawn there:
+
+```bat
+codex\dev-plugin\scripts\setup-codex-mcp.cmd
 ```
 
 Reload (`/reload-plugins`) if Codex doesn't pick it up automatically. See

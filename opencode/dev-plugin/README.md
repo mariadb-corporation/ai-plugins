@@ -92,9 +92,11 @@ Windows users should point the `command` at
 `MARIADB_SHELL_TOKEN`, or simply run `gh auth login`). The token is needed twice:
 to fetch the installer, and for the installer to download the release.
 
-**Prereleases:** the installer skips prereleases, as `releases/latest` does. Set
-`MARIADB_SHELL_PRERELEASE=1` to let it pick one — necessary until a stable
-`mariadb-shell` release is published.
+**Prereleases:** nothing to set. The installer skips prereleases, as
+`releases/latest` does, so the launcher tries a stable release first and retries
+with `--pre-release` when there is none — which is the case until a stable
+`mariadb-shell` is published. `MARIADB_SHELL_PRERELEASE=1` skips straight to a
+prerelease; `=0` refuses one and keeps the install stable-only.
 
 ### Configure what the server may access
 
