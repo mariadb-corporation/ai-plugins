@@ -51,8 +51,10 @@
 #   MARIADB_SHELL_PREFIX      Passed through: where install.sh unpacks releases.
 #   MARIADB_SHELL_TAG         Passed through: install this release tag rather than
 #                             the newest.
-#   MARIADB_SHELL_PRERELEASE  Set to 1 to let the installer pick a prerelease
-#                             (install.sh skips prereleases by default).
+#   MARIADB_SHELL_PRERELEASE  Normally unset: a stable release is preferred, and a
+#                             prerelease is installed only when there is no stable
+#                             one to install. Set to 1 to go straight for a
+#                             prerelease, or to 0 to refuse one entirely.
 #   MARIADB_SHELL_REPO        Passed through: owner/repo to install from.
 #   MARIADB_SHELL_TOKEN       Token for a private repository. GH_TOKEN and
 #                             GITHUB_TOKEN are consulted too, then `gh auth token`
@@ -173,24 +175,49 @@ TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
 
 install_failed=0
+# run_installer [extra args...] — install, with output kept off stdout.
+#
+# BINDIR is exported so the installer links where step 3 looks. Its own progress
+# output would corrupt the MCP stream, hence the redirect to stderr.
+run_installer() {
+  MARIADB_SHELL_BINDIR="$BINDIR" \
+  MARIADB_SHELL_TOKEN="$TOKEN" \
+  sh "$TMP/install.sh" "$@" >&2
+}
+
 log "no suitable mariadb-shell found; installing from $REPO ..."
 if fetch "$INSTALLER_URL" "$TMP/install.sh"; then
-  INSTALL_ARGS=()
+  # Prereleases: wanted when they are all there is, but not preferred over a
+  # stable release. install.sh skips them exactly as /releases/latest does, so a
+  # repository whose only release is a prerelease has nothing to install and the
+  # first attempt fails — retrying with --pre-release then gets it, and needs no
+  # decision from whoever is running this.
+  #
+  # MARIADB_SHELL_PRERELEASE still short-circuits the choice: truthy takes the
+  # prerelease straight away (one fewer round trip when stable is known to be
+  # absent), and an explicit 0/false/no refuses the fallback and keeps this
+  # install stable-only.
   case "${MARIADB_SHELL_PRERELEASE:-}" in
-    ""|0|false|no) ;;
-    *) INSTALL_ARGS+=(--pre-release) ;;
+    1|true|yes|on) prefer_prerelease=1; allow_fallback=1 ;;
+    0|false|no|off) prefer_prerelease=0; allow_fallback=0 ;;
+    *) prefer_prerelease=0; allow_fallback=1 ;;
   esac
 
-  # BINDIR is exported so the installer links where step 3 looks. Its own
-  # progress output would corrupt the MCP stream, hence the redirect to stderr.
-  if MARIADB_SHELL_BINDIR="$BINDIR" \
-     MARIADB_SHELL_TOKEN="$TOKEN" \
-     sh "$TMP/install.sh" ${INSTALL_ARGS[@]+"${INSTALL_ARGS[@]}"} >&2; then
+  if [ "$prefer_prerelease" = 1 ]; then
+    run_installer --pre-release || install_failed=1
+  elif run_installer; then
     :
+  elif [ "$allow_fallback" = 1 ]; then
+    log "no stable release to install; retrying with --pre-release"
+    if run_installer --pre-release; then
+      log "installed a prerelease — no stable $REPO release is published yet"
+    else
+      install_failed=1
+    fi
   else
     install_failed=1
-    log "the mariadb-shell installer failed"
   fi
+  [ "$install_failed" = 0 ] || log "the mariadb-shell installer failed"
 else
   install_failed=1
   log "could not download the installer from $INSTALLER_URL"

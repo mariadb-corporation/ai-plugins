@@ -26,8 +26,18 @@ project adheres to [Semantic Versioning](https://semver.org/).
   spawns a plugin's MCP server, so a plugin cannot register a working one; the
   script does it with `codex mcp add` and an absolute path. Registering is now a
   documented second installation step.
+- **New `scripts/setup-codex-mcp.cmd`** for native Windows. The bash script needs
+  a shell Windows does not have, and the entry it writes names the `.sh` launcher
+  — which Codex, spawning the command directly, cannot execute there. The batch
+  version registers the `.cmd` launcher instead.
 
 ### Changed
+
+- The launcher now **prefers a stable release and falls back to a prerelease**
+  when there is no stable one to install, so no `MARIADB_SHELL_PRERELEASE=1` is
+  needed while `mariadb-shell` has only prereleases. Setting it to `1` still skips
+  straight to a prerelease, and `0` refuses one and keeps the install
+  stable-only.
 
 - The `mariadb-shell` launcher no longer downloads and unpacks release assets
   itself. It now runs the first shell that satisfies `MARIADB_SHELL_VERSION`

@@ -28,6 +28,11 @@
 # $CODEX_HOME/config.toml with the absolute path resolved here, which does work —
 # and it takes precedence over the plugin-provided entry of the same name.
 #
+# On Windows use setup-codex-mcp.cmd instead, and not merely because this needs
+# bash: the entry below names the .sh launcher, which Codex — which spawns the
+# command directly — cannot execute on a native Windows host. The .cmd script
+# registers the .cmd launcher.
+#
 # Usage:
 #   codex/dev-plugin/scripts/setup-codex-mcp.sh              # register (or update)
 #   codex/dev-plugin/scripts/setup-codex-mcp.sh --remove     # unregister
@@ -40,7 +45,7 @@
 set -euo pipefail
 
 SERVER_NAME="mariadb"
-SHELL_VERSION="${MARIADB_SHELL_VERSION:-26.8.0}"
+SHELL_VERSION="26.8.0"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PLUGIN_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"

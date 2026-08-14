@@ -8,6 +8,14 @@ project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- The MCP launcher scripts are **enabled**: they were shipped as
+  `mariadb-mcp-launcher.sh_disabled` / `.cmd_disabled`, so the `command` in
+  `opencode.json` pointed at a file that did not exist.
+- The launcher now **prefers a stable release and falls back to a prerelease**
+  when there is no stable one to install, so no `MARIADB_SHELL_PRERELEASE=1` is
+  needed while `mariadb-shell` has only prereleases. Setting it to `1` still skips
+  straight to a prerelease, and `0` refuses one and keeps the install
+  stable-only.
 - The `mariadb-shell` launcher no longer downloads and unpacks release assets
   itself. It now runs the first shell that satisfies `MARIADB_SHELL_VERSION`
   (`$MARIADB_SHELL_BIN`, one on `PATH`, or an existing install in `~/.local/bin`

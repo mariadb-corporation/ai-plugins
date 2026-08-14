@@ -30,6 +30,13 @@ required:
 codex/dev-plugin/scripts/setup-codex-mcp.sh     # --remove to unregister
 ```
 
+On native Windows run the batch counterpart instead — it registers the `.cmd`
+launcher, which is the one Codex can actually spawn there:
+
+```bat
+codex\dev-plugin\scripts\setup-codex-mcp.cmd
+```
+
 Then reload (`/reload-plugins`) if Codex doesn't pick it up automatically. On first
 use of a MariaDB tool, the launcher looks for a `mariadb-shell` it can run —
 `$MARIADB_SHELL_BIN`, one on `PATH`, or an existing install in `~/.local/bin`
@@ -62,7 +69,7 @@ has a second step.** Codex stores the `command` verbatim and expands nothing whe
 it spawns the process, so the placeholder — which a plugin has no way to avoid, as
 it cannot know the content-addressed directory Codex will install it into — is
 exec'd literally and the first tool call fails with `MCP startup failed: No such
-file or directory`. [scripts/setup-codex-mcp.sh](scripts/setup-codex-mcp.sh) works
+file or directory`. [scripts/setup-codex-mcp.sh](scripts/setup-codex-mcp.sh) (or [.cmd](scripts/setup-codex-mcp.cmd) on native Windows) works
 around that with `codex mcp add`, writing an `[mcp_servers.mariadb]` entry into
 `$CODEX_HOME/config.toml` with the absolute path resolved on your machine; that
 entry takes precedence over the plugin's. The declaration above is kept so the
@@ -93,9 +100,11 @@ at [scripts/mariadb-mcp-launcher.cmd](scripts/mariadb-mcp-launcher.cmd).
 `MARIADB_SHELL_TOKEN`, or simply run `gh auth login`). The token is needed twice:
 to fetch the installer, and for the installer to download the release.
 
-**Prereleases:** the installer skips prereleases, as `releases/latest` does. Set
-`MARIADB_SHELL_PRERELEASE=1` to let it pick one — necessary until a stable
-`mariadb-shell` release is published.
+**Prereleases:** nothing to set. The installer skips prereleases, as
+`releases/latest` does, so the launcher tries a stable release first and retries
+with `--pre-release` when there is none — which is the case until a stable
+`mariadb-shell` is published. `MARIADB_SHELL_PRERELEASE=1` skips straight to a
+prerelease; `=0` refuses one and keeps the install stable-only.
 
 ### Configure what the server may access
 
