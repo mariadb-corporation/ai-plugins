@@ -22,6 +22,14 @@ MariaDB support through two parts:
 /plugin install dev@mariadb
 ```
 
+Then register the MCP server — installing the plugin gives Codex the skills, but
+Codex 0.147 cannot start a server a plugin declares (see below), so this step is
+required:
+
+```sh
+codex/dev-plugin/scripts/setup-codex-mcp.sh     # --remove to unregister
+```
+
 Then reload (`/reload-plugins`) if Codex doesn't pick it up automatically. On first
 use of a MariaDB tool, the launcher looks for a `mariadb-shell` it can run —
 `$MARIADB_SHELL_BIN`, one on `PATH`, or an existing install in `~/.local/bin`
@@ -31,13 +39,13 @@ binary as the MCP server. Later runs reuse the install.
 
 ## The MCP server
 
-Configured in [.mcp.json](.mcp.json):
+Declared in [.mcp.json](.mcp.json):
 
 ```json
 {
-  "mcp_servers": {
+  "mcpServers": {
     "mariadb": {
-      "command": "${CODEX_PLUGIN_ROOT}/scripts/mariadb-mcp-launcher.sh",
+      "command": "${CLAUDE_PLUGIN_ROOT}/scripts/mariadb-mcp-launcher.sh",
       "args": [],
       "env": { "MARIADB_SHELL_VERSION": "26.8.0" }
     }
@@ -45,9 +53,20 @@ Configured in [.mcp.json](.mcp.json):
 }
 ```
 
-`${CODEX_PLUGIN_ROOT}` resolves to this plugin's install directory. (Codex also
-honours the legacy `${CLAUDE_PLUGIN_ROOT}` alias for compatibility with plugins
-authored for Claude Code.)
+The key is `mcpServers` (camelCase) because that is the only one Codex reads — a
+`mcp_servers` key registers nothing at all — and `${CLAUDE_PLUGIN_ROOT}` because
+that is the only placeholder name Codex knows.
+
+**Codex 0.147 still cannot start this server, which is why the installation above
+has a second step.** Codex stores the `command` verbatim and expands nothing when
+it spawns the process, so the placeholder — which a plugin has no way to avoid, as
+it cannot know the content-addressed directory Codex will install it into — is
+exec'd literally and the first tool call fails with `MCP startup failed: No such
+file or directory`. [scripts/setup-codex-mcp.sh](scripts/setup-codex-mcp.sh) works
+around that with `codex mcp add`, writing an `[mcp_servers.mariadb]` entry into
+`$CODEX_HOME/config.toml` with the absolute path resolved on your machine; that
+entry takes precedence over the plugin's. The declaration above is kept so the
+plugin works unchanged once Codex expands it.
 
 The launcher ([scripts/mariadb-mcp-launcher.sh](scripts/mariadb-mcp-launcher.sh)):
 

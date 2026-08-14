@@ -33,6 +33,14 @@ curated set of agent **skills** and wires up the native, high-performance
 /plugin install dev@mariadb
 ```
 
+Then register the MCP server, which the plugin cannot do for itself on Codex
+0.147 — it stores a plugin's `command` verbatim and expands no placeholder, so the
+server would fail to start:
+
+```sh
+codex/dev-plugin/scripts/setup-codex-mcp.sh     # --remove to unregister
+```
+
 Reload (`/reload-plugins`) if Codex doesn't pick it up automatically. See
 [codex/dev-plugin/README.md](codex/dev-plugin/README.md) for details.
 
@@ -136,7 +144,8 @@ not pulled in by it. See [pi/README.md](pi/README.md).
 ```text
 ai-plugins/
 ├── .claude-plugin/marketplace.json    # Claude Code marketplace entry
-├── .codex-plugin/marketplace.json     # Codex marketplace entry
+├── .agents/plugins/marketplace.json   # Codex marketplace entry (the file codex reads)
+├── .codex-plugin/marketplace.json     # Codex plugin metadata (not read by codex 0.147)
 ├── additional-skills/                 # repo-local skills, grouped by topic subfolder
 │   ├── sql/                            # vendored into dev + sql (e.g. mariadb-schema-create-script)
 │   ├── rest/                           # MariaDB REST Service skills (dev only)

@@ -6,6 +6,23 @@ project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Fixed
+
+- **Codex 0.147 compatibility.** Three things kept this plugin from working as
+  installed, all of them silent:
+  - `.mcp.json` declared its server under `mcp_servers`; Codex reads only
+    `mcpServers`, so it registered nothing at all. Renamed.
+  - the command used `${CODEX_PLUGIN_ROOT}`, which is not a name Codex knows (it
+    recognises `${CLAUDE_PLUGIN_ROOT}` alone). Renamed.
+  - Codex resolves `dev@mariadb` through `.agents/plugins/marketplace.json`,
+    falling back to `.claude-plugin/marketplace.json`, and never reads
+    `.codex-plugin/marketplace.json` — so installing from this repo gave Codex the
+    *Claude* plugin. The repo now ships `.agents/plugins/marketplace.json`.
+- **New `scripts/setup-codex-mcp.sh`.** Codex expands no placeholder when it
+  spawns a plugin's MCP server, so a plugin cannot register a working one; the
+  script does it with `codex mcp add` and an absolute path. Registering is now a
+  documented second installation step.
+
 ### Changed
 
 - The `mariadb-shell` launcher no longer downloads and unpacks release assets

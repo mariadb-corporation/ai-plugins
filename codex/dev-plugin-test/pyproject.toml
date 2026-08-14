@@ -5,6 +5,7 @@ markers = [
     "static: structural/static checks of the skills (no DB, no LLM) — the always-on CI gate",
     "db: SQL executed against a live MariaDB 11.8 (needs a reachable server)",
     "eval: behavioral LLM evals (needs OPENAI_API_KEY; deselected by default)",
+    "e2e: full Codex CLI run with the plugin + MCP server (needs codex, mariadb-shell; deselected by default)",
 ]
-# By default skip the slow/expensive eval tier; opt in with `-m eval`.
-addopts = "-m 'not eval' -ra"
+# By default skip the slow/expensive eval + e2e tiers; opt in with `-m eval` / `-m e2e`.
+addopts = "-m 'not eval and not e2e' -ra"
