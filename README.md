@@ -13,11 +13,6 @@ curated set of agent **skills** and wires up the native, high-performance
 
 ## Installation
 
-> NOTE: While the `mariadb-shell` repo is private, set `GH_TOKEN` (or run
-> `gh auth login`) so both the installer download and the release download can
-> authenticate. No release-channel setting is needed: the launcher prefers a
-> stable release and falls back to a prerelease when there is no stable one yet.
-
 ### Claude Code
 
 ```text
