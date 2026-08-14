@@ -20,9 +20,13 @@
 #
 # Updates the "version" field in each plugin manifest (.claude-plugin/plugin.json
 # and .codex-plugin/plugin.json) and the "Version **x.y.z**" line in each
-# plugin README, for both the dev-* and sql-* plugins across claude/, codex/,
-# and opencode/. (OpenCode has no manifest version field, so only its README is
-# updated. CHANGELOG history is intentionally left untouched.)
+# plugin README, for the dev-*, sql-* and contributor-* plugins across claude/,
+# codex/, opencode/ and pi/, plus the repo-root package.json.
+#
+# Not every plugin carries both: OpenCode has no manifest version field, so only
+# its README is updated, and pi has no per-plugin manifest at all — the repo-root
+# package.json IS its manifest, which is why that file is in the list.
+# (CHANGELOG history is intentionally left untouched.)
 #
 # This is the plugin *package* version, NOT the mariadb-shell binary version —
 # use scripts/set-mariadb-shell-version.sh for the latter.
@@ -41,24 +45,31 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 command -v perl >/dev/null 2>&1 || { echo "error: perl is required" >&2; exit 1; }
 
-# Collect manifests and READMEs across every *-plugin dir (excludes test dirs).
+# Collect manifests and READMEs across every *-plugin dir (excludes test dirs),
+# then the repo-root package.json — pi's manifest, which lives outside them all.
 files=()
 while IFS= read -r f; do files+=("$f"); done < <(
   find "$REPO_ROOT"/claude/*-plugin \
        "$REPO_ROOT"/codex/*-plugin \
        "$REPO_ROOT"/opencode/*-plugin \
+       "$REPO_ROOT"/pi/*-plugin \
        -type f \( -name 'plugin.json' -o -name 'README.md' \) | sort
 )
+files+=("$REPO_ROOT/package.json")
 
 [ "${#files[@]}" -gt 0 ] || { echo "error: no plugin files found under $REPO_ROOT" >&2; exit 1; }
 
 # Two shapes the version appears in:
 #   plugin manifest JSON:  "version": "<v>"
 #   README header line:    Version **<v>**
+#
+# The JSON substitution is anchored to the start of a line so it can only ever
+# hit a "version" key that stands on its own — package.json also carries
+# dependency and peerDependency version ranges, and those must not be touched.
 V="$VERSION" perl -i -pe '
   my $v = $ENV{V};
-  s/("version"\s*:\s*")[^"]*(")/${1}${v}${2}/g;
-  s/^(Version \*\*)[^*]*(\*\*)$/${1}${v}${2}/g;
+  s/^(\s*"version"\s*:\s*")[^"]*(")/${1}${v}${2}/;
+  s/^(Version \*\*)[^*]*(\*\*)$/${1}${v}${2}/;
 ' "${files[@]}"
 
 echo "Set plugin version -> $VERSION in ${#files[@]} file(s):"

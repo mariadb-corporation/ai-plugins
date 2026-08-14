@@ -152,6 +152,21 @@ def statement_skills() -> list[Skill]:
 def skill_names() -> set[str]:
     return {s.name for s in load_skills()}
 
+def additional_skills() -> list[Skill]:
+    """The skills vendored from this repo's own ``additional-skills/`` tree."""
+    return [s for s in load_skills() if s.layer == "additional"]
+
+
+def additional_sources(name: str) -> list[Path]:
+    """Every ``additional-skills/<subfolder>/<name>/SKILL.md`` matching a skill name.
+
+    The manifest records the layer (``additional``) but not which subfolder
+    (``sql``/``rest``/``schema-management``) a skill came from, so the source is
+    found by name. A list is returned rather than a single path because two
+    subfolders holding the same skill name is itself a fault worth reporting.
+    """
+    return sorted((REPO_ROOT / "additional-skills").glob(f"*/{name}/SKILL.md"))
+
 
 def discover_disk_skills() -> list[Path]:
     """Every SKILL.md actually present under the plugin's skills/ (manifest-independent)."""

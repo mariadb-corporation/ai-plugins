@@ -9,12 +9,6 @@ Assume MariaDB version 11.8 if not explicitly told.
 
 Always create a comment before each database schema object, to describe what it is indented for.
 
-## What LLMs Often Miss
-
-| If the agent writes / suggests… | …prefer the MariaDB form |
-|---|---|
-| `id CHAR(36)` | `id UUID NOT NULL DEFAULT UUID_v7()` (MariaDB features a native UUID datatype) |
-
 ## Start and End Block that should always be added
 
 The SQL script should always start with the following block, to set the correct checks and SQL mode.
@@ -54,9 +48,9 @@ Read the `mariadb-create-database` skill before creating the SQL command.
 
 ## Tables
 
-Unless told otherwise, use the MariaDB native UUID datatype for primary key columns in tables that will be consumed by client applications. This helps to prevent enumeration attacks, hide business intelligence and prevent information leakage about record creation order.
+Unless told otherwise, use the MariaDB native UUID datatype for primary key columns for tables that will most likely be exposed directly to client applications. This is done in order to prevent enumeration attacks, hide business intelligence and prevent information leakage about record creation order.
 
-> **Important**: Always use the native MariaDB UUID datatype, usage: `UUID NOT NULL DEFAULT UUID_v7()`. Never use `CHAR(36)`.
+> **Important**: For UUIDs always use the native MariaDB UUID datatype, usage: `UUID NOT NULL DEFAULT UUID_v7()`. Never use `CHAR(36)`.
 
 Always use `CREATE OR REPLACE TABLE` unless told otherwise.
 

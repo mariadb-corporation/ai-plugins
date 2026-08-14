@@ -29,6 +29,7 @@ pytestmark = pytest.mark.static
 
 ALL_SKILLS = skills.load_skills()
 STATEMENT_SKILLS = skills.statement_skills()
+ADDITIONAL_SKILLS = skills.additional_skills()
 
 
 def _id(s: skills.Skill) -> str:
@@ -126,3 +127,31 @@ def test_expected_statement_skill_count():
     # granular statement skills. Bump this when sync-skills.sh pulls a ref that
     # legitimately adds or removes statement skills.
     assert len(STATEMENT_SKILLS) == 31, f"expected 31 statement skills, found {len(STATEMENT_SKILLS)}"
+
+
+# --- vendored `additional` skills match their source in this repo ------------
+#
+# `additional-skills/` is the editable source; the copies under each plugin's
+# skills/ are vendored by scripts/sync-skills.sh. Editing the source without
+# re-running that script leaves every plugin shipping stale text, which no other
+# check would notice: the manifest still agrees with what is on disk, and the
+# stale copy still parses. This is the check that notices.
+
+
+@pytest.mark.parametrize("skill", ADDITIONAL_SKILLS, ids=_id)
+def test_additional_skill_matches_its_source(skill: skills.Skill):
+    sources = skills.additional_sources(skill.name)
+    assert sources, (
+        f"no source for the vendored {skill.name!r} under additional-skills/*/ — "
+        "it was removed from (or renamed in) the source tree without re-running "
+        "scripts/sync-skills.sh"
+    )
+    assert len(sources) == 1, (
+        f"{skill.name!r} exists in more than one additional-skills/ subfolder: "
+        + ", ".join(str(p.relative_to(skills.REPO_ROOT)) for p in sources)
+    )
+    source = sources[0]
+    assert skill.path.read_text(encoding="utf-8") == source.read_text(encoding="utf-8"), (
+        f"vendored {skill.rel_path} differs from {source.relative_to(skills.REPO_ROOT)} — "
+        "re-run scripts/sync-skills.sh from the repo root"
+    )

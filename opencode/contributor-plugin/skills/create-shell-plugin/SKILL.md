@@ -1,11 +1,11 @@
 ---
 name: create-shell-plugin
-description: Scaffold a MySQL/MariaDB Shell plugin following project best practices. Use when the user asks to create, scaffold, or add a shell plugin (or a new global object / command / function exposed in the shell), especially in Python using the plugin decorators. Produces a ready-to-load plugin folder with a correctly documented init.py (or init.js).
+description: Scaffold a MariaDB Shell plugin following project best practices. Use when the user asks to create, scaffold, or add a shell plugin (or a new global object / command / function exposed in the shell), especially in Python using the plugin decorators. Produces a ready-to-load plugin folder with a correctly documented init.py (or init.js).
 ---
 
 # Create a Shell Plugin
 
-Shell plugins extend the `mysqlsh` shell with new global objects and functions that
+Shell plugins extend the `mariadb-shell` shell with new global objects and functions that
 are available from the interactive shell, scripts, and the command-line interface
 (CLI). This skill scaffolds a plugin that follows the conventions enforced by the
 plugin registrar, so the generated code loads and documents itself correctly on the
@@ -21,8 +21,8 @@ The loader is `Mysql_shell::get_plugins` in [src/mysqlsh/mysql_shell.cc](src/mys
 - Search paths (see `Mysql_shell::get_plugins` at [src/mysqlsh/mysql_shell.cc:998](src/mysqlsh/mysql_shell.cc#L998)):
   - `<library_folder>/plugins` — built-in/bundled plugins (skipped if
     `--disable-builtin-plugins`).
-  - `${MYSQLSH_USER_CONFIG_HOME}/plugins` — per-user (default `~/.mysqlsh/plugins`
-    on Linux/macOS, `%AppData%\MySQL\mysqlsh\plugins` on Windows). Skipped if
+  - `${MARIADB_SHELL_USER_CONFIG_HOME}/plugins` — per-user (default `~/.mariadb-shell/plugins`
+    on Linux/macOS, `%AppData%\MariaDB\mariadb-shell\plugins` on Windows). Skipped if
     `--disable-plugins`. If the `plugins_path` shell option is set, it replaces this
     user path with the listed folders (`:`-separated, `;` on Windows).
 - Loading is recursive: a folder without an init file may contain sub-folders that
@@ -33,7 +33,7 @@ The loader is `Mysql_shell::get_plugins` in [src/mysqlsh/mysql_shell.cc](src/mys
 
 Decide **where** to write before scaffolding:
 - Bundled / repo-tracked plugin → `python/plugins/<name>/init.py` in this repo.
-- Personal / user plugin → `${MYSQLSH_USER_CONFIG_HOME:-~/.mysqlsh}/plugins/<name>/init.py`.
+- Personal / user plugin → `${MARIADB_SHELL_USER_CONFIG_HOME:-~/.mariadb-shell}/plugins/<name>/init.py`.
 
 If the user has not said which, ask. Default to the user config path for one-off
 plugins, the repo `python/plugins/` for something meant to ship.
@@ -76,7 +76,7 @@ def create_instance(name, region="us-east-1", **options):
   chain). A function can also attach to a nested object declared as an inner class.
 - Flags control availability:
   - `shell=True` (default) — available in the interactive shell and scripts.
-  - `cli=True` — also exposed as a CLI command (`mysqlsh -- mycloud create instance ...`).
+  - `cli=True` — also exposed as a CLI command (`mariadb-shell -- mycloud create instance ...`).
     `cli=True` requires `shell=True`.
   - `web=True` — registered for web/MRS clients. Can be `web=False`/`True`.
 - The decorator wraps the call so tracebacks are logged at `debug` level instead of
@@ -124,7 +124,7 @@ consult it for edge cases (required dict params, nested options, web-only functi
 ## Accessing shell facilities from a plugin
 
 ```python
-from mysqlsh import globals          # globals.shell, globals.session, globals.dba
+from mysqlsh import globals          # globals.shell, globals.session, globals.db
 from mysqlsh import Error, DBError, mysql
 ```
 
@@ -149,8 +149,8 @@ from mysqlsh import Error, DBError, mysql
    focused on registration.
 5. **Mirror the project license header** at the top of every file — copy the GPLv2
    header used by existing plugins in [python/plugins/debug/init.py](python/plugins/debug/init.py).
-6. **Tell the user how to try it**: it loads on the next `mysqlsh` start; verify with
-   `\? <object>` (help), call it from JS/Py, or `mysqlsh -- <object> <function> ...`
+6. **Tell the user how to try it**: it loads on the next `mariadb-shell` start; verify with
+   `\? <object>` (help), call it from Python, or `mariadb-shell -- <object> <function> ...`
    for CLI. If running from the repo build, plugins under `python/plugins/` are
    bundled into the build's share path.
 
