@@ -23,8 +23,8 @@ curated set of agent **skills** and wires up the native, high-performance
 ### Codex
 
 ```text
-/plugin marketplace add mariadb/ai-plugins
-/plugin install dev@mariadb
+/plugins marketplace add mariadb/ai-plugins
+/plugins install dev@mariadb
 ```
 
 Reload (`/reload-plugins`) if Codex doesn't pick it up automatically. See
