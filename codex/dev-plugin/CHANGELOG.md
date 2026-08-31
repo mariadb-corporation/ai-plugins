@@ -24,10 +24,19 @@ project adheres to [Semantic Versioning](https://semver.org/).
   extensionless file as not being a Windows binary.
 
   Verified against Codex 0.151.0 on both platforms, each installing the plugin
-  into a clean `CODEX_HOME` with no `[mcp_servers]` entry of its own: on macOS the
-  server completed the MCP handshake, and on Windows 11 (ARM64) Codex spawned
-  `mariadb-mcp-launcher.cmd` — proven by a marker probe in which only the `.cmd`
-  wrote its marker and the extensionless file never ran at all.
+  into a clean `CODEX_HOME` with no `[mcp_servers]` entry of its own. On macOS and
+  on Windows 11 (ARM64) alike the server came up and completed the MCP handshake,
+  and on Windows a tool call reached it and returned a response. Codex's own
+  resolver log states the choice outright there:
+
+  ```text
+  DEBUG codex_rmcp_client::program_resolver: Resolved "./scripts/mariadb-mcp-launcher"
+    to "...\26.8.0\.\scripts\mariadb-mcp-launcher.cmd"
+  ```
+
+  A marker probe confirms the other half independently: with both launcher files
+  present and each writing a distinct marker, only the `.cmd` wrote one — the
+  extensionless file never executed.
 
   `scripts/setup-codex-mcp.{sh,cmd}` are kept as a documented fallback rather
   than a required step.
