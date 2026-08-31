@@ -21,9 +21,13 @@ project adheres to [Semantic Versioning](https://semver.org/).
   Codex resolves the program per platform: unchanged on macOS/Linux, where the
   kernel runs the new shim of that name through its shebang; through `%PATHEXT%`
   on Windows, where it lands on `mariadb-mcp-launcher.cmd` instead and skips the
-  extensionless file as not being a Windows binary. Verified end-to-end on
-  macOS against Codex 0.151.0; the Windows leg follows from how Codex's own
-  program resolver works and wants confirming on a Windows host.
+  extensionless file as not being a Windows binary.
+
+  Verified against Codex 0.151.0 on both platforms, each installing the plugin
+  into a clean `CODEX_HOME` with no `[mcp_servers]` entry of its own: on macOS the
+  server completed the MCP handshake, and on Windows 11 (ARM64) Codex spawned
+  `mariadb-mcp-launcher.cmd` — proven by a marker probe in which only the `.cmd`
+  wrote its marker and the extensionless file never ran at all.
 
   `scripts/setup-codex-mcp.{sh,cmd}` are kept as a documented fallback rather
   than a required step.
