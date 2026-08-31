@@ -27,19 +27,13 @@ curated set of agent **skills** and wires up the native, high-performance
 /plugin install dev@mariadb
 ```
 
-Then register the MCP server, which the plugin cannot do for itself on Codex
-0.147 — it stores a plugin's `command` verbatim and expands no placeholder, so the
-server would fail to start:
+That is all: the plugin declares its MCP server as a relative, extensionless
+command paired with `"cwd": "."`, which is the one shape Codex both resolves (it
+expands no placeholder) and can spawn on every OS. Should the server not come up,
+register it explicitly as a fallback — `setup-codex-mcp.cmd` on native Windows:
 
 ```sh
 codex/dev-plugin/scripts/setup-codex-mcp.sh     # --remove to unregister
-```
-
-On native Windows run the batch counterpart instead — it registers the `.cmd`
-launcher, which is the one Codex can actually spawn there:
-
-```bat
-codex\dev-plugin\scripts\setup-codex-mcp.cmd
 ```
 
 Reload (`/reload-plugins`) if Codex doesn't pick it up automatically. See
