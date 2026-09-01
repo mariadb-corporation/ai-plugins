@@ -34,12 +34,63 @@
 #
 # Usage:
 #   scripts/set-mariadb-shell-version.sh <version>
-#   scripts/set-mariadb-shell-version.sh 26.8.0
+#   scripts/set-mariadb-shell-version.sh 26.8.1
+#   scripts/set-mariadb-shell-version.sh --help
 
 set -euo pipefail
 
+usage() {
+  cat <<'USAGE'
+set-mariadb-shell-version.sh — pin the mariadb-shell MCP server version across
+every plugin in this repo.
+
+Usage:
+  scripts/set-mariadb-shell-version.sh <version>
+  scripts/set-mariadb-shell-version.sh --help
+
+Arguments:
+  <version>   The mariadb-shell binary version to require, e.g. 26.8.1. This is
+              a *minimum*: each launcher accepts any install at or above it.
+
+Updates, across claude/, codex/, opencode/ and pi/:
+  - MARIADB_SHELL_VERSION in each plugin's MCP config (.mcp.json, opencode.json)
+  - the fallback default in the launchers (mariadb-mcp-launcher.sh / .cmd)
+  - the version the setup-*-mcp scripts write (codex, pi)
+  - the MARIADB_SHELL_VERSION shown in each plugin README
+
+This is the mariadb-shell *binary* version, NOT the plugin package version —
+use scripts/set-plugin-version.sh for the latter.
+USAGE
+}
+
+case "${1:-}" in
+  -h | --help | help)
+    usage
+    exit 0
+    ;;
+esac
+
 VERSION="${1:-}"
-[ -n "$VERSION" ] || { echo "usage: $0 <version>   (e.g. 26.8.0)" >&2; exit 1; }
+if [ -z "$VERSION" ]; then
+  echo "error: no version given" >&2
+  echo >&2
+  usage >&2
+  exit 1
+fi
+
+# Reject anything that is not version-shaped rather than writing it into 35
+# files. A mistyped flag used to be accepted as the version and substituted
+# everywhere, which is a tedious thing to undo.
+case "$VERSION" in
+  -*)
+    echo "error: unknown option '$VERSION' (see --help)" >&2
+    exit 1
+    ;;
+esac
+if ! printf '%s' "$VERSION" | grep -Eq '^[0-9]+(\.[0-9]+)*(-[0-9A-Za-z.]+)?$'; then
+  echo "error: '$VERSION' is not a version (expected digits and dots, e.g. 26.8.1)" >&2
+  exit 1
+fi
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"

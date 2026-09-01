@@ -33,12 +33,67 @@
 #
 # Usage:
 #   scripts/set-plugin-version.sh <version>
-#   scripts/set-plugin-version.sh 26.7.0
+#   scripts/set-plugin-version.sh 26.8.1
+#   scripts/set-plugin-version.sh --help
 
 set -euo pipefail
 
+usage() {
+  cat <<'USAGE'
+set-plugin-version.sh — set the plugin package version across every plugin in
+this repo.
+
+Usage:
+  scripts/set-plugin-version.sh <version>
+  scripts/set-plugin-version.sh --help
+
+Arguments:
+  <version>   The plugin package version to set, e.g. 26.8.1.
+
+Updates, for the dev-*, sql-* and contributor-* plugins across claude/, codex/,
+opencode/ and pi/:
+  - the "version" field in each plugin manifest (.claude-plugin/plugin.json,
+    .codex-plugin/plugin.json)
+  - the "Version **x.y.z**" line in each plugin README
+  - the repo-root package.json
+
+Not every plugin carries both: OpenCode has no manifest version field, so only
+its README is updated, and pi has no per-plugin manifest at all — the repo-root
+package.json IS its manifest. CHANGELOG history is intentionally left untouched.
+
+This is the plugin *package* version, NOT the mariadb-shell binary version —
+use scripts/set-mariadb-shell-version.sh for the latter.
+USAGE
+}
+
+case "${1:-}" in
+  -h | --help | help)
+    usage
+    exit 0
+    ;;
+esac
+
 VERSION="${1:-}"
-[ -n "$VERSION" ] || { echo "usage: $0 <version>   (e.g. 26.7.0)" >&2; exit 1; }
+if [ -z "$VERSION" ]; then
+  echo "error: no version given" >&2
+  echo >&2
+  usage >&2
+  exit 1
+fi
+
+# Reject anything that is not version-shaped rather than writing it into 17
+# files. A mistyped flag used to be accepted as the version and substituted
+# everywhere, which is a tedious thing to undo.
+case "$VERSION" in
+  -*)
+    echo "error: unknown option '$VERSION' (see --help)" >&2
+    exit 1
+    ;;
+esac
+if ! printf '%s' "$VERSION" | grep -Eq '^[0-9]+(\.[0-9]+)*(-[0-9A-Za-z.]+)?$'; then
+  echo "error: '$VERSION' is not a version (expected digits and dots, e.g. 26.8.1)" >&2
+  exit 1
+fi
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
