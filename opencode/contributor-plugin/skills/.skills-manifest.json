@@ -10,6 +10,11 @@
           "name": "create-shell-plugin",
           "path": "create-shell-plugin/SKILL.md",
           "status": "contributor"
+        },
+        {
+          "name": "review-shell-change",
+          "path": "review-shell-change/SKILL.md",
+          "status": "contributor"
         }
       ]
     }
