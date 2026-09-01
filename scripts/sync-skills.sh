@@ -48,7 +48,7 @@
 #   - opencode/contributor-plugin (OpenCode)     — mariadb-shell .claude/skills only
 #
 # The contributor-* plugins vendor a DIFFERENT source repo — the skills tracked in
-# mariadb-corporation/mariadb-shell under .claude/skills/ (private; needs a token).
+# mariadb-corporation/mariadb-shell under .claude/skills/ (public; no token needed).
 # They share none of the mariadb-docs layers or the local additional-skills/.
 #
 # The dev-* plugins vendor EVERY upstream layer — granular/statements,
@@ -121,9 +121,10 @@ ADDITIONAL_SUBDIRS=("sql" "rest" "schema-management")
 
 # The "contributor" plugins vendor a DIFFERENT source: the skills tracked in the
 # mariadb-shell repository under .claude/skills/ (no manifest — every SKILL.md
-# under it is a skill). That repo is currently PRIVATE, so the fetch needs a
-# GitHub token ($GH_TOKEN, else `gh auth token`); without one this plugin is
-# skipped (the dev/sql sync still succeeds). Override the ref via $CONTRIB_REF.
+# under it is a skill). That repo is PUBLIC, so no token is needed. One is still
+# used when available ($GH_TOKEN, else `gh auth token`) purely for the higher API
+# rate limit — and so this keeps working if the repo is ever made private again.
+# Override the ref via $CONTRIB_REF.
 CONTRIB_REPO="mariadb-corporation/mariadb-shell"
 CONTRIB_SUBDIR=".claude/skills"
 CONTRIB_REF="${CONTRIB_REF:-main}"
@@ -320,40 +321,56 @@ for plugin in "${SQL_PLUGINS[@]}"; do
   vendor_into "$REPO_ROOT/$plugin" "${SQL_INCLUDE_LAYERS[@]}"
 done
 
-# Contributor plugins: skills from the (private) mariadb-shell repo. Best-effort —
-# needs a GitHub token; on any failure we warn and leave these plugins untouched.
+# Contributor plugins: skills from the mariadb-shell repo, which is public — so
+# this no longer depends on having a token, and these plugins no longer drop out
+# of an unauthenticated sync (they silently fell a skill behind that way). A token
+# is still passed when one happens to be available, for the higher API rate limit
+# and so a return to private does not break this. Still best-effort: on any
+# failure we warn and leave these plugins untouched.
 CONTRIB_SYNCED=0
 CONTRIB_TOKEN="${GH_TOKEN:-}"
 if [ -z "$CONTRIB_TOKEN" ] && command -v gh >/dev/null 2>&1; then
   CONTRIB_TOKEN="$(gh auth token 2>/dev/null || true)"
 fi
-if [ -z "$CONTRIB_TOKEN" ]; then
-  echo "warning: no GH_TOKEN / gh auth token — skipping contributor plugins (private $CONTRIB_REPO)" >&2
-else
-  echo "Fetching $CONTRIB_REPO@$CONTRIB_REF ($CONTRIB_SUBDIR) ..."
-  CONTRIB_TMP="$TMP/contrib"
-  mkdir -p "$CONTRIB_TMP"
-  if curl -fsSL -H "Authorization: Bearer $CONTRIB_TOKEN" \
-       -H "Accept: application/vnd.github+json" \
-       "https://api.github.com/repos/$CONTRIB_REPO/tarball/$CONTRIB_REF" \
-       | tar -xz -C "$CONTRIB_TMP" 2>/dev/null; then
-    CONTRIB_SRC_ROOT="$(find "$CONTRIB_TMP" -maxdepth 1 -type d -name '*-*' | head -n1)"
-    CONTRIB_SKILLS="$CONTRIB_SRC_ROOT/$CONTRIB_SUBDIR"
-    CONTRIB_COMMIT="$(curl -s -H "Authorization: Bearer $CONTRIB_TOKEN" \
-      "https://api.github.com/repos/$CONTRIB_REPO/commits/$CONTRIB_REF" \
-      | jq -r '.sha // empty')"
-    CONTRIB_COMMIT="${CONTRIB_COMMIT:-$CONTRIB_REF}"
-    if [ -d "$CONTRIB_SKILLS" ]; then
-      for plugin in "${CONTRIB_PLUGINS[@]}"; do
-        vendor_contributor_into "$REPO_ROOT/$plugin" "$CONTRIB_SKILLS" "$CONTRIB_COMMIT"
-      done
-      CONTRIB_SYNCED=${#CONTRIB_PLUGINS[@]}
-    else
-      echo "warning: $CONTRIB_SUBDIR not found in $CONTRIB_REPO@$CONTRIB_REF — skipping contributor plugins" >&2
-    fi
+
+# curl with the token only when there is one. A function rather than an array of
+# header args: under `set -u`, bash 3.2 (macOS) errors on expanding an empty
+# array.
+contrib_curl() {
+  if [ -n "$CONTRIB_TOKEN" ]; then
+    curl -H "Authorization: Bearer $CONTRIB_TOKEN" "$@"
   else
-    echo "warning: failed to fetch $CONTRIB_REPO@$CONTRIB_REF (auth/access?) — skipping contributor plugins" >&2
+    curl "$@"
   fi
+}
+
+if [ -n "$CONTRIB_TOKEN" ]; then
+  echo "Fetching $CONTRIB_REPO@$CONTRIB_REF ($CONTRIB_SUBDIR) ..."
+else
+  echo "Fetching $CONTRIB_REPO@$CONTRIB_REF ($CONTRIB_SUBDIR), unauthenticated ..."
+fi
+CONTRIB_TMP="$TMP/contrib"
+mkdir -p "$CONTRIB_TMP"
+if contrib_curl -fsSL \
+     -H "Accept: application/vnd.github+json" \
+     "https://api.github.com/repos/$CONTRIB_REPO/tarball/$CONTRIB_REF" \
+     | tar -xz -C "$CONTRIB_TMP" 2>/dev/null; then
+  CONTRIB_SRC_ROOT="$(find "$CONTRIB_TMP" -maxdepth 1 -type d -name '*-*' | head -n1)"
+  CONTRIB_SKILLS="$CONTRIB_SRC_ROOT/$CONTRIB_SUBDIR"
+  CONTRIB_COMMIT="$(contrib_curl -s \
+    "https://api.github.com/repos/$CONTRIB_REPO/commits/$CONTRIB_REF" \
+    | jq -r '.sha // empty')"
+  CONTRIB_COMMIT="${CONTRIB_COMMIT:-$CONTRIB_REF}"
+  if [ -d "$CONTRIB_SKILLS" ]; then
+    for plugin in "${CONTRIB_PLUGINS[@]}"; do
+      vendor_contributor_into "$REPO_ROOT/$plugin" "$CONTRIB_SKILLS" "$CONTRIB_COMMIT"
+    done
+    CONTRIB_SYNCED=${#CONTRIB_PLUGINS[@]}
+  else
+    echo "warning: $CONTRIB_SUBDIR not found in $CONTRIB_REPO@$CONTRIB_REF — skipping contributor plugins" >&2
+  fi
+else
+  echo "warning: failed to fetch $CONTRIB_REPO@$CONTRIB_REF — skipping contributor plugins" >&2
 fi
 
 total_plugins=$(( ${#TARGET_PLUGINS[@]} + ${#SQL_PLUGINS[@]} ))

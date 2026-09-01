@@ -84,7 +84,7 @@ Each agent ships the plugin variants below — all built by the same
 | ------ | ------ | ---------- | ------------- |
 | `dev` | full set — statements, functions, client tools, connectors, topical (+ all local `additional-skills/`: `sql`, `rest`, `schema-management`) | yes | `mariadb-docs` + `additional-skills/` |
 | `sql` | SQL-focused subset — statements, functions, topical (+ local `additional-skills/sql`) | yes | `mariadb-docs` + `additional-skills/sql/` |
-| `contributor` | skills for **contributing to MariaDB tooling** | no | [`mariadb-shell`](https://github.com/mariadb-corporation/mariadb-shell) `.claude/skills/` (private) |
+| `contributor` | skills for **contributing to MariaDB tooling** | no | [`mariadb-shell`](https://github.com/mariadb-corporation/mariadb-shell) `.claude/skills/` |
 
 The folders are `<agent>/{dev,sql,contributor}-plugin/` for each of `claude/`,
 `codex/`, and `opencode/`; `pi/` ships `dev` only for now. Skills are baseline
@@ -182,8 +182,9 @@ upstream layers plus only `additional-skills/sql/` (`rest/` and
 `schema-management/` are dev-only — see `SQL_INCLUDE_LAYERS` in the script). It
 also vendors the
 `contributor` plugins from a separate source — the `mariadb-shell` repo's
-`.claude/skills/` tree; since that repo is private, this step needs `GH_TOKEN`
-(or `gh auth token`) and is skipped with a warning when no credentials are present.
+`.claude/skills/` tree. That repo is public, so this needs no credentials; a
+`GH_TOKEN` (or `gh auth token`) is still used when present, purely for the higher
+GitHub API rate limit.
 
 **Flat layout.** Every plugin — including `pi/dev-plugin` — vendors skills flat,
 `skills/<skill>/SKILL.md`, regardless of how they are grouped upstream. This is
