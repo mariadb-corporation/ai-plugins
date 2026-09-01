@@ -20,17 +20,17 @@ rem setup-codex-mcp.cmd -- register the mariadb-shell MCP server with Codex,
 rem                        on native Windows. The counterpart of
 rem                        setup-codex-mcp.sh.
 rem
-rem Installing this plugin gives Codex the MariaDB *skills*. The MCP server needs
-rem this one extra step, because of how Codex 0.147 treats a plugin's .mcp.json:
-rem it stores the `command` verbatim and expands nothing, so the
-rem ${CLAUDE_PLUGIN_ROOT} placeholder a plugin has to use (it cannot know the
-rem content-addressed directory Codex will install it into) is exec'd literally
-rem and the server dies with "MCP startup failed: No such file or directory".
+rem This is a FALLBACK, not a required step. The plugin's own .mcp.json declares a
+rem working server: a relative command plus "cwd": "." (which Codex resolves to
+rem the plugin's install directory), naming the extensionless
+rem scripts/mariadb-mcp-launcher, which Codex resolves through %PATHEXT% here and
+rem so lands on mariadb-mcp-launcher.cmd. See that file for why. Use this script
+rem when that does not take effect -- an older Codex, or a host where the
+rem extensionless resolution does not hold.
 rem
 rem `codex mcp add` writes an ordinary [mcp_servers.mariadb] entry into
-rem %CODEX_HOME%\config.toml with the absolute path resolved here, which does
-rem work -- and it takes precedence over the plugin-provided entry of the same
-rem name.
+rem %CODEX_HOME%\config.toml with the absolute path resolved here, and it takes
+rem precedence over the plugin-provided entry of the same name.
 rem
 rem This registers the **.cmd** launcher, which is the point of having a separate
 rem script: Codex spawns the command directly, so a .sh path -- what the bash
@@ -48,7 +48,7 @@ rem   MARIADB_SHELL_VERSION   Minimum mariadb-shell version to pass to the launc
 rem ============================================================================
 
 set "SERVER_NAME=mariadb"
-if not defined MARIADB_SHELL_VERSION set "MARIADB_SHELL_VERSION=26.8.0"
+if not defined MARIADB_SHELL_VERSION set "MARIADB_SHELL_VERSION=26.8.1"
 
 rem %~dp0 is this script's directory, with a trailing backslash.
 set "PLUGIN_ROOT=%~dp0.."

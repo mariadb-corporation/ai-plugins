@@ -1,0 +1,42 @@
+#!/bin/sh
+#
+# Copyright (c) 2026, MariaDB plc.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License, version 2.0,
+# as published by the Free Software Foundation.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See
+# the GNU General Public License, version 2.0, for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
+#
+# mariadb-mcp-launcher — the extensionless name Codex resolves, on every OS.
+#
+# This file exists so that ONE `command` in .mcp.json works on macOS, Linux and
+# Windows alike. Codex stores a plugin's .mcp.json `command` verbatim, expanding
+# no placeholder (there is no ${CODEX_PLUGIN_ROOT}, and ${CLAUDE_PLUGIN_ROOT} is
+# not expanded on the MCP spawn path), so the command has to be *relative* and
+# paired with `"cwd": "."`, which Codex does resolve to the plugin root. But a
+# relative command still cannot name one file that both OS families can execute:
+# Windows cannot run a .sh, and .mcp.json cannot branch per OS.
+#
+# An extensionless name resolves that, because of how Codex resolves the program
+# (codex-rs/rmcp-client/src/program_resolver.rs):
+#
+#   * On Unix it hands the name to the OS unchanged, and the kernel runs THIS
+#     file via the shebang below — the extension is meaningless here.
+#   * On Windows it resolves through the `which` crate, which walks %PATHEXT%
+#     and lands on mariadb-mcp-launcher.cmd. This file is skipped there: having
+#     no extension, it is tested with GetBinaryType(), which rejects a text file.
+#
+# The same mechanism is why `npx`/`pnpm`/`yarn` work in a Codex MCP entry.
+#
+# Keeping this a shim rather than renaming mariadb-mcp-launcher.sh keeps that
+# file's name identical across all the plugins in this repo, where it is also
+# referenced by the Claude and OpenCode configs and by the setup scripts.
+exec "$(dirname "$0")/mariadb-mcp-launcher.sh" "$@"

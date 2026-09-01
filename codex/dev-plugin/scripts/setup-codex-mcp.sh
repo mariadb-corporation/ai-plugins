@@ -17,16 +17,16 @@
 #
 # setup-codex-mcp.sh — register the mariadb-shell MCP server with Codex.
 #
-# Installing this plugin gives Codex the MariaDB *skills*. The MCP server needs
-# this one extra step, because of how Codex 0.147 treats a plugin's .mcp.json:
-# it stores the `command` verbatim and expands nothing, so the
-# ${CLAUDE_PLUGIN_ROOT} placeholder a plugin has to use (it cannot know the
-# content-addressed directory Codex will install it into) is exec'd literally and
-# the server dies with "MCP startup failed: No such file or directory".
+# This is a FALLBACK, not a required step. The plugin's own .mcp.json declares a
+# working server: a relative command plus "cwd": "." (which Codex resolves to the
+# plugin's install directory), naming the extensionless scripts/mariadb-mcp-launcher
+# so that one command works on macOS, Linux and Windows alike. See that file for
+# why. Use this script when that does not take effect — an older Codex, or a
+# platform where the extensionless resolution does not hold.
 #
 # `codex mcp add` writes an ordinary [mcp_servers.mariadb] entry into
-# $CODEX_HOME/config.toml with the absolute path resolved here, which does work —
-# and it takes precedence over the plugin-provided entry of the same name.
+# $CODEX_HOME/config.toml with the absolute path resolved here, and it takes
+# precedence over the plugin-provided entry of the same name.
 #
 # On Windows use setup-codex-mcp.cmd instead, and not merely because this needs
 # bash: the entry below names the .sh launcher, which Codex — which spawns the
@@ -45,7 +45,7 @@
 set -euo pipefail
 
 SERVER_NAME="mariadb"
-SHELL_VERSION="26.8.0"
+SHELL_VERSION="26.8.1"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PLUGIN_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"

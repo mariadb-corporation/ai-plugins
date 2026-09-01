@@ -30,13 +30,15 @@ from Codex differs from Claude Code in three ways that shaped this module:
   a regression that makes Codex resolve `dev@mariadb` to the *Claude* plugin
   fails the e2e tier rather than passing unnoticed.
 
-* **A plugin cannot register a working MCP server on 0.147.** Codex stores the
-  `.mcp.json` `command` verbatim and expands nothing, so the
-  ``${CLAUDE_PLUGIN_ROOT}`` placeholder a plugin must use is exec'd literally and
-  the server dies with "MCP startup failed: No such file or directory". The
-  supported path is `scripts/setup-codex-mcp.sh` (`codex mcp add` with an
-  absolute path), which is what :func:`run_setup_script` exercises. The workflow
-  fixtures inject the server with ``-c`` instead, to keep the model runs
+* **Codex expands no placeholder when it spawns a plugin's MCP server.** It
+  execs the stored `.mcp.json` `command` verbatim, so a ``${CLAUDE_PLUGIN_ROOT}``
+  in it is exec'd literally and the server dies with "MCP startup failed: No such
+  file or directory". The plugin therefore ships a *relative, extensionless*
+  command plus ``"cwd": "."`` (which Codex does resolve to the plugin root) —
+  see `scripts/mariadb-mcp-launcher` for why that one name works on every OS.
+  `scripts/setup-codex-mcp.sh` (`codex mcp add` with an absolute path) remains
+  the documented fallback, and is what :func:`run_setup_script` exercises. The
+  workflow fixtures inject the server with ``-c`` instead, to keep the model runs
   independent of however the user's Codex happens to be configured.
 
 * **Evidence comes from the event stream.** ``codex exec --json`` prints JSONL;

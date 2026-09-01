@@ -8,6 +8,39 @@ project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Fixed
 
+- **The plugin now registers a working MCP server by itself, on every OS.**
+  Installing it used to be a two-step affair: Codex expands no placeholder when
+  it spawns a plugin's server (it execs the stored `command` verbatim), so the
+  `${CLAUDE_PLUGIN_ROOT}` a plugin has to use died as a literal path, and
+  `scripts/setup-codex-mcp.sh` had to register the server by absolute path.
+  `.mcp.json` now uses a *relative* command plus `"cwd": "."` — which Codex does
+  resolve, to the plugin's install directory — so no placeholder is needed.
+
+  The command is deliberately **extensionless**, `./scripts/mariadb-mcp-launcher`,
+  because `.mcp.json` cannot branch per OS and Windows cannot execute a `.sh`.
+  Codex resolves the program per platform: unchanged on macOS/Linux, where the
+  kernel runs the new shim of that name through its shebang; through `%PATHEXT%`
+  on Windows, where it lands on `mariadb-mcp-launcher.cmd` instead and skips the
+  extensionless file as not being a Windows binary.
+
+  Verified against Codex 0.151.0 on both platforms, each installing the plugin
+  into a clean `CODEX_HOME` with no `[mcp_servers]` entry of its own. On macOS and
+  on Windows 11 (ARM64) alike the server came up and completed the MCP handshake,
+  and on Windows a tool call reached it and returned a response. Codex's own
+  resolver log states the choice outright there:
+
+  ```text
+  DEBUG codex_rmcp_client::program_resolver: Resolved "./scripts/mariadb-mcp-launcher"
+    to "...\26.8.0\.\scripts\mariadb-mcp-launcher.cmd"
+  ```
+
+  A marker probe confirms the other half independently: with both launcher files
+  present and each writing a distinct marker, only the `.cmd` wrote one — the
+  extensionless file never executed.
+
+  `scripts/setup-codex-mcp.{sh,cmd}` are kept as a documented fallback rather
+  than a required step.
+
 - **Codex 0.147 compatibility.** Three things kept this plugin from working as
   installed, all of them silent:
   - `.mcp.json` declared its server under `mcp_servers`; Codex reads only
@@ -48,7 +81,7 @@ project adheres to [Semantic Versioning](https://semver.org/).
   Asset naming is no longer duplicated here, so the launcher cannot go stale as
   releases change.
 - `MARIADB_SHELL_VERSION` now means the *minimum* acceptable version and defaults
-  to `26.8.0`, matching the published release series.
+  to `26.8.1`, matching the published release series.
 - New pass-through settings: `MARIADB_SHELL_BINDIR`, `MARIADB_SHELL_PREFIX`,
   `MARIADB_SHELL_TAG`, `MARIADB_SHELL_PRERELEASE` (needed while the only
   published release is a prerelease) and `MARIADB_SHELL_TOKEN` (`GH_TOKEN`,

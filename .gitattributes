@@ -1,3 +1,8 @@
 # Batch files must keep CRLF endings: cmd.exe mis-parses `goto` labels and `^`
 # line continuations in an LF-only .cmd, both of which the MCP launcher uses.
 *.cmd text eol=crlf
+
+# The extensionless launcher Codex resolves must stay LF: it is a shell script
+# run through its shebang on macOS/Linux, and CRLF would make the kernel look
+# for an interpreter named "bash\r". It matches no *.sh rule, hence this one.
+mariadb-mcp-launcher text eol=lf

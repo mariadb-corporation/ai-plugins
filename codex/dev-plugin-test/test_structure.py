@@ -157,30 +157,85 @@ def test_additional_skill_matches_its_source(skill: skills.Skill):
     )
 
 
-# --- Codex MCP wiring (static: the file shape Codex 0.147 actually reads) -----
+# --- Codex MCP wiring (static: the file shape Codex actually reads) -----------
 #
-# Two mistakes here register nothing and are invisible until a tool call fails:
-# Codex reads the camelCase `mcpServers` key (a `mcp_servers` key is ignored
-# outright), and it substitutes no placeholder at all when spawning the server —
-# `${CODEX_PLUGIN_ROOT}` is not a variable it knows.
+# Every mistake here registers a server that silently never starts, and nothing
+# says so until a tool call finds no tools. Three facts drive these checks, all
+# measured against a real Codex (0.147, re-verified on 0.151.0):
+#
+#   1. Codex reads the camelCase `mcpServers` key; a `mcp_servers` key is
+#      ignored outright.
+#   2. It expands NO placeholder when spawning a plugin's server — it execs the
+#      stored `command` verbatim. `${CODEX_PLUGIN_ROOT}` is not a variable it
+#      knows at all, and `${CLAUDE_PLUGIN_ROOT}` is not expanded on this path.
+#   3. It does resolve a relative `cwd` against the plugin root, and resolves a
+#      relative `command` from there. So the working shape is a relative,
+#      *extensionless* command plus `"cwd": "."` — extensionless because that is
+#      what lets one command name serve every OS: Unix runs the shim via its
+#      shebang, while Windows walks %PATHEXT% onto the .cmd.
+#
+# Hence the command, the cwd and the launcher trio have to stay consistent with
+# each other; each of these tests guards one leg of that.
 
 
-def test_mcp_config_uses_the_key_codex_reads():
+def _mcp_server() -> dict:
     import json
 
     config = json.loads((skills.PLUGIN_ROOT / ".mcp.json").read_text(encoding="utf-8"))
     assert "mcpServers" in config, (
-        "codex/dev-plugin/.mcp.json must declare `mcpServers` (camelCase); codex 0.147 "
+        "codex/dev-plugin/.mcp.json must declare `mcpServers` (camelCase); codex "
         f"ignores any other key, so it would register no server at all. Found: {list(config)}"
     )
     servers = config["mcpServers"]
     assert "mariadb" in servers, f"no `mariadb` server in .mcp.json: {list(servers)}"
+    return servers["mariadb"]
+
+
+def test_mcp_config_uses_the_key_codex_reads():
+    _mcp_server()
 
 
 def test_mcp_config_avoids_a_placeholder_codex_cannot_expand():
     raw = (skills.PLUGIN_ROOT / ".mcp.json").read_text(encoding="utf-8")
-    assert "${CODEX_PLUGIN_ROOT}" not in raw, (
-        "codex/dev-plugin/.mcp.json uses ${CODEX_PLUGIN_ROOT}, which codex does not know. "
-        "Use ${CLAUDE_PLUGIN_ROOT} (the only one it recognises) and register the working "
-        "server with scripts/setup-codex-mcp.sh."
+    assert "${" not in raw, (
+        "codex/dev-plugin/.mcp.json contains a ${...} placeholder. Codex expands none "
+        "of them when it spawns a plugin's MCP server — it execs the command verbatim, "
+        'so the server dies with "No such file or directory". Use a relative command '
+        'plus "cwd": "." instead.'
+    )
+
+
+def test_mcp_command_is_relative_extensionless_and_paired_with_cwd():
+    server = _mcp_server()
+    command = server.get("command", "")
+    assert command == "./scripts/mariadb-mcp-launcher", (
+        "codex/dev-plugin/.mcp.json `command` must be the relative, extensionless "
+        f"./scripts/mariadb-mcp-launcher, not {command!r}. Relative because Codex expands "
+        "no placeholder; extensionless because that is the only single name that resolves "
+        "on macOS/Linux (shebang) and on Windows (%PATHEXT% -> .cmd) alike."
+    )
+    assert server.get("cwd") == ".", (
+        'codex/dev-plugin/.mcp.json must set "cwd": "." — it is what Codex resolves to the '
+        f"plugin root, and without it the relative command resolves from the user's "
+        f"working directory and the server never starts. Found: {server.get('cwd')!r}"
+    )
+
+
+def test_launcher_trio_backs_the_extensionless_command():
+    scripts = skills.PLUGIN_ROOT / "scripts"
+    shim = scripts / "mariadb-mcp-launcher"
+    real = scripts / "mariadb-mcp-launcher.sh"
+    windows = scripts / "mariadb-mcp-launcher.cmd"
+
+    for path in (shim, real):
+        assert path.is_file(), f"missing launcher: {path}"
+        # Codex execs the shim directly on Unix; without +x it dies with EACCES.
+        assert path.stat().st_mode & 0o111, f"launcher is not executable: {path}"
+    assert windows.is_file(), (
+        f"missing {windows.name}: it is what %PATHEXT% resolution lands on for Windows, "
+        "so without it the extensionless command has nothing to find there."
+    )
+    assert shim.read_text(encoding="utf-8").startswith("#!"), (
+        f"{shim.name} needs a shebang: it has no extension, so the kernel has nothing "
+        "else to go on when Codex execs it on macOS/Linux."
     )

@@ -1,6 +1,6 @@
 # MariaDB plugin for Codex
 
-Version **26.8.0**
+Version **26.9.0**
 
 This plugin gives [OpenAI Codex](https://developers.openai.com/codex/) first-class
 MariaDB support through two parts:
@@ -22,19 +22,14 @@ MariaDB support through two parts:
 /plugin install dev@mariadb
 ```
 
-Then register the MCP server — installing the plugin gives Codex the skills, but
-Codex 0.147 cannot start a server a plugin declares (see below), so this step is
-required:
+That is the whole installation: the plugin declares its MCP server in a shape
+Codex can actually spawn (see below), so there is no second step. If the server
+does not come up, [scripts/setup-codex-mcp.sh](scripts/setup-codex-mcp.sh) — or
+[.cmd](scripts/setup-codex-mcp.cmd) on native Windows — registers it explicitly
+as a fallback:
 
 ```sh
 codex/dev-plugin/scripts/setup-codex-mcp.sh     # --remove to unregister
-```
-
-On native Windows run the batch counterpart instead — it registers the `.cmd`
-launcher, which is the one Codex can actually spawn there:
-
-```bat
-codex\dev-plugin\scripts\setup-codex-mcp.cmd
 ```
 
 Then reload (`/reload-plugins`) if Codex doesn't pick it up automatically. On first
@@ -52,32 +47,51 @@ Declared in [.mcp.json](.mcp.json):
 {
   "mcpServers": {
     "mariadb": {
-      "command": "${CLAUDE_PLUGIN_ROOT}/scripts/mariadb-mcp-launcher.sh",
+      "command": "./scripts/mariadb-mcp-launcher",
+      "cwd": ".",
       "args": [],
-      "env": { "MARIADB_SHELL_VERSION": "26.8.0" }
+      "env": { "MARIADB_SHELL_VERSION": "26.8.1" }
     }
   }
 }
 ```
 
-The key is `mcpServers` (camelCase) because that is the only one Codex reads — a
-`mcp_servers` key registers nothing at all — and `${CLAUDE_PLUGIN_ROOT}` because
-that is the only placeholder name Codex knows.
+Three details in there are each load-bearing, and getting any of them wrong
+registers a server that silently never starts:
 
-**Codex 0.147 still cannot start this server, which is why the installation above
-has a second step.** Codex stores the `command` verbatim and expands nothing when
-it spawns the process, so the placeholder — which a plugin has no way to avoid, as
-it cannot know the content-addressed directory Codex will install it into — is
-exec'd literally and the first tool call fails with `MCP startup failed: No such
-file or directory`. [scripts/setup-codex-mcp.sh](scripts/setup-codex-mcp.sh) (or [.cmd](scripts/setup-codex-mcp.cmd) on native Windows) works
-around that with `codex mcp add`, writing an `[mcp_servers.mariadb]` entry into
-`$CODEX_HOME/config.toml` with the absolute path resolved on your machine; that
-entry takes precedence over the plugin's. The declaration above is kept so the
-plugin works unchanged once Codex expands it.
+- **`mcpServers`, camelCase** — the only key Codex reads. A `mcp_servers` key
+  registers nothing at all, without a word of complaint.
+- **A relative `command`, with no `${...}` placeholder.** Codex expands none of
+  them when it spawns a plugin's server; it execs the stored command verbatim.
+  There is no `${CODEX_PLUGIN_ROOT}`, and `${CLAUDE_PLUGIN_ROOT}` — the one name
+  Codex recognises elsewhere — is not expanded on this path either. Either way
+  the server dies with `MCP startup failed: No such file or directory`.
+- **`"cwd": "."`** — this is what Codex *does* resolve to the plugin's install
+  directory, and it is what the relative command is then resolved from. Without
+  it the command resolves from your own working directory instead.
 
-The launcher ([scripts/mariadb-mcp-launcher.sh](scripts/mariadb-mcp-launcher.sh)):
+**One command name, every OS.** `command` names
+[scripts/mariadb-mcp-launcher](scripts/mariadb-mcp-launcher) — deliberately
+without an extension, because `.mcp.json` cannot branch per OS and Windows cannot
+execute a `.sh`. Codex resolves the program per platform: on macOS and Linux it
+hands the name to the OS unchanged and the kernel runs that file through its
+shebang, while on Windows it resolves through `%PATHEXT%` and lands on
+[scripts/mariadb-mcp-launcher.cmd](scripts/mariadb-mcp-launcher.cmd) instead, the
+extensionless file being skipped there as not a Windows binary. It is the same
+mechanism that lets `npx` and `pnpm` work in a Codex MCP entry. The extensionless
+file is a three-line shim, so that `mariadb-mcp-launcher.sh` keeps the name it has
+in every other plugin in this repo.
 
-- Resolves the minimum version from `MARIADB_SHELL_VERSION` (default `26.8.0`).
+If the server still does not start,
+[scripts/setup-codex-mcp.sh](scripts/setup-codex-mcp.sh) (or
+[.cmd](scripts/setup-codex-mcp.cmd) on native Windows) is the fallback: it runs
+`codex mcp add`, writing an `[mcp_servers.mariadb]` entry into
+`$CODEX_HOME/config.toml` with the absolute path resolved on your machine, and
+that entry takes precedence over the plugin's.
+
+The real launcher ([scripts/mariadb-mcp-launcher.sh](scripts/mariadb-mcp-launcher.sh)), which the shim execs:
+
+- Resolves the minimum version from `MARIADB_SHELL_VERSION` (default `26.8.1`).
 - Runs the first `mariadb-shell` that meets it: `$MARIADB_SHELL_BIN`, then one on
   `PATH`, then a local install at `~/.local/bin/mariadb-shell`
   (`%LOCALAPPDATA%\Programs\mariadb-shell\bin\mariadb-shell.cmd` on Windows).
@@ -91,10 +105,6 @@ The launcher ([scripts/mariadb-mcp-launcher.sh](scripts/mariadb-mcp-launcher.sh)
   `mariadb-shell -- mcp start-server --transport=stdio`. stdout belongs to the
   MCP transport alone, so the launcher's own messages — and the installer's — go
   to stderr.
-
-**Windows:** `.mcp.json` cannot branch per OS. The `.sh` launcher works on
-macOS/Linux and under Git-Bash; native Windows users should point the `command`
-at [scripts/mariadb-mcp-launcher.cmd](scripts/mariadb-mcp-launcher.cmd).
 
 **Private repository:** while `mariadb-shell` is private, set `GH_TOKEN` (or
 `MARIADB_SHELL_TOKEN`, or simply run `gh auth login`). The token is needed twice:
