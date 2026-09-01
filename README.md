@@ -125,7 +125,7 @@ locally — no Docker, no container runtime, no administrator rights:
 > *Stop and delete the sandbox, I'm done with it.*
 
 Instances live under `~/.mariadb-shell/sandboxes/<port>/` on macOS and Linux and
-under `%APPDATA%\MariaDB\mariadb-shell\sandboxes\<port>\` on Windows.
+under `%USERPROFILE%\MariaDB\mariadb-shell\sandboxes\<port>\` on Windows.
 
 Three things to know regarding sandbox instances:
 
