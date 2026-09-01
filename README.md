@@ -2,16 +2,36 @@
 
 First-class **MariaDB** support for AI coding agents. This repo packages a
 curated set of agent **skills** and wires up the native, high-performance
-**`mariadb-shell` MCP server** for the following harnesses:
+**`mariadb-shell` MCP server**.
 
-| Harness | Plugin Folder | Test suite | CI workflow |
-| ------- | ------------- | ---------- | ----------- |
-| [Claude Code](https://claude.com/claude-code) | [`claude`](claude) | [`claude/dev-plugin-tests`](claude/dev-plugin-tests) | [claude-test.yml](.github/workflows/claude-test.yml) |
-| [Codex](https://openai.com/codex) | [`codex`](codex) | [`codex/dev-plugin-test`](codex/dev-plugin-test) | [codex-test.yml](.github/workflows/codex-test.yml) |
-| [OpenCode](https://opencode.ai) | [`opencode`](opencode) | [`opencode/dev-plugin-test`](opencode/dev-plugin-test) | [opencode-test.yml](.github/workflows/opencode-test.yml) |
-| [Pi](https://pi.dev) | [`pi`](pi) | [`pi/dev-plugin-tests`](pi/dev-plugin-tests) | [pi-test.yml](.github/workflows/pi-test.yml) |
+Installing a plugin gives you three things:
+
+- **Skills** — MariaDB reference material the agent reads when it becomes
+  relevant: how `ALTER TABLE` behaves in MariaDB, how vector indexes work, which
+  connector to use from Python or Java, how to move an application over from
+  MySQL. Skills work straight away and need no database.
+- **An MCP server** — a live connection to a MariaDB server, so the agent can
+  read your schema, run queries, analyse a slow query with `EXPLAIN`, or start a
+  throwaway test instance. This needs a one-time setup, described below.
+- **`mariadb-shell`** — MariaDB's command-line shell, a port of MySQL Shell,
+  installed automatically the first time an agent starts the MCP server. The MCP
+  server runs inside it as a plugin, using its ability to securely store all
+  database credentials. You can also use it yourself as a SQL client —
+  run `mariadb-shell` and type `\help`.
+
+> **New to MCP?** The Model Context Protocol is a standardized interface for
+> AI agents to call tools — here, the tools that talk to MariaDB.
+
+Works with [Claude Code](https://claude.com/claude-code), [Codex](https://openai.com/codex), [OpenCode](https://opencode.ai) and [Pi](https://pi.dev) — see [Installation](#installation).
 
 ## Installation
+
+The MariaDB AI Plugins use the standard plugin system of the harness where
+available.
+
+> Note: On first start, the plugin is going to download and extract the required
+> MariaDB Shell package, unless a suitable one is already installed. Depending on
+> the network connection speed this might take a bit of time.
 
 ### Claude Code
 
@@ -59,7 +79,7 @@ Then `/mcp reconnect mariadb` (or restart pi). The extension also prints a
 one-line reminder at session start while the server isn't configured. Full steps
 in [pi/dev-plugin/README.md](pi/dev-plugin/README.md).
 
-### Configure the MCP server (all harnesses)
+## Configure the MCP server (all harnesses)
 
 The skills work on their own. The MCP server, however, starts out allowed to reach
 nothing — installing a plugin wires it up, but does not tell it what it may touch.
@@ -69,12 +89,58 @@ Run this once per machine:
 mariadb-shell -- mcp setup     # or mcp.setup() from an interactive shell
 ```
 
+> **Why the shell?** It already handles connections, credentials, test instances
+> and schema management, so the MCP server runs as a plugin inside it rather than
+> reimplementing all of that.
+
 If `mariadb-shell` isn't on your `PATH`, use the copy the launcher installed —
 `~/.local/bin/mariadb-shell`, or
 `%LOCALAPPDATA%\Programs\mariadb-shell\bin\mariadb-shell.cmd` on Windows. The
 installer only prints a `PATH` hint; it never edits your shell profile. That copy
 appears the first time a plugin starts the MCP server, so either let the agent run
 once first, or install the shell yourself before configuring it.
+
+## What you can ask for
+
+**With skills alone**, no database connection needed:
+
+> *Write a `CREATE TABLE` for a product catalogue, MariaDB style.*
+> *What changes if I move this application from MySQL to MariaDB?*
+> *How do I do semantic search in MariaDB?*
+> *Show me how to connect to MariaDB from Node.js.*
+
+**With the MCP server connected**, against your real database:
+
+> *What does the schema of my `orders` table look like?*
+> *Why is this query slow? Run `EXPLAIN` on it.*
+> *Which of my tables have no primary key?*
+> *Deploy a test instance and try this migration on it first.*
+
+**No database yet?** The MCP server can deploy a throwaway MariaDB instance
+locally — no Docker, no container runtime, no administrator rights:
+
+> *Deploy a MariaDB sandbox on port 3310.*
+> *Spin up a test instance, apply this schema to it and show me the result.*
+> *Try this migration on a sandbox before I run it for real.*
+> *Stop and delete the sandbox, I'm done with it.*
+
+Instances live under `~/.mariadb-shell/sandboxes/<port>/` on macOS and Linux and
+under `%USERPROFILE%\MariaDB\mariadb-shell\sandboxes\<port>\` on Windows.
+
+Three things to know regarding sandbox instances:
+
+- A database connection to the sandbox is automatically registered with the MCP server.
+- The sandbox is deployed without TLS, so command-line clients may need `--skip-ssl`.
+- A `root@'%'` account is created and the sandbox listens on all interfaces,
+  which is worth changing outside a trusted network.
+
+The MCP server provides 27 tools in three groups:
+
+| Group | Tools | What they do |
+| ----- | ----- | ------------ |
+| `db.*` | 8 | list connections and schemas, describe objects, run SQL |
+| `msm.*` | 12 | MariaDB Schema Management — versioned schema projects, releases, deployments |
+| `sandbox.*` | 7 | deploy, start, stop and delete local throwaway server instances |
 
 ## Plugin variants
 
@@ -102,19 +168,31 @@ The MCP server is surfaced through the community
 loads only as a package in its own right — so it is installed alongside this one,
 not pulled in by it. See [pi/README.md](pi/README.md).
 
-## What each plugin provides
+---
+
+# Development and maintenance
+
+Everything below is for people working **on** the plugins rather than with them.
+
+| Harness | Plugin Folder | Test suite | CI workflow |
+| ------- | ------------- | ---------- | ----------- |
+| [Claude Code](https://claude.com/claude-code) | [`claude`](claude) | [`claude/dev-plugin-tests`](claude/dev-plugin-tests) | [claude-test.yml](.github/workflows/claude-test.yml) |
+| [Codex](https://openai.com/codex) | [`codex`](codex) | [`codex/dev-plugin-test`](codex/dev-plugin-test) | [codex-test.yml](.github/workflows/codex-test.yml) |
+| [OpenCode](https://opencode.ai) | [`opencode`](opencode) | [`opencode/dev-plugin-test`](opencode/dev-plugin-test) | [opencode-test.yml](.github/workflows/opencode-test.yml) |
+| [Pi](https://pi.dev) | [`pi`](pi) | [`pi/dev-plugin-tests`](pi/dev-plugin-tests) | [pi-test.yml](.github/workflows/pi-test.yml) |
+
+## How the plugins are built
 
 1. **Skills** — MariaDB agent skills (`SKILL.md` docs) covering SQL statements,
    functions, client tools, connectors, and topical deep-dives. Most are vendored
-   from
-   [`mariadb-corporation/mariadb-docs/agent-skills`](https://github.com/mariadb-corporation/mariadb-docs/tree/main/agent-skills);
+   from [`mariadb-corporation/mariadb-docs/agent-skills`](https://github.com/mariadb-corporation/mariadb-docs/tree/main/agent-skills);
    additional repo-local skills are maintained in
    [additional-skills/](additional-skills), grouped into `sql/` (e.g.
    `mariadb-schema-create-script`), `rest/` (MariaDB REST Service) and
    `schema-management/` (MSM lifecycle) subfolders. The `dev` plugin vendors all
    of them; the `sql` plugin vendors only `additional-skills/sql/`. The agent
    surfaces the right skill by its `description` "Use when …" trigger.
-2. **A native MCP server** — the [`mariadb-shell`](https://github.com/mariadb-corporation/mariadb-shell)
+1. **A native MCP server** — the [`mariadb-shell`](https://github.com/mariadb-corporation/mariadb-shell)
    binary, launched by [scripts/mariadb-mcp-launcher.sh](claude/dev-plugin/scripts/mariadb-mcp-launcher.sh)
    (and `.cmd` for native Windows). On first use it runs the first
    `mariadb-shell` that satisfies `MARIADB_SHELL_VERSION` — `$MARIADB_SHELL_BIN`,
@@ -214,8 +292,8 @@ because what there is to drive differs:
 - **Claude** — `eval` (Anthropic SDK) plus two `e2e` modules: the REST workflow
   (sandbox, schema, REST DDL) and the MSM schema-lifecycle workflow.
 - **Codex** — `eval` (OpenAI SDK) plus the same two `e2e` workflows, and two
-  token-free checks that Codex resolves this repo's *Codex* plugin and that
-  `setup-codex-mcp.sh` registers a server it can actually spawn.
+  token-free checks: that Codex resolves this repo's *Codex* plugin, and that
+  `setup-codex-mcp.sh` leaves Codex a server it can spawn.
 - **OpenCode** — `eval` only; no `e2e` yet.
 - **Pi** — `e2e` only, and **no `eval` tier**: pi has no SDK of its own to prompt,
   so driving the `pi` binary *is* the behavioural test. Its e2e installs this repo
