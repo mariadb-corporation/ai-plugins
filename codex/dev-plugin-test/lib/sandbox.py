@@ -188,6 +188,47 @@ def _payload_text(result: dict | None) -> str:
 
 def _failed(result: dict | None) -> bool:
     return bool((result or {}).get("isError"))
+# --------------------------------------------------------------------------- #
+# Talking to the MCP server the instance was deployed through
+# --------------------------------------------------------------------------- #
+@contextlib.contextmanager
+def mcp_client(instance: SandboxInstance, timeout: float = TOOL_TIMEOUT):
+    """An MCP client on the *same* shell config home the instance was deployed with.
+
+    Which config home is used is not incidental here. `sandbox.deploy` registers
+    the instance as a configured connection by storing its password in the
+    shell's secret store, and `db.list_connections` is derived from those
+    secrets — so a client started against a different config home sees no
+    connection at all, and `db.connect` reports the URI as unconfigured. Reusing
+    ``instance.config_home`` is what makes the registration observable.
+    """
+    shell = shell_binary()
+    if not shell:
+        raise SandboxUnavailable(
+            "mariadb-shell not found (set MARIADB_SHELL_BIN or put it on PATH)"
+        )
+    with _client(shell, _server_env(instance.config_home), timeout) as client:
+        yield client
+
+
+def tool_failed(result: dict | None) -> bool:
+    """Whether a tool call came back as an error."""
+    return _failed(result)
+
+
+def tool_text(result: dict | None) -> str:
+    """The text a tool returned, flattened — for assertions and messages."""
+    return _payload_text(result)
+
+
+def connection_uri(instance: SandboxInstance) -> str:
+    """The URI `sandbox.deploy` registers for an instance.
+
+    Mirrors `_sandbox_connection_uri` in the shell's mcp_plugin: bare
+    ``user@host:port``, with no scheme. A ``mariadb://`` prefix does not match
+    the stored key and is rejected as unconfigured.
+    """
+    return f"{instance.user}@{instance.host}:{instance.port}"
 
 
 @contextlib.contextmanager

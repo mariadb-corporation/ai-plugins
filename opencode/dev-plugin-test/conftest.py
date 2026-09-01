@@ -56,7 +56,37 @@ def _explicit_server() -> dict | None:
 
 
 @pytest.fixture(scope="session")
-def mariadb_server():
+def mariadb_sandbox():
+    """The sandbox instance the db tier deployed, or None for an explicit server.
+
+    Split out from :func:`mariadb_server` so that one deploy serves both: tests
+    that only need a connection take ``mariadb_server``, while tests that need
+    the instance itself — its port, or the shell config home whose secret store
+    holds the connection `sandbox.deploy` registered — take this.
+
+    Yields:
+        A ``lib.sandbox.SandboxInstance``, or None when ``MARIADB_*`` named a
+        server that was already running (nothing was deployed, so there is no
+        instance and no registered connection).
+    """
+    if _explicit_server() is not None:
+        yield None
+        return
+
+    from lib import sandbox
+
+    try:
+        with sandbox.deployed_sandbox() as instance:
+            yield instance
+    except sandbox.SandboxUnavailable as exc:
+        pytest.skip(
+            f"cannot deploy a MariaDB sandbox for the db tier ({exc}); "
+            f"or point {'/'.join(_SERVER_ENV_VARS)} at a running server"
+        )
+
+
+@pytest.fixture(scope="session")
+def mariadb_server(mariadb_sandbox):
     """The MariaDB the db tier runs against, for the whole session.
 
     A sandbox instance is deployed on a free port and deleted afterwards, unless
@@ -73,16 +103,7 @@ def mariadb_server():
         yield {**explicit, "explicit": True}
         return
 
-    from lib import sandbox
-
-    try:
-        with sandbox.deployed_sandbox() as instance:
-            yield {**instance.dsn, "explicit": False}
-    except sandbox.SandboxUnavailable as exc:
-        pytest.skip(
-            f"cannot deploy a MariaDB sandbox for the db tier ({exc}); "
-            f"or point {'/'.join(_SERVER_ENV_VARS)} at a running server"
-        )
+    yield {**mariadb_sandbox.dsn, "explicit": False}
 
 
 @pytest.fixture(scope="session")

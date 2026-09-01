@@ -2,7 +2,7 @@
 
 ## Project
 
-**Latest work stream (now merged into `main`)**: rewrote the `mariadb-mcp-launcher.{sh,cmd}` scripts in all plugins to stop downloading release assets themselves and instead delegate to the shell's own `install.sh` / `install.ps1`; bumped the version gate to 26.8.0 (now explicitly a *minimum*); added a repo-root `LICENSE`, `.gitattributes` and `SECURITY.md`; restructured the main README (Installation moved directly under the harness table, new `## Plugin variants` heading, new "configure the MCP server" step propagated to all 7 MCP-bearing plugin READMEs); switched the install-facing org to **`mariadb`**; and added the GPL-2.0 copyright header to all 46 source files. Details in "Launcher rewrite" below.
+**Latest work streams**: (a) **Codex now registers its own MCP server** — merged as PR #6; see Codex fact 5. (b) **`db.connect` coverage** on `wip/DB-CONNECT-TESTS`, which closed the last untested path an agent actually takes. (c) **PR transfers from the tracking fork** `MariaDB/ai-plugins` (remote `fork`) into `origin` — both of its PRs are transferred and merged (#9, #7). Earlier stream, merged:  rewrote the `mariadb-mcp-launcher.{sh,cmd}` scripts in all plugins to stop downloading release assets themselves and instead delegate to the shell's own `install.sh` / `install.ps1`; bumped the version gate to 26.8.0 (now explicitly a *minimum*); added a repo-root `LICENSE`, `.gitattributes` and `SECURITY.md`; restructured the main README (Installation moved directly under the harness table, new `## Plugin variants` heading, new "configure the MCP server" step propagated to all 7 MCP-bearing plugin READMEs); switched the install-facing org to **`mariadb`**; and added the GPL-2.0 copyright header to all 46 source files. Details in "Launcher rewrite" below.
 
 `ai-plugins` packages MariaDB agent skills (+ the native `mariadb-shell` MCP server) as installable plugins for four coding agents: Claude Code (`claude/`), Codex (`codex/`), OpenCode (`opencode/`), and Pi/pi.dev (`pi/`). Each agent has `dev` (full skills + MCP), `sql` (SQL subset + MCP), `contributor` (skills-only) variants. Skills are vendored (never hand-edited) by `scripts/sync-skills.sh`. **This work stream** added a set of **MariaDB REST Service** skills (a fork of the MySQL REST Service) and **Schema Management (MSM)** lifecycle skills under `additional-skills/`, reorganized `additional-skills/` into `sql/`/`rest/`/`schema-management/` subfolders with per-plugin selection, added **two Claude e2e tests** that exercise the REST skills and the MSM lifecycle skills end-to-end (both pass), and updated the README. Latterly it also **unified how the tests run** across the plugins: a repo-root `run_tests.py` drives every suite with the Python inside `mariadb-shell` and one combined coverage report, and the `db` tier deploys its own sandbox instance instead of needing a server on 3306.
 
@@ -35,7 +35,7 @@
   - **It does NOT track the latest release.** `MARIADB_SHELL_VERSION` is a floor for *accepting* what is already on disk, never a trigger to look for something newer: a `PATH` binary or a local install at-or-above the floor is used **with no network access at all**, so a machine can sit on 26.8.0 forever after 26.9.0 ships. A download happens only when nothing meets the floor, and then it takes the newest release (subject to `MARIADB_SHELL_TAG`, and to `install.sh` picking the newest package the platform's glibc/macOS version can run). **Corollary: a floor set above the newest published release costs a fetch on every server start** — the gate rejects the local copy, the installer re-fetches the same version, and the launcher warns it is still below the floor and starts it anyway (verified). Upgrade by raising the floor with `scripts/set-mariadb-shell-version.sh`, by deleting the managed install, or by running `install.sh` directly.
   - **Fallback**: if the install fails but a binary exists at the target anyway (a concurrent launcher won the race), it is used with a warning; a below-gate version warns rather than refusing to start.
   - **Git-Bash/MSYS**: the `.sh` looks at the `%LOCALAPPDATA%` shim and, since `install.sh` refuses Windows, points at the `.cmd` launcher / `install.ps1` instead of failing obscurely.
-- **Pi test suite (`pi/dev-plugin-tests/`, new)** — the 4th suite, so `run_tests.py` now discovers claude/codex/opencode/pi. Tiers: `static` (**611** = the 602 shared + **9 pi-specific**), `db` (16, self-deployed sandbox), `e2e` (6). **No `eval` tier**: pi has no SDK of its own to prompt, so driving the `pi` binary *is* the behavioural test. The 9 pi-specific static tests guard the wiring that has actually broken here: repo-root `package.json` `pi` field present with resolvable paths, the skills entry pointing at the skills **root** and not a glob, `skills/` holding only skill dirs + the two manifests (the loader constraint that forced two reverts), `pi-mcp-adapter` declared, `src/index.ts` having a default export, and the three shipped scripts present + executable. Its `lib/` is the usual copies (`skills.py`, `mcp_stdio.py`, `sandbox.py`) plus **`lib/pi_cli.py`** for the e2e.
+- **Pi test suite (`pi/dev-plugin-tests/`, new)** — the 4th suite, so `run_tests.py` now discovers claude/codex/opencode/pi. Tiers: `static` (**611** = the 602 shared + **9 pi-specific**), `db` (**20** since the `db.connect` coverage; self-deployed sandbox), `e2e` (6). **No `eval` tier**: pi has no SDK of its own to prompt, so driving the `pi` binary *is* the behavioural test. The 9 pi-specific static tests guard the wiring that has actually broken here: repo-root `package.json` `pi` field present with resolvable paths, the skills entry pointing at the skills **root** and not a glob, `skills/` holding only skill dirs + the two manifests (the loader constraint that forced two reverts), `pi-mcp-adapter` declared, `src/index.ts` having a default export, and the three shipped scripts present + executable. Its `lib/` is the usual copies (`skills.py`, `mcp_stdio.py`, `sandbox.py`) plus **`lib/pi_cli.py`** for the e2e.
   - **e2e wiring**: temp project → `pi install -l --approve <REPO_ROOT>` (project-local, so nothing lands in the user's pi config) → one `pi -p --approve --no-session --mode json` run. Steps: skills reached the model / `notes-app.sql` written / it carries the skill's Start Block, plus two model-free checks that `setup-pi-mcp.sh` registers `mariadb` at the plugin's launcher with `lifecycle: "lazy"` and is idempotent + preserves other servers. **No MCP tool-call assertions** — pi's MCP comes from the separately installed `pi-mcp-adapter`.
 - **Keep `skills/` to ONLY skill dirs + `.skills-manifest.json` + `skills-source.json` — no other files/dirs.** Two things bit us here: (1) the former `skills/topical/` attribution *dir* (`LICENSE`+`VENDORED.md`, no `SKILL.md`) made pi's loader choke ("description is required") → **removed from all plugins**, `sync-skills.sh` no longer emits it (dropped entirely per user; READMEs point at upstream `agent-skills/topical` for MIT terms). (2) A `skills/README.md` note was then tried (copied in by `sync-skills.sh`) — a fixture `pi install -l` looked clean, but **the user reported it still causes loader issues, so it was reverted too**: the copy logic is gone from `sync-skills.sh` and no `skills/README.md` is shipped. Sources/licensing now lives ONLY in `additional-skills/README.md`, and every plugin's top-level README License section links to it via `../../additional-skills/README.md`. The topical *layer* (the skills themselves) is unaffected throughout.
 
@@ -78,8 +78,9 @@
 - `claude/dev-plugin-tests/test_e2e_claude.py` -> REST e2e: fixture `workflow` + `test_step0..5`; helpers `_rest_via_show`, `_rest_via_metadata`, `_parse_rest_paths`, `_find_sql_tool`, `_teardown_sandbox`.
 - `claude/dev-plugin-tests/test_e2e_msm_claude.py` -> MSM e2e: fixture `workflow` + `test_step0..5`; helpers `_find_project`, `_sections` (MSM banner split), `_strip_sql_comments`, `_seed_allowed_path` (isolated `MYSQLSH_USER_CONFIG_HOME` allow-list).
 - `claude/dev-plugin-tests/lib/{mcp_stdio.py,skills.py}` + `test_structure.py` -> MCP stdio client + tier-1 static contract, now including `test_additional_skill_matches_its_source` (vendored `additional` skills == their `additional-skills/` source; helpers `additional_skills()` / `additional_sources()`).
-- `*/dev-plugin-test*/lib/sandbox.py` (3 identical copies) -> the db tier's sandbox provisioning: `deployed_sandbox()` context manager; `SandboxUnavailable` → skip, a failed deploy → error. **Isolated shell config home is mandatory but must carry the plugins**: the current build's config home is `~/.mariadb-shell` (NOT `~/.mysqlsh`) and the `mcp` plugin is a *symlink in its `plugins/` dir* — pointing `MYSQLSH_USER_CONFIG_HOME` at a bare temp dir yields "There is no object registered under name 'mcp'". So `_prepare_config_home()` symlinks every plugin from the real config home into the temp one and writes its own `plugin_data/mcp_plugin/settings.json` with `allowedPaths=[sandbox_dir]`. **Without the allow-list entry the deploy HANGS** (path guard → elicitation), which is why `lib/mcp_stdio.py` now answers server-initiated requests with a JSON-RPC error, keeps stderr in a temp file for diagnostics, and never leaks the shell subprocess when the handshake fails.
+- `*/dev-plugin-test*/lib/sandbox.py` (**4** identical copies — pi has one too) ->  the db tier's sandbox provisioning: `deployed_sandbox()` context manager; `SandboxUnavailable` → skip, a failed deploy → error. **Isolated shell config home is mandatory but must carry the plugins**: the current build's config home is `~/.mariadb-shell` (NOT `~/.mysqlsh`) and the `mcp` plugin is a *symlink in its `plugins/` dir* — pointing `MYSQLSH_USER_CONFIG_HOME` at a bare temp dir yields "There is no object registered under name 'mcp'". So `_prepare_config_home()` symlinks every plugin from the real config home into the temp one and writes its own `plugin_data/mcp_plugin/settings.json` with `allowedPaths=[sandbox_dir]`. **Without the allow-list entry the deploy HANGS** (path guard → elicitation), which is why `lib/mcp_stdio.py` now answers server-initiated requests with a JSON-RPC error, keeps stderr in a temp file for diagnostics, and never leaks the shell subprocess when the handshake fails.
 - `pi/dev-plugin-tests/{lib/pi_cli.py,test_e2e_pi.py,test_structure.py}` -> the pi suite. `pi_cli.py` holds all the pi-specific wiring (`missing_prerequisite`, `provider_ready` round-trip gate, `install_package` project-local install, `run_pi` with `--approve --mode json`, JSONL parsing incl. `assistant_text()`/`model()`). Tests live **beside** the plugin (`pi/dev-plugin-tests`), not inside it — an earlier `pi/dev-plugin/tests` layout would have been shipped to users by `pi install` and needed an extra discovery glob in `run_tests.py`.
+- `*/dev-plugin-test*/test_db_connect.py` (4 identical copies, db tier) -> the only coverage of `db.connect`, and of the connection `sandbox.deploy` registers. Uses `sandbox.mcp_client()` so the client runs on the instance's own config home — the registration lives in that config home's secret store, so a client started elsewhere sees nothing. Pins both halves of the URI contract: equivalent spellings (scheme, host case, default port, inline password) are accepted; a uri asking for **more** (`/schema`, `?ssl-mode=REQUIRED`) is refused.
 - `run_tests.py` (repo root) -> the unified runner: auto-discovers suites via `*/dev-plugin-test*/conftest.py` (suite name = top-level dir), resolves the shell from `--shell`/`$MARIADB_SHELL`/PATH, installs each suite's `requirements.txt` into the shell's Python (`--no-install` to skip), runs **one pytest process per suite** (same-named test modules + `lib` packages collide in one process), passes ALL selected suite dirs as `--cov` on every run with `--cov-append` so the last suite's reports are the combined ones. `pytest-coverage.ini` (passed via `-c`, so it **replaces** the per-suite `pyproject.toml` → it must keep the markers + the `-m "not eval and not e2e"` default in sync); `.coveragerc` measures only `lib/` + `conftest.py` (test modules omitted). Reports: `test-results/{coverage.xml,<suite>-tests.xml}` + `htmlcov/`, all gitignored. `--` splits pytest passthrough args (done manually — argparse would eat them as suite names).
 - `*/[dsp]*-plugin/scripts/mariadb-mcp-launcher.{sh,cmd}` (+ opencode's `*_disabled`) -> the 14 identical launcher copies; edit `claude/dev-plugin/scripts/` and `cp` to the rest, then re-check with `shasum`. `.gitattributes` keeps the `.cmd` ones CRLF.
 - `scripts/set-plugin-version.sh` -> the plugin **package** version (not the shell binary's): `plugin.json` `"version"` + each README's `Version **x.y.z**` line, across claude/codex/opencode/**pi** `*-plugin` dirs **plus the repo-root `package.json`** (pi's manifest). CHANGELOG history deliberately untouched.
@@ -91,15 +92,15 @@
 
 ## Next steps
 
-1. **Exercise `mariadb-mcp-launcher.cmd` on a real Windows host** — the only part of the rewrite never run (macOS has no cmd.exe/pwsh). Worth checking: the two `powershell -Command` blocks with `^` continuations, `call :check_version`'s exit codes, and that the installer's output really lands on stderr via `1>&2`.
-2. **Once a stable (non-prerelease) `mariadb-shell` release exists**, drop the `MARIADB_SHELL_PRERELEASE=1` guidance from the main README's `> NOTE:` and the 7 plugin READMEs' "Prereleases" note; the launcher itself needs no change. Same for the "while the repo is private" token wording once it goes public.
-3. **Confirm `github.com/mariadb/ai-plugins` exists** — the READMEs now tell users `/plugin marketplace add mariadb/ai-plugins`, which fails until the tracking fork is there. (`origin` here is still `mariadb-corporation/ai-plugins`.)
-4. (Optional) Delete the stale `wip/updateMcpLauncher` branch, local and remote — its content is in `main` under different SHAs.
-5. (Optional) Propagate the REST/MSM e2e steps to the opencode suite (codex has them now; pi cannot until `pi-mcp-adapter` is part of the test wiring).
-6. (Optional) Teach CI to use `run_tests.py` — needs a `mariadb-shell` on the runner; until then the workflows keep calling `pytest` per suite (see "CI left alone on purpose").
+1. **`mariadb-shell` must package pywin32 for Windows.** Its Windows packages (26.8.0 *and* 26.8.1, arm and x86 alike) ship no pywin32, so `mcp start-server` dies with `ModuleNotFoundError: No module named 'pywintypes'` — reproduced by running the shell directly, no Codex or plugin involved, and fixed by hand with a `pip install pywin32` into the bundled Python 3.14. Until it is packaged, Codex's one-step install is only truly one step on macOS/Linux. Not filed yet (user declined).
+2. **Transfer the remaining PRs from the fork** — `git fetch fork pull/<N>/head:pr-<N>-branch`, rebase onto `main`, verify, push to `origin`, open there. **Both are done** — fork PR 1 → #9, fork PR 2 → #7 — and the fork has no others, so this is finished unless new ones appear. Two lessons worth keeping: rebasing a fork PR onto a `main` that moved needs the overlaps checked **by hand**, because a clean rebase can silently revert newer edits in a restructured file.
+3. **Once a stable (non-prerelease) `mariadb-shell` release exists**, drop the prerelease guidance from the main README and the 7 plugin READMEs. Both published releases are still prereleases, so `releases/latest` resolves to nothing and the launcher's prerelease fallback stays load-bearing.
+4. (Optional) Propagate the REST/MSM e2e steps to the opencode suite (codex has them; pi cannot until `pi-mcp-adapter` is in the test wiring).
+5. (Optional) Teach CI to use `run_tests.py` — needs a `mariadb-shell` on the runner; until then the workflows keep calling `pytest` per suite (see "CI left alone on purpose"). Note CI has no GitHub token, but that no longer skips the contributor plugins now that `mariadb-shell` is public.
 
 ## Gotchas / things not to repeat
 
+- **`sandbox.deploy` registers a connection; `db.connect` needs no password.** It calls `config.store_connection("root@127.0.0.1:<port>", password)`, `db.list_connections` is derived from those *secrets* (not a registry of its own), and `db.connect` checks its argument against that list. Consequences: the registration is only visible through the config home holding the secret store, and an **unreadable secret store makes every connection look unconfigured** — which is exactly how a working deploy misreads as a broken one (seen on Windows over SSH). Covered by `test_db_connect.py` in all four suites.
 - **Don't judge credential-touching behaviour from an SSH session on Windows.** The Windows credential store needs an interactive desktop logon, so over SSH the shell's secret-reading tools fail with `Cannot list secrets, current credential helper is invalid`; run directly on the machine and they work (user-confirmed on the `dev@192.168.10.103` VM). SSH is fine for process/MCP-wiring checks, which is what the Codex launcher verification needed.
 - **`mariadb-shell` is PUBLIC now** (was private; re-verified anonymously 2026-09-01: `api/repos` 200 `"visibility": "public"`, the tarball 200, `raw.githubusercontent.com/.../install.sh` 200). So neither `sync-skills.sh` nor the launcher needs a token any more — `sync-skills.sh` no longer skips the contributor plugins without one (verified: with `GH_TOKEN`/`GITHUB_TOKEN` unset *and* a `gh` that cannot authenticate, all 3 contributor plugins sync and the output is byte-identical to the authenticated run). A token is still passed when available, for the API rate limit and in case it goes private again. **The old note conflated two causes — don't repeat that:** anonymous `releases/latest` still answers **404**, but that is purely because every release is a prerelease and `releases/latest` excludes those, NOT privacy. `releases` (the list) answers 200 and shows `v26.8.1` and `v26.8.0`, both prerelease.
 - **Every published release is still flagged prerelease** — `v26.8.1` (2026-09-01) and `v26.8.0` (2026-08-13), verified with `gh release list`. So `releases/latest` still resolves to nothing and an unattended install still depends on the launcher's prerelease fallback (or `MARIADB_SHELL_PRERELEASE=1`). 26.8.1 assets: `install.sh`, `install.ps1`, `SHA256SUMS`, and `mariadb-shell-26.8.1-{linux-glibc2.34-arm,linux-glibc2.34-x86,macos15-x86,macos26-arm,windows-arm,windows-x86}-64bit.tar.gz` — note the macOS matrix is **not** the full cross product: macos15 is x86-only and macos26 arm-only. **Package versions are 26.x; the local source build still reports `Ver 9.7.0`** — so with the gate at 26.8.1 the local build on PATH is rejected; use `MARIADB_SHELL_BIN` for it (which is what the e2e tier already does).
@@ -127,45 +128,71 @@
 - **All the file-touching MCP tools are path-gated** by the server's `settings.json` allow-list (`<config home>/plugin_data/mcp_plugin/settings.json`, key `allowedPaths`); a non-allowed path falls back to an elicitation a headless client can't answer. For the MSM tools that fails the call; for `sandbox.deploy` it **HANGS** — so always pre-seed the allow-list. The `msm` plugin method is `msm.create_new_project_folder` (not `create_project`); `license="GPLv2"` is rejected (no stored license by that name) — omit it or pass custom text.
 - **Shell config home — two facts that cost time:** (1) the current build's real one is **`~/.mariadb-shell`**, not `~/.mysqlsh` (log is `mariadb-shell.log`), though **`MYSQLSH_USER_CONFIG_HOME` is still honored** for relocating it (`MARIADB_SHELL_USER_CONFIG_HOME` too — set both). (2) **the shell loads its plugins from the config home**, and on this source build `mcp`/`msm`/`mrs` are symlinks in `~/.mariadb-shell/plugins/` — so relocating it to a bare temp dir kills the MCP server outright (`ERROR: There is no object registered under name 'mcp'`). Isolate it *and* symlink the real one's plugins in (what `lib/sandbox.py` does). Also: the config home dir must already exist, or the shell dies on "Error opening log file".
 - `db.execute_sql_script` runs each statement in a **fresh session** → REST grammar needs one continuous session; run REST statements individually via `db.execute_sql` on one connection (claude adapts automatically).
-- MCP `db.connect` needs a **bare** uri `root@127.0.0.1:PORT` (not `mariadb://...` → "not a configured connection"); `db.execute_sql_script` rejects file paths outside allowed paths → pass SQL inline.
+- MCP `db.connect` **no longer** needs a bare uri — **this gotcha is out of date, measured 2026-09-01**: `config.normalize_connection_uri` now folds a `mariadb://`/`mysql://` prefix, host case, the default port and an inline password onto the stored `root@127.0.0.1:PORT` key, so all of those open the connection (verified by `test_db_connect.py`). What is still refused is a uri asking for **more** than was configured — a default schema (`…:PORT/schema`) or an option (`?ssl-mode=REQUIRED`) — deliberately, so a caller is never handed a connection that quietly drops what it asked for. That refusal is still "not a configured connection"; `db.execute_sql_script` rejects file paths outside allowed paths → pass SQL inline.
 - Background `... | tee log` reports **tee's** exit (0), not pytest's — always read the pytest summary line.
 - Timeouts orphan sandboxes if teardown isn't in a `finally` (leaked 51111/51914 earlier). Clean via MCP `sandbox.stop`+`sandbox.delete` (fallback `sandbox.kill`). All session sandboxes now cleaned (51111, 51914, 52646, e2e's 54042).
 - Foreground `sleep` is blocked by the harness; use `run_in_background` / Monitor.
 - `see_also_refs()` counts only backticked `mariadb-*`/`mysql-*` under `## See Also`; underscored names like `mysql_rest_service_metadata` don't match (safe).
 - Sandbox root password must not be blank (the e2e tier pins `test`, the db tier `skilltest_root`); `sandbox.delete` refuses a running instance, so `sandbox.kill` is the fallback when `stop` fails. Deploy with `ssl: False` to avoid needing openssl.
-- **Two shell-plugins checkouts exist**: `~/git/mariadb-shell-plugins` (newer, and what `~/.mariadb-shell/plugins/` symlinks point at — the **active** one) and the older `~/git/mysql-shell-plugins` from before the upstream rename. Same layout; always read/patch the active one.
+- **Two shell-plugins checkouts exist**: `~/git/mariadb-shell-plugins` (the **active** one, and what `~/.mariadb-shell/plugins/` symlinks point at) and `~/git/mysql-shell-plugins-old` from before the rename. Same layout; always read/patch the active one. **The rename silently broke the plugin symlinks** (2026-09-01): all three still pointed at the vanished `~/git/mysql-shell-plugins`, so the MCP server died with `ERROR: There is no object registered under name 'mcp'` and the **whole db tier skipped** in every suite — a skip, not a failure, so a run looked fine. `mrs` and `msm` were broken the same way, which would have taken the REST and MSM e2e modules with them. Repaired with `ln -sfn`; if that error appears again, check these symlinks *first*.
 - mariadb-shell binary: `/Users/mzinner/git/mariadb-shell/build/bin/mariadb-shell`; MCP plugin source: `/Users/mzinner/git/mariadb-shell-plugins/mcp_plugin`; REST/mrs plugin: `/Users/mzinner/git/mariadb-shell-plugins/mrs_plugin`.
 
 ## Git state
 
-Branch: **`wip/mcpLauncherUpdate`**, branched from `main` at `1615136`. `main` is
-the GitHub **default branch** and the only other branch — every earlier wip branch
-(`wip/AIPL-4`, `wip/updateMcpLauncher`, `wip/codexTests`, `wip/piTests`) has been
-merged and deleted, locally and on the remote. An earlier version of this section
-claimed the default was `wip/AIPL-4`; that was only a stale local `origin/HEAD`.
+Branch: **`wip/DB-CONNECT-TESTS`**, branched from `main` at `014d574`. `main` is the
+GitHub default branch; a local `origin/HEAD` pointing at the deleted
+`wip/AIPL-4` was repaired with `git remote set-head origin -a`.
+
+Two remotes: **`origin`** = `mariadb-corporation/ai-plugins` (the source of truth)
+and **`fork`** = `MariaDB/ai-plugins` (the tracking fork PRs arrive on, and the
+install-facing org the READMEs name).
+
+Open on `origin`: only **PR #8** — `wip/DB-CONNECT-TESTS`, the `db.connect`
+coverage (this branch). Both fork transfers are merged: #9 (fork PR 1) and #7
+(fork PR 2).
+
+**The two fork PRs are still OPEN on `MariaDB/ai-plugins`** even though their
+content is merged here, so their authors have no signal that the work landed.
+They want closing with a pointer to the merged PR — not yet done.
 
 `main` history, newest first (PR merges are squashes, so branch SHAs do not
-survive — check containment by tree, not by ancestry):
+survive — check containment by **tree**, not by ancestry; `git rev-list ^main`
+will report a merged branch's commits as missing):
 
-- `1615136` — **pi test suite + `pi-test.yml`** (PR #4). 4th suite: static 611
-  (602 shared + 9 pi-specific), db 16, e2e 6; no eval tier.
+- `6e42fab` — **README restructured** (PR #7, fork PR 2 by @robertsilen): a
+  `# Development and maintenance` rule splits maintainer material from user
+  material, `## Configure the MCP server` promoted to H2, new `## What you can ask
+  for`. Plus the Windows sandbox path (`%USERPROFILE%\MariaDB\mariadb-shell\sandboxes`,
+  which is NOT the config home under `%APPDATA%`) and casing/formatting fixes.
+- `3d8f8ea` — **Codex install commands corrected** (PR #9, fork PR 1 by @lefred):
+  `/plugin` does not exist in Codex (the enum variant is `Plugins`), and `/plugins`
+  takes no arguments (it browses interactively) while `/reload-plugins` does not
+  exist at all — so all four Codex-facing READMEs now document the CLI
+  (`codex plugin marketplace add …` / `codex plugin add …`), verified end to end.
+  Claude Code keeps `/plugin`, which is correct there.
+- `014d574` — `sync-skills.sh` stops requiring a token: `mariadb-shell` is public,
+  so the contributor plugins no longer drop out of an unauthenticated sync.
+- `e6db430` — skills re-vendored (docs `ace4f63`, shell `2b2d0aa`); contributor
+  plugins 1 → 2 skills (`review-shell-change`), their first sync in a while.
+- `c5a3a8c` — **Codex registers its own MCP server** (PR #6): relative
+  extensionless `command` + `"cwd": "."`, the `mariadb-mcp-launcher` shim, 4 static
+  guards, and the 26.8.1 / 26.9.0 version bumps.
+- `1615136` — pi test suite + `pi-test.yml` (PR #4).
 - `5905134` — deleted the unread `.codex-plugin/marketplace.json`.
-- `e89fac9` — **Codex 0.147 fixes + codex e2e tier** (PR #3): `.agents/plugins/marketplace.json`,
-  `mcpServers` key, `${CLAUDE_PLUGIN_ROOT}`, `setup-codex-mcp.sh`, two e2e modules
-  + `lib/codex_cli.py`, two static guards.
-- `86b6b7d` — plugin version 26.8.0, skills re-synced at `ec1d988`/`af86380`, and
-  `test_additional_skill_matches_its_source` in all three suites.
+- `e89fac9` — Codex 0.147 fixes + codex e2e tier (PR #3).
+- `86b6b7d` — plugin version 26.8.0, skills re-synced, `test_additional_skill_matches_its_source`.
 - `fb08a4a` — LICENSE: dropped the Paramiko section (user's own commit).
-- `1c4d422` — GPL-2.0 header on all 46 source files + `SECURITY.md`.
-- `b00fbc3` — install-facing org → `mariadb` (install commands + manifest URLs).
-- `735f74a` — **launcher rewrite**: delegate installing to the shell's
-  `install.sh`/`install.ps1`; version gate → 26.8.0 as a *minimum*;
-  `.gitattributes` (CRLF for `.cmd`); repo-root `LICENSE`.
-- Below that, `7a52cc3` is a squash of the whole original `wip/AIPL-4` line (REST
-  and MSM skills, the pi harness, the unified `run_tests.py`, the db-tier sandbox);
-  its 16 subjects are listed in that commit's own message.
+- `1c4d422` — GPL-2.0 header on all source files + `SECURITY.md`.
+- `b00fbc3` — install-facing org → `mariadb`.
+- `735f74a` — launcher rewrite: delegate installing to the shell's
+  `install.sh`/`install.ps1`; version gate as a *minimum*; `.gitattributes`.
+- Below that, `7a52cc3` squashes the whole original `wip/AIPL-4` line (REST and MSM
+  skills, the pi harness, `run_tests.py`, the db-tier sandbox); its 16 subjects are
+  listed in that commit's own message.
 
-Unreleased on this branch: the prerelease fallback, OpenCode's launchers enabled,
-the README NOTE removal, `setup-codex-mcp.cmd`, and the version-script reach fix.
-
-Heads-up (earlier this session): the `codex/dev-plugin-test` and `opencode/dev-plugin-test` dirs had gone **missing from the working tree** (not by any deliberate action here); restored from HEAD with `git restore`. `.claude/settings.json` remains intentionally uncommitted.
+Versions are two independent things, set by two scripts, and have **diverged on
+purpose**: plugin package **26.9.0** (`set-plugin-version.sh`, 17 files),
+mariadb-shell floor **26.8.1** (`set-mariadb-shell-version.sh`, 35 files). Both
+scripts now take `--help` and refuse a non-version argument — before that,
+`set-mariadb-shell-version.sh --help` wrote the literal string `--help` into all
+35 files.
