@@ -1,6 +1,6 @@
 # MariaDB contributor plugin for Codex
 
-Version **26.8.1**
+Version **26.9.0**
 
 Skills for **contributing to MariaDB tooling**. Unlike the `dev`/`sql` plugins
 (which vendor the MariaDB SQL/usage skills from `mariadb-docs`), this plugin
