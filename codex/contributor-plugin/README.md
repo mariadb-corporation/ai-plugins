@@ -14,9 +14,9 @@ server.
 
 ## Installation
 
-```text
-/plugin marketplace add mariadb/ai-plugins
-/plugin install contributor@mariadb
+```sh
+codex plugin marketplace add mariadb/ai-plugins
+codex plugin add contributor@mariadb
 ```
 
 ## Skills

@@ -17,9 +17,9 @@ MariaDB SQL support through two parts:
 
 ## Installation
 
-```text
-/plugin marketplace add mariadb/ai-plugins
-/plugin install sql@mariadb
+```sh
+codex plugin marketplace add mariadb/ai-plugins
+codex plugin add sql@mariadb
 ```
 
 That is the whole installation: the plugin declares its MCP server in a shape
@@ -32,7 +32,8 @@ as a fallback:
 codex/sql-plugin/scripts/setup-codex-mcp.sh     # --remove to unregister
 ```
 
-Then reload (`/reload-plugins`) if Codex doesn't pick it up automatically. On first
+Codex's `/plugins` slash command browses and enables plugins interactively; it
+takes no arguments, so adding a marketplace is done with the CLI above. On first
 use of a MariaDB tool, the launcher looks for a `mariadb-shell` it can run —
 `$MARIADB_SHELL_BIN`, one on `PATH`, or an existing install in `~/.local/bin`
 (`%LOCALAPPDATA%\Programs\mariadb-shell\bin` on Windows) — and otherwise installs
