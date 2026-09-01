@@ -2,7 +2,7 @@
 
 ## Project
 
-**Latest work streams**: (a) **Codex now registers its own MCP server** — merged as PR #6; see Codex fact 5. (b) **`db.connect` coverage** on `wip/DB-CONNECT-TESTS`, which closed the last untested path an agent actually takes. (c) **PR transfers from the tracking fork** `MariaDB/ai-plugins` (remote `fork`) into `origin` — PR #7 is the first. Earlier stream, merged:  rewrote the `mariadb-mcp-launcher.{sh,cmd}` scripts in all plugins to stop downloading release assets themselves and instead delegate to the shell's own `install.sh` / `install.ps1`; bumped the version gate to 26.8.0 (now explicitly a *minimum*); added a repo-root `LICENSE`, `.gitattributes` and `SECURITY.md`; restructured the main README (Installation moved directly under the harness table, new `## Plugin variants` heading, new "configure the MCP server" step propagated to all 7 MCP-bearing plugin READMEs); switched the install-facing org to **`mariadb`**; and added the GPL-2.0 copyright header to all 46 source files. Details in "Launcher rewrite" below.
+**Latest work streams**: (a) **Codex now registers its own MCP server** — merged as PR #6; see Codex fact 5. (b) **`db.connect` coverage** on `wip/DB-CONNECT-TESTS`, which closed the last untested path an agent actually takes. (c) **PR transfers from the tracking fork** `MariaDB/ai-plugins` (remote `fork`) into `origin` — both of its PRs are transferred and merged (#9, #7). Earlier stream, merged:  rewrote the `mariadb-mcp-launcher.{sh,cmd}` scripts in all plugins to stop downloading release assets themselves and instead delegate to the shell's own `install.sh` / `install.ps1`; bumped the version gate to 26.8.0 (now explicitly a *minimum*); added a repo-root `LICENSE`, `.gitattributes` and `SECURITY.md`; restructured the main README (Installation moved directly under the harness table, new `## Plugin variants` heading, new "configure the MCP server" step propagated to all 7 MCP-bearing plugin READMEs); switched the install-facing org to **`mariadb`**; and added the GPL-2.0 copyright header to all 46 source files. Details in "Launcher rewrite" below.
 
 `ai-plugins` packages MariaDB agent skills (+ the native `mariadb-shell` MCP server) as installable plugins for four coding agents: Claude Code (`claude/`), Codex (`codex/`), OpenCode (`opencode/`), and Pi/pi.dev (`pi/`). Each agent has `dev` (full skills + MCP), `sql` (SQL subset + MCP), `contributor` (skills-only) variants. Skills are vendored (never hand-edited) by `scripts/sync-skills.sh`. **This work stream** added a set of **MariaDB REST Service** skills (a fork of the MySQL REST Service) and **Schema Management (MSM)** lifecycle skills under `additional-skills/`, reorganized `additional-skills/` into `sql/`/`rest/`/`schema-management/` subfolders with per-plugin selection, added **two Claude e2e tests** that exercise the REST skills and the MSM lifecycle skills end-to-end (both pass), and updated the README. Latterly it also **unified how the tests run** across the plugins: a repo-root `run_tests.py` drives every suite with the Python inside `mariadb-shell` and one combined coverage report, and the `db` tier deploys its own sandbox instance instead of needing a server on 3306.
 
@@ -93,7 +93,7 @@
 ## Next steps
 
 1. **`mariadb-shell` must package pywin32 for Windows.** Its Windows packages (26.8.0 *and* 26.8.1, arm and x86 alike) ship no pywin32, so `mcp start-server` dies with `ModuleNotFoundError: No module named 'pywintypes'` — reproduced by running the shell directly, no Codex or plugin involved, and fixed by hand with a `pip install pywin32` into the bundled Python 3.14. Until it is packaged, Codex's one-step install is only truly one step on macOS/Linux. Not filed yet (user declined).
-2. **Transfer the remaining PRs from the fork** — `git fetch fork pull/<N>/head:pr-<N>-branch`, rebase onto `main`, verify, push to `origin`, open there. PR 2 done as #7. Rebasing a fork PR onto a `main` that moved needs the overlaps checked **by hand**: a clean rebase can silently revert newer edits in a restructured file.
+2. **Transfer the remaining PRs from the fork** — `git fetch fork pull/<N>/head:pr-<N>-branch`, rebase onto `main`, verify, push to `origin`, open there. **Both are done** — fork PR 1 → #9, fork PR 2 → #7 — and the fork has no others, so this is finished unless new ones appear. Two lessons worth keeping: rebasing a fork PR onto a `main` that moved needs the overlaps checked **by hand**, because a clean rebase can silently revert newer edits in a restructured file.
 3. **Once a stable (non-prerelease) `mariadb-shell` release exists**, drop the prerelease guidance from the main README and the 7 plugin READMEs. Both published releases are still prereleases, so `releases/latest` resolves to nothing and the launcher's prerelease fallback stays load-bearing.
 4. (Optional) Propagate the REST/MSM e2e steps to the opencode suite (codex has them; pi cannot until `pi-mcp-adapter` is in the test wiring).
 5. (Optional) Teach CI to use `run_tests.py` — needs a `mariadb-shell` on the runner; until then the workflows keep calling `pytest` per suite (see "CI left alone on purpose"). Note CI has no GitHub token, but that no longer skips the contributor plugins now that `mariadb-shell` is public.
@@ -147,16 +147,29 @@ Two remotes: **`origin`** = `mariadb-corporation/ai-plugins` (the source of trut
 and **`fork`** = `MariaDB/ai-plugins` (the tracking fork PRs arrive on, and the
 install-facing org the READMEs name).
 
-Open on `origin`:
+Open on `origin`: only **PR #8** — `wip/DB-CONNECT-TESTS`, the `db.connect`
+coverage (this branch). Both fork transfers are merged: #9 (fork PR 1) and #7
+(fork PR 2).
 
-- **PR #7** — `pr-2-branch`, the transfer of fork PR 2 (README restructure by
-  @robertsilen, commits rebased with authorship preserved) plus two fixup commits.
-- **`wip/DB-CONNECT-TESTS`** — the `db.connect` coverage, this branch.
+**The two fork PRs are still OPEN on `MariaDB/ai-plugins`** even though their
+content is merged here, so their authors have no signal that the work landed.
+They want closing with a pointer to the merged PR — not yet done.
 
 `main` history, newest first (PR merges are squashes, so branch SHAs do not
 survive — check containment by **tree**, not by ancestry; `git rev-list ^main`
 will report a merged branch's commits as missing):
 
+- `6e42fab` — **README restructured** (PR #7, fork PR 2 by @robertsilen): a
+  `# Development and maintenance` rule splits maintainer material from user
+  material, `## Configure the MCP server` promoted to H2, new `## What you can ask
+  for`. Plus the Windows sandbox path (`%USERPROFILE%\MariaDB\mariadb-shell\sandboxes`,
+  which is NOT the config home under `%APPDATA%`) and casing/formatting fixes.
+- `3d8f8ea` — **Codex install commands corrected** (PR #9, fork PR 1 by @lefred):
+  `/plugin` does not exist in Codex (the enum variant is `Plugins`), and `/plugins`
+  takes no arguments (it browses interactively) while `/reload-plugins` does not
+  exist at all — so all four Codex-facing READMEs now document the CLI
+  (`codex plugin marketplace add …` / `codex plugin add …`), verified end to end.
+  Claude Code keeps `/plugin`, which is correct there.
 - `014d574` — `sync-skills.sh` stops requiring a token: `mariadb-shell` is public,
   so the contributor plugins no longer drop out of an unauthenticated sync.
 - `e6db430` — skills re-vendored (docs `ace4f63`, shell `2b2d0aa`); contributor
