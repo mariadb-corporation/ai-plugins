@@ -104,6 +104,7 @@
 - **Don't judge credential-touching behaviour from an SSH session on Windows.** The Windows credential store needs an interactive desktop logon, so over SSH the shell's secret-reading tools fail with `Cannot list secrets, current credential helper is invalid`; run directly on the machine and they work (user-confirmed on the `dev@192.168.10.103` VM). SSH is fine for process/MCP-wiring checks, which is what the Codex launcher verification needed.
 - **`mariadb-shell` is PUBLIC now** (was private; re-verified anonymously 2026-09-01: `api/repos` 200 `"visibility": "public"`, the tarball 200, `raw.githubusercontent.com/.../install.sh` 200). So neither `sync-skills.sh` nor the launcher needs a token any more — `sync-skills.sh` no longer skips the contributor plugins without one (verified: with `GH_TOKEN`/`GITHUB_TOKEN` unset *and* a `gh` that cannot authenticate, all 3 contributor plugins sync and the output is byte-identical to the authenticated run). A token is still passed when available, for the API rate limit and in case it goes private again. **The old note conflated two causes — don't repeat that:** anonymous `releases/latest` still answers **404**, but that is purely because every release is a prerelease and `releases/latest` excludes those, NOT privacy. `releases` (the list) answers 200 and shows `v26.9.0`, `v26.8.1` and `v26.8.0`, all prerelease.
 - **Every published release is still flagged prerelease** — `v26.9.0` (2026-09-02), `v26.8.1` (2026-09-01) and `v26.8.0` (2026-08-13), verified with `gh release list`. So `releases/latest` still resolves to nothing and an unattended install still depends on the launcher's prerelease fallback (or `MARIADB_SHELL_PRERELEASE=1`). 26.8.1 assets: `install.sh`, `install.ps1`, `SHA256SUMS`, and `mariadb-shell-26.8.1-{linux-glibc2.34-arm,linux-glibc2.34-x86,macos15-x86,macos26-arm,windows-arm,windows-x86}-64bit.tar.gz` — note the macOS matrix is **not** the full cross product: macos15 is x86-only and macos26 arm-only. **Package versions are 26.x; the local source build still reports `Ver 9.7.0`** — so with the gate at 26.9.0 the local build on PATH is rejected; use `MARIADB_SHELL_BIN` for it (which is what the e2e tier already does).
+- **`gh release create` cannot combine `--notes-from-tag` with `--repo`** (gh 2.97): the annotation is read from the *local* clone, and `--repo` takes it out of that context, so the pair is rejected outright. With more than one remote and no `gh repo set-default`, `--repo` is unavoidable — so extract the message yourself (`git tag -l --format='%(contents:body)' <tag>` → `--notes-file`), which also guarantees two repos get byte-identical notes. Always pass **`--verify-tag`**: without it a typo'd tag name is silently *created* as a lightweight tag off the default branch instead of failing.
 - **Installer targets**: `install.sh` → unpacks to `~/.local/share/mariadb-shell/<ver>/`, symlinks `~/.local/bin/{mariadb-shell,msh}`, keeps only the 2 newest versions, and **only prints a PATH hint — never edits a shell profile**. `install.ps1` → `%LOCALAPPDATA%\Programs\mariadb-shell\`, `bin\*.cmd` shims written with `%~dp0`-relative paths. Both are overridable with `MARIADB_SHELL_PREFIX`/`_BINDIR`; `install.sh` needs curl+tar+awk, and jq or python3 only on the API path (token or `--pre-release`).
 - **Testing a resolution chain: measure the branch, not the outcome.** A first probe keyed on "did the shell get launched" reported ACCEPTED for *every* version, because a rejected binary is still launched by the install-failure fallback. Assert on the launcher's own stderr line instead. Stub binaries (`--version` prints a fake `Ver x.y.z`, anything else echoes a marker) cover the whole table cheaply.
 - **pi does NOT load a dependency's pi resources.** Per pi 0.84.1 `docs/packages.md`: resources load only from packages listed in settings, and *"other pi packages must be bundled in your tarball. Add them to `dependencies` **and** `bundledDependencies`, then reference their resources through `node_modules/` paths."* Our root `package.json` does neither, so **`pi install npm:pi-mcp-adapter` is a required separate step** — the `dependencies` entry only version-constrains the module. Also: `pi install <path>` writes just that path to `.pi/settings.json` `packages` and runs **no** `npm install` (that happens for `npm:`/`git:` sources only). Useful for testing: `pi install -l --approve <path>` in a throwaway dir touches nothing global; `pi list` was empty before/after.
@@ -139,22 +140,44 @@
 
 ## Git state
 
-Branch: **`wip/26-9-0-SHELL`**, branched from `main` at `ac55729`. `main` is the
-GitHub default branch; a local `origin/HEAD` pointing at the deleted
-`wip/AIPL-4` was repaired with `git remote set-head origin -a`.
+Branch: **`main`**, clean and level with `origin/main` at **`80a4a6a`** (= tag
+`v26.9.0`). `main` is the GitHub default branch; a local `origin/HEAD` pointing at
+the deleted `wip/AIPL-4` was repaired with `git remote set-head origin -a`.
 
 Two remotes: **`origin`** = `mariadb-corporation/ai-plugins` (the source of truth)
 and **`fork`** = `MariaDB/ai-plugins` (the tracking fork PRs arrive on, and the
-install-facing org the READMEs name).
+install-facing org the READMEs name). **The `fork` remote had gone missing from
+the local clone** and was re-added 2026-09-02 (`git remote add fork
+git@github.com:MariaDB/ai-plugins.git`) — this file had claimed it existed for a
+while before anyone noticed, so check `git remote -v` rather than trusting it.
 
-Open on `origin`: only **PR #10** — `wip/26-9-0-SHELL`, the mariadb-shell floor
-bump to 26.9.0 plus the changelog cut (this branch); MERGEABLE/CLEAN against
-`main`. **PR #8** (`db.connect` coverage) merged as `ac55729`, and both fork
-transfers are merged too: #9 (fork PR 1) and #7 (fork PR 2).
+**Nothing is open on `origin`, and no branches are left there but `main`.** PR #10
+(the 26.9.0 floor bump + changelog cut) merged as `80a4a6a`; #8 as `ac55729`; the
+fork transfers as #9 and #7. Four merged branches were deleted 2026-09-02 —
+`wip/26-9-0-SHELL`, `wip/DB-CONNECT-TESTS`, `pr-1-branch`, `pr-2-branch` — each
+checked first by **comparing its remote head against the `headRefOid` GitHub
+actually merged**, since squash merges leave the branch commits unreachable from
+`main` and `git branch -d` therefore refuses them (`-D` skips the very check you
+want). Their merged heads, if one is ever wanted back: `9262c79`, `ab05169`,
+`f1acb15`, `3015a48`.
 
-**The two fork PRs are still OPEN on `MariaDB/ai-plugins`** even though their
-content is merged here, so their authors have no signal that the work landed.
-They want closing with a pointer to the merged PR — not yet done.
+**The two fork PRs are now CLOSED** on `MariaDB/ai-plugins` (#1 and #2) — the
+long-standing "their authors have no signal" item is done.
+
+### Release v26.9.0 (2026-09-02) — the repo's first tag and first release
+
+- **Annotated tag `v26.9.0`** (tag object `5e360ac` → commit `80a4a6a`), pushed to
+  **both** `origin` and `fork`; the same tag object, not two separately created
+  ones. There were **no tags at all before this**, so 26.7.0 and 26.8.0 cannot be
+  reached by tag name, and `v`-prefixed is now the convention (user's choice,
+  matching `mariadb-shell`'s own `v26.9.0`/`v26.8.1` while the version *inside*
+  this repo — manifests, CHANGELOG headings — stays bare `26.9.0`).
+- **GitHub Releases published on both repos**, titled `v26.9.0`, notes taken from
+  the tag annotation, **not** flagged prerelease. Consequence worth knowing
+  because it is the mirror image of the `mariadb-shell` gotcha in Gotchas:
+  `repos/<org>/ai-plugins/releases/latest` **now resolves** (it 404'd before, as
+  `mariadb-shell`'s still does — every release there is a prerelease). Verified on
+  both. Nothing consumes it yet.
 
 `main` history, newest first (PR merges are squashes, so branch SHAs do not
 survive — check containment by **tree**, not by ancestry; `git rev-list ^main`
@@ -171,6 +194,8 @@ will report a merged branch's commits as missing):
   exist at all — so all four Codex-facing READMEs now document the CLI
   (`codex plugin marketplace add …` / `codex plugin add …`), verified end to end.
   Claude Code keeps `/plugin`, which is correct there.
+- `80a4a6a` — mariadb-shell floor → 26.9.0, changelogs cut as `[26.9.0]` (PR #10);
+  tagged `v26.9.0`.
 - `ac55729` — `db.connect` + `sandbox.deploy` connection coverage (PR #8).
 - `014d574` — `sync-skills.sh` stops requiring a token: `mariadb-shell` is public,
   so the contributor plugins no longer drop out of an unauthenticated sync.
