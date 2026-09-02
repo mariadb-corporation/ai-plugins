@@ -4,7 +4,7 @@ All notable changes to the MariaDB SQL OpenCode plugin are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 project adheres to [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [26.9.0] - 2026-09-02
 
 ### Changed
 
