@@ -37,7 +37,7 @@
 set -euo pipefail
 
 SERVER_NAME="mariadb"
-SHELL_VERSION="26.8.1"
+SHELL_VERSION="26.9.0"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PLUGIN_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"

@@ -4,7 +4,7 @@ All notable changes to the MariaDB Codex plugin are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 project adheres to [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [26.9.0] - 2026-09-02
 
 ### Fixed
 
@@ -81,7 +81,7 @@ project adheres to [Semantic Versioning](https://semver.org/).
   Asset naming is no longer duplicated here, so the launcher cannot go stale as
   releases change.
 - `MARIADB_SHELL_VERSION` now means the *minimum* acceptable version and defaults
-  to `26.8.1`, matching the published release series.
+  to `26.9.0`, matching the published release series.
 - New pass-through settings: `MARIADB_SHELL_BINDIR`, `MARIADB_SHELL_PREFIX`,
   `MARIADB_SHELL_TAG`, `MARIADB_SHELL_PRERELEASE` (needed while the only
   published release is a prerelease) and `MARIADB_SHELL_TOKEN` (`GH_TOKEN`,
