@@ -173,11 +173,16 @@ long-standing "their authors have no signal" item is done.
   matching `mariadb-shell`'s own `v26.9.0`/`v26.8.1` while the version *inside*
   this repo — manifests, CHANGELOG headings — stays bare `26.9.0`).
 - **GitHub Releases published on both repos**, titled `v26.9.0`, notes taken from
-  the tag annotation, **not** flagged prerelease. Consequence worth knowing
-  because it is the mirror image of the `mariadb-shell` gotcha in Gotchas:
-  `repos/<org>/ai-plugins/releases/latest` **now resolves** (it 404'd before, as
-  `mariadb-shell`'s still does — every release there is a prerelease). Verified on
-  both. Nothing consumes it yet.
+  the tag annotation. Published **without** the prerelease flag by mistake and
+  **flagged prerelease afterwards (2026-09-03)** with `gh release edit v26.9.0
+  --repo <org>/ai-plugins --prerelease --verify-tag` — the flag *is* editable
+  after publishing (only an **immutable** release is frozen; `gh release view
+  --json isImmutable` says which, and both were `false`). Tag, title and the
+  322-byte notes were untouched by the edit.
+- **Consequence of that flag**, the same one `mariadb-shell` has:
+  `repos/<org>/ai-plugins/releases/latest` **404s again** on both repos (verified
+  after the edit) because the endpoint excludes prereleases — it had briefly
+  resolved in the window when the release was stable. Nothing consumes it yet.
 
 `main` history, newest first (PR merges are squashes, so branch SHAs do not
 survive — check containment by **tree**, not by ancestry; `git rev-list ^main`
