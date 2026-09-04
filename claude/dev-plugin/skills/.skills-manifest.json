@@ -557,6 +557,12 @@
           "path": "mariadb-schema-management/SKILL.md",
           "status": "local",
           "baseline_version": "11.8 LTS"
+        },
+        {
+          "name": "mariadb-migrator",
+          "path": "mariadb-migrator/SKILL.md",
+          "status": "local",
+          "baseline_version": "11.8 LTS"
         }
       ]
     }

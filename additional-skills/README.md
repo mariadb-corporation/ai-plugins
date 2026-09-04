@@ -20,8 +20,8 @@ plugin are recorded in that plugin's `skills/skills-source.json`.
    `.claude/skills/`. Supplies the `contributor` plugins.
 3. **This repository — `additional-skills/`** — the repo-local skills under
    [`mariadb-corporation/ai-plugins`](https://github.com/mariadb-corporation/ai-plugins)
-   `additional-skills/` (`sql/`, `rest/`, `schema-management/`), vendored flat
-   alongside the upstream skills.
+   `additional-skills/` (`sql/`, `rest/`, `schema-management/`, `migrator/`),
+   vendored flat alongside the upstream skills.
 
 ## Licensing
 
