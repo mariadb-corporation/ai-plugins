@@ -1,6 +1,6 @@
 # MariaDB plugin for Claude Code
 
-Version **26.9.0**
+Version **26.9.1**
 
 This plugin gives Claude Code first-class MariaDB support through two parts:
 

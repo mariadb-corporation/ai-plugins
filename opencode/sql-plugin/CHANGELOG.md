@@ -4,6 +4,17 @@ All notable changes to the MariaDB SQL OpenCode plugin are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 project adheres to [Semantic Versioning](https://semver.org/).
 
+## [26.9.1] - 2026-09-04
+
+### Changed
+
+- Skills re-vendored from `mariadb-corporation/mariadb-docs` `agent-skills/` at
+  commit `71f3ac5` (synced 2026-09-04). **No skill in this plugin changed**: the
+  upstream edits were to the connector layer and the new `mariadb-migrator`
+  skill is repo-local, and both are dev-only. This plugin's 47 skills are
+  unchanged.
+- Version bumped to 26.9.1 to stay in lockstep with the other plugins.
+
 ## [26.9.0] - 2026-09-02
 
 ### Changed
