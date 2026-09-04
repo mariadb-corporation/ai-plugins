@@ -1,6 +1,6 @@
 # MariaDB plugin for Pi
 
-Version **26.9.0**
+Version **26.9.1**
 
 This plugin gives the [Pi coding agent](https://pi.dev) first-class MariaDB
 support as a **pi extension**, through two parts:

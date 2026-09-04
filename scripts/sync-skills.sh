@@ -58,8 +58,8 @@
 # The sql-* plugins are a SQL-focused variant vendored from an explicit
 # include-list: the upstream layers granular/statements, granular/functions and
 # topical, plus the local additional-skills/sql subfolder. So the client-tool and
-# connector layers, and the additional-skills/rest and
-# additional-skills/schema-management subfolders, are dev-only.
+# connector layers, and the additional-skills/rest, schema-management and
+# migrator subfolders, are dev-only.
 # vendor_into() takes an optional list of include keys; upstream layers are picked
 # by their manifest layer key, and local additional-skills/ subfolders by an
 # "additional-<subfolder>" key (or "additional" for every subfolder). Only the
@@ -106,9 +106,9 @@ SQL_PLUGINS=(
 )
 # Include keys the sql plugins vendor: the upstream manifest layers
 # granular/statements, granular/functions and topical, plus the local
-# additional-skills/sql subfolder ("additional-sql"). The additional-skills/rest
-# and additional-skills/schema-management subfolders are omitted from sql (they
-# are dev-only), as are the granular/tools + connectors layers. Use
+# additional-skills/sql subfolder ("additional-sql"). The additional-skills/rest,
+# schema-management and migrator subfolders are omitted from sql (they are
+# dev-only), as are the granular/tools + connectors layers. Use
 # "additional-<subfolder>" to pick a subfolder, or "additional" for all of them.
 SQL_INCLUDE_LAYERS=("granular-statements" "granular-functions" "topical" "additional-sql")
 
@@ -117,7 +117,7 @@ SQL_INCLUDE_LAYERS=("granular-statements" "granular-functions" "topical" "additi
 # sql plugins select a subset (see SQL_INCLUDE_LAYERS). Add a new subfolder here
 # to make it selectable via the "additional-<subfolder>" include key.
 ADDITIONAL_SKILLS_DIR="$REPO_ROOT/additional-skills"
-ADDITIONAL_SUBDIRS=("sql" "rest" "schema-management")
+ADDITIONAL_SUBDIRS=("sql" "rest" "schema-management" "migrator")
 
 # The "contributor" plugins vendor a DIFFERENT source: the skills tracked in the
 # mariadb-shell repository under .claude/skills/ (no manifest — every SKILL.md
@@ -215,7 +215,7 @@ vendor_into() {
 
   # Copy this repo's local additional-skills/ (flat) from the selected subfolders
   # and collect their manifest entries so the disk<->manifest consistency tests
-  # still pass. dev vendors every subfolder; the sql plugins omit "rest".
+  # still pass. dev vendors every subfolder; the sql plugins take only "sql".
   local extra_entries="[]" skill_md sdir sname sub base
   if [ "${#add_subdirs[@]}" -gt 0 ]; then
     for sub in "${add_subdirs[@]}"; do

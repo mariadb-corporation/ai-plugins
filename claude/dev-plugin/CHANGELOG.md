@@ -4,6 +4,27 @@ All notable changes to the MariaDB Claude Code plugin are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 project adheres to [Semantic Versioning](https://semver.org/).
 
+## [26.9.1] - 2026-09-04
+
+### Added
+
+- `mariadb-migrator` skill: migrating a MySQL database to MariaDB with the
+  `migrator.*` tools of the `mariadb-shell` MCP server — picking the execution
+  mode, writing the tooling's `config/migration.yaml` correctly (only servers
+  that are already configured MCP connections may be named, and passwords are
+  never written to it), then planning, running and verifying the migration. It
+  also records the release's known defects and the configuration that works
+  around each, so a run does not have to rediscover them. Brings the plugin to
+  76 skills.
+
+### Changed
+
+- Skills re-vendored from `mariadb-corporation/mariadb-docs` `agent-skills/` at
+  commit `71f3ac5` (synced 2026-09-04): `mariadb-connector-r2dbc-install` and
+  `mariadb-connector-r2dbc-usage` now document R2DBC driver 1.4.2 in place of
+  1.4.1. No upstream skill was added or removed, so the skill count moved only
+  by the one added above.
+
 ## [26.9.0] - 2026-09-02
 
 ### Changed
