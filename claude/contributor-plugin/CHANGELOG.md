@@ -4,6 +4,18 @@ All notable changes to the MariaDB contributor Claude Code plugin are documented
 The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 project adheres to [Semantic Versioning](https://semver.org/).
 
+## [26.9.1] - 2026-09-08
+
+### Changed
+
+- Skills re-vendored from `mariadb-corporation/mariadb-shell` `.claude/skills/`
+  at commit `33b4e3e` (synced 2026-09-04). The upstream default branch moved
+  on, but nothing under `.claude/skills/` did, so both skills here are
+  unchanged.
+- Version bumped to 26.9.1 to stay in lockstep with the other plugins. This
+  plugin ships skills only and no MCP server, so the `MARIADB_SHELL_VERSION`
+  floor the others moved to 26.9.1 does not apply here.
+
 ## [26.9.0] - 2026-09-02
 
 ### Added
