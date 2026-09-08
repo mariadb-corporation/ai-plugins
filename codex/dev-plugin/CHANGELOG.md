@@ -4,7 +4,7 @@ All notable changes to the MariaDB Codex plugin are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 project adheres to [Semantic Versioning](https://semver.org/).
 
-## [26.9.1] - 2026-09-04
+## [26.9.1] - 2026-09-08
 
 ### Added
 
@@ -24,6 +24,10 @@ project adheres to [Semantic Versioning](https://semver.org/).
   `mariadb-connector-r2dbc-usage` now document R2DBC driver 1.4.2 in place of
   1.4.1. No upstream skill was added or removed, so the skill count moved only
   by the one added above.
+- `MARIADB_SHELL_VERSION`, the *minimum* `mariadb-shell` the launcher accepts,
+  now defaults to `26.9.1`, matching the published release series. An install
+  already at or above that version is still used as-is; only a machine below it
+  fetches anything.
 
 ## [26.9.0] - 2026-09-02
 

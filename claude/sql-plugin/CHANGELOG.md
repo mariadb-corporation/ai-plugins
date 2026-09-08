@@ -4,7 +4,7 @@ All notable changes to the MariaDB SQL Claude Code plugin are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 project adheres to [Semantic Versioning](https://semver.org/).
 
-## [26.9.1] - 2026-09-04
+## [26.9.1] - 2026-09-08
 
 ### Changed
 
@@ -13,6 +13,10 @@ project adheres to [Semantic Versioning](https://semver.org/).
   upstream edits were to the connector layer and the new `mariadb-migrator`
   skill is repo-local, and both are dev-only. This plugin's 47 skills are
   unchanged.
+- `MARIADB_SHELL_VERSION`, the *minimum* `mariadb-shell` the launcher accepts,
+  now defaults to `26.9.1`, matching the published release series. An install
+  already at or above that version is still used as-is; only a machine below it
+  fetches anything.
 - Version bumped to 26.9.1 to stay in lockstep with the other plugins.
 
 ## [26.9.0] - 2026-09-02
