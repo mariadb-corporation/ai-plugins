@@ -2,7 +2,7 @@
 
 ## Project
 
-**Latest work streams**: (0) **Release 26.9.1**, in two halves: the **mariadb-shell floor** went to 26.9.1 on `main` on 2026-09-08 (`set-mariadb-shell-version.sh`, pushed direct, no PR), and **PR #11 (`wip/AIPL-21`, open)** takes the **plugin package version** there too while adding the repo-local **`mariadb-migrator`** skill (MySQL→MariaDB via the `migrator.*` MCP tools; new `additional-skills/migrator/` subfolder, so `ADDITIONAL_SUBDIRS` gained `"migrator"`; dev plugins 75 → 76 skills, sql unchanged at 47) and re-vendoring skills (docs `71f3ac5`, shell `33b4e3e`). The branch was **rebased onto the floor bump** on 2026-09-08 — both edits survived, verified site by site. (a) **Codex now registers its own MCP server** — merged as PR #6; see Codex fact 5. (b) **`db.connect` coverage** on `wip/DB-CONNECT-TESTS`, which closed the last untested path an agent actually takes. (c) **PR transfers from the tracking fork** `MariaDB/ai-plugins` (remote `fork`) into `origin` — both of its PRs are transferred and merged (#9, #7). Earlier stream, merged:  rewrote the `mariadb-mcp-launcher.{sh,cmd}` scripts in all plugins to stop downloading release assets themselves and instead delegate to the shell's own `install.sh` / `install.ps1`; bumped the version gate to 26.8.0 (now explicitly a *minimum*); added a repo-root `LICENSE`, `.gitattributes` and `SECURITY.md`; restructured the main README (Installation moved directly under the harness table, new `## Plugin variants` heading, new "configure the MCP server" step propagated to all 7 MCP-bearing plugin READMEs); switched the install-facing org to **`mariadb`**; and added the GPL-2.0 copyright header to all 46 source files. Details in "Launcher rewrite" below.
+**Latest work streams**: (0) **Release 26.9.1 is out** (2026-09-08, tag `v26.9.1` = `4003d0d`, prerelease on both repos). It merged two independently-moved versions — the **mariadb-shell floor** (direct to `main`, `a693a28`) and the **plugin package version** (PR #11) — and shipped the repo-local **`mariadb-migrator`** skill (MySQL→MariaDB via the `migrator.*` MCP tools; new `additional-skills/migrator/` subfolder, dev plugins 75 → 76 skills), a skills re-vendor, a new **`CONTRIBUTING.md`** holding the maintainer docs, and README fixes. (a) **Codex now registers its own MCP server** — merged as PR #6; see Codex fact 5. (b) **`db.connect` coverage** on `wip/DB-CONNECT-TESTS`, which closed the last untested path an agent actually takes. (c) **PR transfers from the tracking fork** `MariaDB/ai-plugins` (remote `fork`) into `origin` — both of its PRs are transferred and merged (#9, #7). Earlier stream, merged:  rewrote the `mariadb-mcp-launcher.{sh,cmd}` scripts in all plugins to stop downloading release assets themselves and instead delegate to the shell's own `install.sh` / `install.ps1`; bumped the version gate to 26.8.0 (now explicitly a *minimum*); added a repo-root `LICENSE`, `.gitattributes` and `SECURITY.md`; restructured the main README (Installation moved directly under the harness table, new `## Plugin variants` heading, new "configure the MCP server" step propagated to all 7 MCP-bearing plugin READMEs); switched the install-facing org to **`mariadb`**; and added the GPL-2.0 copyright header to all 46 source files. Details in "Launcher rewrite" below.
 
 `ai-plugins` packages MariaDB agent skills (+ the native `mariadb-shell` MCP server) as installable plugins for four coding agents: Claude Code (`claude/`), Codex (`codex/`), OpenCode (`opencode/`), and Pi/pi.dev (`pi/`). Each agent has `dev` (full skills + MCP), `sql` (SQL subset + MCP), `contributor` (skills-only) variants. Skills are vendored (never hand-edited) by `scripts/sync-skills.sh`. **This work stream** added a set of **MariaDB REST Service** skills (a fork of the MySQL REST Service) and **Schema Management (MSM)** lifecycle skills under `additional-skills/`, reorganized `additional-skills/` into `sql/`/`rest/`/`schema-management/` subfolders with per-plugin selection, added **two Claude e2e tests** that exercise the REST skills and the MSM lifecycle skills end-to-end (both pass), and updated the README. Latterly it also **unified how the tests run** across the plugins: a repo-root `run_tests.py` drives every suite with the Python inside `mariadb-shell` and one combined coverage report, and the `db` tier deploys its own sandbox instance instead of needing a server on 3306.
 
@@ -44,7 +44,7 @@
 - **Done & working:**
   - 5 REST skills in `additional-skills/rest/`: `mariadb-rest-service-{create,update-endpoints,authorization,show,drop}`.
   - MSM skills in `additional-skills/schema-management/`: overview `mariadb-schema-management` + `mariadb-schema-management-{create,develop,release,deploy}`. `mariadb-schema-create-script` moved to `additional-skills/sql/`.
-  - `additional-skills/` reorganized into `sql/`/`rest/`/`schema-management/`; `sync-skills.sh` updated for per-subfolder selection and re-run. Counts (after the 2026-08-10 re-sync at upstream `870469e`): dev = **75** skills (additional=11: 5 rest + 5 MSM + schema-create-script); sql = 47 (additional=1: only schema-create-script). Manifests match disk. **Upstream split each connector skill in two** — `mariadb-connector-<x>-install` + `-usage` for c/cpp/j/nodejs/odbc/python/r2dbc (7 → 14, hence 68 → 75); dev-only, so `sql` is unchanged.
+  - `additional-skills/` reorganized into `sql/`/`rest/`/`schema-management/`; `sync-skills.sh` updated for per-subfolder selection and re-run. Counts (**76** dev skills as of 26.9.1; additional=12: 5 rest + 5 MSM + schema-create-script + `mariadb-migrator` in its own `migrator/` subfolder); sql = 47 (additional=1: only schema-create-script). Manifests match disk. **Upstream split each connector skill in two** — `mariadb-connector-<x>-install` + `-usage` for c/cpp/j/nodejs/odbc/python/r2dbc (7 → 14, hence 68 → 75); dev-only, so `sql` is unchanged.
   - **Unified test runner**: repo-root `run_tests.py` + `pytest-coverage.ini` + `.coveragerc`, plus `scripts` in the root `package.json` (`npm test`, `test:static|db|eval|e2e`, `test:shell`). Runs every suite with `mariadb-shell --pym pytest` (the shell's Python) like `mcp_plugin/run_tests.py`, with coverage appended into one report. Verified: `-m static` → 591 pass ×3; `-m e2e` selects only claude (12) and the others report "no tests selected" (exit 5, not a failure).
   - **db tier now self-provisions a sandbox** (no more "MariaDB unreachable at 127.0.0.1:3306" skips): new `lib/sandbox.py` in all three suites deploys a sandbox instance on a free port via the MCP server's `sandbox.deploy`, then `stop`+`delete` in a `finally`. `conftest.py` gained `mariadb_server` (session-scoped) in front of `mariadb_connection`; any of `MARIADB_HOST/PORT/USER/PASSWORD` set → use that server instead (**keeps CI's service container working unchanged**), unreachable → skip as before. Default run is now **607 passed, 0 skipped ×3** (was 592 + 15 skipped), coverage 82%.
   - README updated (plugin table, "what each plugin provides", repo-layout tree, skills-sync section) for the subfolders + dev/sql split.
@@ -86,7 +86,7 @@
 - `scripts/set-plugin-version.sh` -> the plugin **package** version (not the shell binary's): `plugin.json` `"version"` + each README's `Version **x.y.z**` line, across claude/codex/opencode/**pi** `*-plugin` dirs **plus the repo-root `package.json`** (pi's manifest). CHANGELOG history deliberately untouched.
 - `scripts/set-mariadb-shell-version.sh` -> the only way to move the version: rewrites `MARIADB_SHELL_VERSION` across launchers (all 4 name variants), `.mcp.json`, `opencode.json`, `setup-pi-mcp.sh`'s `SHELL_VERSION=`, and the READMEs' `` `MARIADB_SHELL_VERSION` (default `<v>`) `` prose — **that prose shape must stay on one line** or the perl substitution stops matching it.
 - `LICENSE` (repo root, new) -> GPLv2, byte-identical to all 10 plugins' copies (`edaef632cbb6…`); root `package.json` already declared `GPL-2.0`.
-- `scripts/sync-skills.sh` -> vendors skills; `ADDITIONAL_SUBDIRS` + `SQL_INCLUDE_LAYERS` drive per-plugin subfolder selection; `TARGET_PLUGINS` now includes `pi/dev-plugin`; rerun after editing `additional-skills/`. (Does NOT copy any README into `skills/`.)
+- `scripts/sync-skills.sh` -> vendors skills; `ADDITIONAL_SUBDIRS` (`sql`, `rest`, `schema-management`, `migrator`) + `SQL_INCLUDE_LAYERS` drive per-plugin subfolder selection — **a new subfolder must be added to `ADDITIONAL_SUBDIRS` or its skills are silently never vendored**; `TARGET_PLUGINS` now includes `pi/dev-plugin`; rerun after editing `additional-skills/`. (Does NOT copy any README into `skills/`.)
 - `additional-skills/README.md` -> the single sources & licensing doc for the vendored skills (mariadb-docs agent-skills, mariadb-shell contributor skills, this repo's additional-skills/); external skills licensed per their origin repos, additional-skills/ ones GPL-2.0. All 10 plugin READMEs' License sections link to it (`../../additional-skills/README.md`).
 - `package.json` (repo root) -> the pi manifest: `pi` field pointing into `pi/dev-plugin/` + `pi-mcp-adapter` dep. `pi/dev-plugin/{src/index.ts,scripts/setup-pi-mcp.sh}` -> the factory extension (`/mariadb-mcp-setup` + session hint) and the MCP-registration script. `pi/README.md` -> how pi loads the extensions.
 
@@ -140,14 +140,9 @@
 
 ## Git state
 
-Checked out: **`wip/AIPL-21`** (PR #11, see below), rebased onto `main`.
-
-`origin/main`'s head is `29f10ab`, this file's own follow-up to the **26.9.1
-floor bump of 2026-09-08** (`a693a28`) — both committed and pushed **straight to
-`main`, no PR and no branch** (the user asked for exactly that), on top of
-`5bb6282`, and to `origin` only, not `fork`. The last tag is still `v26.9.0` at
-`80a4a6a`; the floor bump is **untagged and unreleased**, and 26.9.1 is not
-released until #11 lands. `main` is the GitHub default branch; a local `origin/HEAD` pointing at
+Branch: **`main`**, clean and level with `origin/main` **and `fork/main`**, both
+at **`4003d0d`** (= tag `v26.9.1`, the squash merge of PR #11). `main` is the
+GitHub default branch; a local `origin/HEAD` pointing at
 the deleted `wip/AIPL-4` was repaired with `git remote set-head origin -a`.
 
 Two remotes: **`origin`** = `mariadb-corporation/ai-plugins` (the source of truth)
@@ -157,23 +152,20 @@ the local clone** and was re-added 2026-09-02 (`git remote add fork
 git@github.com:MariaDB/ai-plugins.git`) — this file had claimed it existed for a
 while before anyone noticed, so check `git remote -v` rather than trusting it.
 
-**One PR is open on `origin`: #11 (`wip/AIPL-21`)** — the `mariadb-migrator`
-skill, the re-vendor, and the plugin package bump to 26.9.1. It was branched off
-`5bb6282`, i.e. **before** the floor bump, and was **rebased onto `main`
-(`29f10ab`) on 2026-09-08**. The rebase was conflict-free, but per the lesson
-below it was still checked by hand: the two sides overlap on the 7 MCP-bearing
-plugin READMEs, where `main` moved `MARIADB_SHELL_VERSION` and the PR moved
-`Version **…**`, and **both survived** (35 floor sites and all 17 package sites
-at 26.9.1). While rebased, the branch also picked up what the pre-rebase PR had
-missed: the `[26.9.1]` CHANGELOG entries now record the floor bump in the 7
-MCP-bearing plugins (the 3 contributor ones say it does not apply to them, as
-26.9.0 did) and are dated 2026-09-08 rather than 2026-09-04. **The rebased
-branch needs a force-push** (`--force-with-lease`) before it can merge.
+**Nothing is open on `origin`.** PR #11 (`wip/AIPL-21`) merged 2026-09-08 as
+`4003d0d`; **its branch still exists on `origin`** and is the only one there
+besides `main` — delete it the careful way, by comparing its remote head
+(`005c15b`) against the `headRefOid` GitHub merged, since a squash merge leaves
+its commits unreachable from `main`. That PR is also the worked example of the
+rebase lesson below: branched off `5bb6282`, i.e. **before** the floor bump, then
+**rebased onto `29f10ab`**. The rebase was conflict-free but still checked by
+hand, because the two sides overlap on the 7 MCP-bearing plugin READMEs — `main`
+moved `MARIADB_SHELL_VERSION` there, the PR moved `Version **…**` — and **both
+survived** (35 floor sites, 17 package sites, all at 26.9.1).
 
-Everything else is merged, and no branches are left on `origin` but `main` and
-`wip/AIPL-21`. PR #10
-(the 26.9.0 floor bump + changelog cut) merged as `80a4a6a`; #8 as `ac55729`; the
-fork transfers as #9 and #7. Four merged branches were deleted 2026-09-02 —
+Earlier merges: PR #10 (the 26.9.0 floor bump + changelog cut) as `80a4a6a`;
+#8 as `ac55729`; the fork transfers as #9 and #7. Four merged branches were
+deleted 2026-09-02 —
 `wip/26-9-0-SHELL`, `wip/DB-CONNECT-TESTS`, `pr-1-branch`, `pr-2-branch` — each
 checked first by **comparing its remote head against the `headRefOid` GitHub
 actually merged**, since squash merges leave the branch commits unreachable from
@@ -183,6 +175,23 @@ want). Their merged heads, if one is ever wanted back: `9262c79`, `ab05169`,
 
 **The two fork PRs are now CLOSED** on `MariaDB/ai-plugins` (#1 and #2) — the
 long-standing "their authors have no signal" item is done.
+
+### Release v26.9.1 (2026-09-08)
+
+- **Annotated tag `v26.9.1`** (tag object `2056cfa` → commit `4003d0d`), pushed to
+  **both** `origin` and `fork` — the *same* object on each, verified with
+  `git ls-remote --tags`, not two separately created tags.
+- **Prerelease on both repos from the start**, unlike v26.9.0 which was published
+  stable by mistake and edited afterwards: `gh release create v26.9.1 --repo <r>
+  --title v26.9.1 --notes-file … --prerelease --verify-tag`. Notes are the tag
+  annotation's body, extracted with `git tag -l --format='%(contents:body)'`
+  because `gh` refuses `--notes-from-tag` together with `--repo`; both bodies
+  checksummed identical afterwards.
+- `releases/latest` still **404s** on both repos — every release is a prerelease
+  and the endpoint excludes those. Nothing consumes it.
+- Contents: the `mariadb-migrator` skill, the docs re-vendor, the plugin package
+  bump to 26.9.1 (PR #11), and — merged earlier, direct to `main` — the
+  `MARIADB_SHELL_VERSION` floor bump to 26.9.1 (`a693a28`).
 
 ### Release v26.9.0 (2026-09-02) — the repo's first tag and first release
 
@@ -208,6 +217,18 @@ long-standing "their authors have no signal" item is done.
 survive — check containment by **tree**, not by ancestry; `git rev-list ^main`
 will report a merged branch's commits as missing):
 
+- `4003d0d` — **`mariadb-migrator` skill + release 26.9.1** (PR #11), tagged
+  `v26.9.1`. The skill covers MySQL→MariaDB migration with the `migrator.*` MCP
+  tools; it lives in a new `additional-skills/migrator/` subfolder, so
+  `sync-skills.sh`'s `ADDITIONAL_SUBDIRS` gained `"migrator"` — without that the
+  file would never be vendored. Dev plugins 75 → **76** skills, sql unchanged at
+  47. Also in it: skills re-vendored (docs `71f3ac5` — r2dbc 1.4.1 → 1.4.2;
+  shell `33b4e3e` — nothing under `.claude/skills/` moved), the package version
+  → 26.9.1 in 17 files, the `[26.9.1]` changelog cut in all 10 plugins, a new
+  repo-root **`CONTRIBUTING.md`** holding the maintainer material that used to be
+  the README's second `#` heading, and README fixes (every harness now points at
+  the MCP-server config step; what `mcp setup` configures; sandboxes need a local
+  MariaDB Server install).
 - `a693a28` *(2026-09-08)* — **mariadb-shell floor → 26.9.1** via
   `scripts/set-mariadb-shell-version.sh 26.9.1`: 32 of its 35 candidate files
   changed — the 3 that did not are the **contributor plugins' READMEs**
@@ -261,8 +282,8 @@ Versions are two independent things, set by two scripts: plugin package
 (`set-mariadb-shell-version.sh`, 35 candidate files, 32 of which actually carry a
 version site — the 3 contributor-plugin READMEs have none, being skills-only).
 Both are **26.9.1** as of the 26.9.1 release, but they got there **separately**:
-the floor moved first, direct to `main` on 2026-09-08, and the package version
-followed in PR #11. They also coincided at 26.8.0 and at 26.9.0 (PR #10), and
+the floor moved first, direct to `main` on 2026-09-08 (`a693a28`), and the
+package version followed in PR #11 (`4003d0d`). They also coincided at 26.8.0 and at 26.9.0 (PR #10), and
 were 26.9.0 vs 26.8.1 before that — coinciding is always a coincidence of
 release timing, never a rule, so do not infer either from the other. Both
 scripts take `--help` and refuse a non-version argument — before that,
