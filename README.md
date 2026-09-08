@@ -158,8 +158,11 @@ locally — no Docker, no container runtime, no administrator rights:
 Instances live under `~/.mariadb-shell/sandboxes/<port>/` on macOS and Linux and
 under `%USERPROFILE%\MariaDB\mariadb-shell\sandboxes\<port>\` on Windows.
 
-Three things to know regarding sandbox instances:
+Four things to know regarding sandbox instances:
 
+- MariaDB Server needs to be installed on the development machine — see the
+  [macOS install instructions](https://mariadb.com/docs/server/server-management/install-and-upgrade-mariadb/installing-mariadb/binary-packages/installing-mariadb-on-macos-using-homebrew)
+  or the [Linux and Windows install instructions](https://mariadb.com/docs/server/mariadb-quickstart-guides/installing-mariadb-server-guide).
 - A database connection to the sandbox is automatically registered with the MCP server.
 - The sandbox is deployed without TLS, so command-line clients may need `--skip-ssl`.
 - A `root@'%'` account is created and the sandbox listens on all interfaces,
