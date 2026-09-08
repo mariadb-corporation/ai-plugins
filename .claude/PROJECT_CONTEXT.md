@@ -140,9 +140,10 @@
 
 ## Git state
 
-Branch: **`main`**, clean and level with `origin/main`, whose head is the
-**26.9.1 floor bump of 2026-09-08** — committed and pushed **straight to `main`,
-no PR and no branch** (the user asked for exactly that), on top of `5bb6282`. The
+Branch: **`main`**, clean and level with `origin/main`, whose head is this
+file's own follow-up to the **26.9.1 floor bump of 2026-09-08** (`a693a28`) —
+both committed and pushed **straight to `main`, no PR and no branch** (the user
+asked for exactly that), on top of `5bb6282`, and to `origin` only, not `fork`. The
 last tag is still `v26.9.0` at `80a4a6a`; the floor bump is **untagged and
 unreleased**. `main` is the GitHub default branch; a local `origin/HEAD` pointing at
 the deleted `wip/AIPL-4` was repaired with `git remote set-head origin -a`.
@@ -191,7 +192,7 @@ long-standing "their authors have no signal" item is done.
 survive — check containment by **tree**, not by ancestry; `git rev-list ^main`
 will report a merged branch's commits as missing):
 
-- *(head, 2026-09-08)* — **mariadb-shell floor → 26.9.1** via
+- `a693a28` *(2026-09-08)* — **mariadb-shell floor → 26.9.1** via
   `scripts/set-mariadb-shell-version.sh 26.9.1`: 32 of its 35 candidate files
   changed — the 3 that did not are the **contributor plugins' READMEs**
   (`{claude,codex,opencode}/contributor-plugin/README.md`), which carry no version
