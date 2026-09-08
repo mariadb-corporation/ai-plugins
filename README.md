@@ -40,6 +40,9 @@ available.
 /plugin install dev@mariadb
 ```
 
+Then configure the MCP server — see
+[Configure the MCP server](#configure-the-mcp-server-all-harnesses) below.
+
 ### Codex
 
 ```sh
@@ -51,6 +54,9 @@ Codex's `/plugins` slash command browses and enables plugins interactively; it
 takes no arguments, so adding a marketplace is done with the CLI above. See
 [codex/dev-plugin/README.md](codex/dev-plugin/README.md) for details.
 
+Then configure the MCP server — see
+[Configure the MCP server](#configure-the-mcp-server-all-harnesses) below.
+
 ### OpenCode
 
 OpenCode has no central marketplace. Merge the `mcp` block from
@@ -58,6 +64,9 @@ OpenCode has no central marketplace. Merge the `mcp` block from
 `opencode.json`, point `MARIADB_DEV_PLUGIN` at the plugin dir, and symlink its
 flat `skills/` into an OpenCode skills directory. Full steps in
 [opencode/dev-plugin/README.md](opencode/dev-plugin/README.md).
+
+Then configure the MCP server — see
+[Configure the MCP server](#configure-the-mcp-server-all-harnesses) below.
 
 ### Pi
 
@@ -79,6 +88,10 @@ Then `/mcp reconnect mariadb` (or restart pi). The extension also prints a
 one-line reminder at session start while the server isn't configured. Full steps
 in [pi/dev-plugin/README.md](pi/dev-plugin/README.md).
 
+That registers the server with pi; configuring what it may access is a separate
+step — see [Configure the MCP server](#configure-the-mcp-server-all-harnesses)
+below.
+
 ## Configure the MCP server (all harnesses)
 
 The skills work on their own. The MCP server, however, starts out allowed to reach
@@ -89,9 +102,9 @@ Run this once per machine:
 mariadb-shell -- mcp setup     # or mcp.setup() from an interactive shell
 ```
 
-> **Why the shell?** It already handles connections, credentials, test instances
-> and schema management, so the MCP server runs as a plugin inside it rather than
-> reimplementing all of that.
+> The MCP server is built as a MariaDB Shell plugin in order to take advantage of
+> its high-performance database connections, credential management, sandbox
+> handling and advanced database schema management.
 
 If `mariadb-shell` isn't on your `PATH`, use the copy the launcher installed —
 `~/.local/bin/mariadb-shell`, or
@@ -99,6 +112,24 @@ If `mariadb-shell` isn't on your `PATH`, use the copy the launcher installed —
 installer only prints a `PATH` hint; it never edits your shell profile. That copy
 appears the first time a plugin starts the MCP server, so either let the agent run
 once first, or install the shell yourself before configuring it.
+
+The setup configures the following items — see the
+[MCP server documentation](https://github.com/mariadb-corporation/mariadb-shell-plugins/blob/main/mcp_plugin/README.md#configuration-mcpsetup)
+for the full reference:
+
+- **Connections**: the database connection URIs the LLM will be allowed to
+  connect to. Each password is prompted for, verified, and stored in the shell's
+  secret store, separately from your regular MariaDB Shell connections. Give each
+  one a dedicated MCP account with only the privileges it needs — read-only
+  access to certain schemas, say — to keep the LLM from performing potentially
+  harmful operations on the database.
+- **Allowed paths**: choose the local directories the server may access (the
+  current directory is suggested as the default, shown as a full path).
+- **Migration tooling** (Linux and macOS only, and offered by the menu on later
+  runs rather than by the first-run walkthrough): downloads the
+  [MySQL-to-MariaDB migration tooling](https://github.com/mariadb-corporation/Mysql-to-MariaDB-Migration)
+  and extracts it into `~/.local/share/mariadb-migrator/<version>`.
+  See [Migration tooling](https://github.com/mariadb-corporation/mariadb-shell-plugins/blob/main/mcp_plugin/README.md#migration-tooling).
 
 ## What you can ask for
 
