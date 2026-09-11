@@ -211,11 +211,16 @@ not pulled in by it. See [pi/README.md](pi/README.md).
 
 [docs/](docs/) holds the **DevHub** — a static Getting Started site served by
 GitHub Pages' built-in Jekyll from the `/docs` folder of `main`. It has no build
-step and no theme gem. See [docs/README.md](docs/README.md) for how to publish
-it, preview it locally, and add a tutorial.
+step and no theme gem.
 
+```sh
+gem install jekyll jekyll-seo-tag jekyll-sitemap   # once
+npm run docs                                       # → http://127.0.0.1:4000/ai-plugins/
+```
+
+See [docs/README.md](docs/README.md) for how to publish it and add a tutorial.
 Note that its skill catalog is generated from the vendored manifests — re-run
-`python3 docs/regenerate-skills-data.py` after `scripts/sync-skills.sh`.
+`npm run docs:skills` after `scripts/sync-skills.sh`.
 
 ## Contributing
 

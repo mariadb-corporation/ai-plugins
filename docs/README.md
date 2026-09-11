@@ -25,14 +25,44 @@ else.
 
 ## Previewing locally
 
+[`serve.sh`](serve.sh) is the one command, and the repo-root `package.json`
+exposes it as npm scripts so it also shows up in editors' script runners:
+
 ```sh
-cd docs
-bundle install          # once
-bundle exec jekyll serve # → http://127.0.0.1:4000/ai-plugins/
+npm run docs           # serve with live reload
+npm run docs:open      # …and open a browser
+npm run docs:build     # build into docs/_site and exit
+npm run docs:skills    # regenerate _data/skills.yml (see below)
+
+./docs/serve.sh --port 4010        # or call it directly
+./docs/serve.sh -- --incremental   # anything after -- goes straight to jekyll
+./docs/serve.sh --help
 ```
 
-The [`Gemfile`](Gemfile) pins the `github-pages` bundle so a local preview
-matches what GitHub builds. GitHub itself ignores the file.
+**Mind the baseurl.** The site is served under the GitHub Pages project path, so
+it lives at <http://127.0.0.1:4000/ai-plugins/> and a bare `/` answers 404. The
+script prints the full URL for that reason.
+
+### What it needs
+
+Either of these; `serve.sh` detects which and adapts:
+
+```sh
+gem install jekyll jekyll-seo-tag jekyll-sitemap   # quick local preview
+cd docs && bundle install                          # matches GitHub Pages exactly
+```
+
+The second uses the [`Gemfile`](Gemfile), which pins the `github-pages` bundle —
+the same Jekyll 3.x build GitHub runs. `serve.sh` prefers it whenever a
+`Gemfile.lock` is present, and otherwise runs a plain `jekyll` with
+`JEKYLL_NO_BUNDLER_REQUIRE` set so it does not read the Gemfile and demand a
+`github-pages` that was never installed. GitHub itself ignores the file.
+
+**Both plugins are required, not decoration.** [`_includes/head.html`](_includes/head.html)
+calls `{% seo %}`, which is an unknown Liquid tag without
+`jekyll-seo-tag`, and Jekyll aborts on any plugin in `_config.yml` it cannot
+require. `serve.sh` preflights them and fails with the install command rather
+than producing a half-built site.
 
 ## Layout
 
@@ -47,6 +77,7 @@ docs/
 ├── _layouts/                 # default → home | page | tutorial
 ├── _tutorials/               # the tutorial collection, one file per tutorial
 ├── assets/{css,js,img}/      # one stylesheet, one script, one favicon
+├── serve.sh                  # local preview (npm run docs)
 ├── index.html                # home
 ├── get-started.md            # install + MCP setup + the working example
 ├── tutorials.html            # filterable catalog
@@ -100,7 +131,7 @@ vendored manifests so the catalog cannot drift from what ships. After a
 `scripts/sync-skills.sh` run:
 
 ```sh
-python3 docs/regenerate-skills-data.py
+npm run docs:skills      # or: python3 docs/regenerate-skills-data.py
 ```
 
 It reads `claude/dev-plugin/skills/.skills-manifest.json` for the full list and
