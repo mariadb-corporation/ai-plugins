@@ -19,7 +19,7 @@ description: >-
 url: "https://mariadb-corporation.github.io"
 baseurl: "/ai-plugins"
 
-repo: "https://github.com/mariadb-corporation/ai-plugins"
+repo: "https://github.com/mariadb/ai-plugins"
 install_org: "mariadb"          # the install-facing org (a tracking fork)
 mariadb_baseline: "11.8 LTS"
 shell_floor: "26.9.1"

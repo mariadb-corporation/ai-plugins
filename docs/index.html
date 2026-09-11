@@ -45,18 +45,20 @@ and run the schema on it.</pre>
 
           <div class="hero-panel">
             <div class="hero-panel__label">
-              <span>The agent does this</span>
+              <span>The agent does this:</span>
               <svg class="hero-panel__check" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                    stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                 <path d="m5 13 4 4L19 7"/>
               </svg>
             </div>
             <div class="hero-panel__body">
-<pre class="hero-code">sandbox.<span class="t-fn">deploy</span>(port=<span class="t-num">3310</span>, password=<span class="t-str">"…"</span>)
+<pre class="hero-code"><span class="t-dim"># Writing a SQL file optimized for MariaDB</span>
+echo <span class="t-str">"CREATE SCHEMA notes_app; …"</span> > notes_schema.sql
+sandbox.<span class="t-fn">deploy</span>(port=<span class="t-num">3310</span>, password=<span class="t-str">"…"</span>)
 db.<span class="t-fn">connect</span>(<span class="t-str">"root@127.0.0.1:3310"</span>)
-db.<span class="t-fn">execute_sql_script</span>(sql_script=<span class="t-str">"…"</span>)
+db.<span class="t-fn">execute_sql_script</span>(sql_script=<span class="t-str">"notes_schema.sql"</span>)
 db.<span class="t-fn">list_objects</span>(schema_name=<span class="t-str">"notes_app"</span>)
-<span class="t-dim">  → user, note, notebook, tag, note_tag</span></pre>
+<span class="t-dim">→ user, note, notebook, tag, note_tag</span></pre>
             </div>
           </div>
         </div>

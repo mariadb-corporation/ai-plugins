@@ -397,7 +397,7 @@ html:not([data-theme="dark"]) .theme-icon--light { display: none; }
   color: #fff; font-size: .78rem; font-weight: 700;
   letter-spacing: .08em; text-transform: uppercase;
 }
-.hero-panel__check { width: 18px; height: 18px; color: rgba(255, 255, 255, .45); flex-shrink: 0; }
+.hero-panel__check { width: 18px; height: 18px; color: rgba(255, 255, 255, 0.9); flex-shrink: 0; }
 
 /* Inset from the label bar, as in the reference. */
 .hero-panel__body {

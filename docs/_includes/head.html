@@ -10,6 +10,13 @@
 {%- endcomment -%}
 {% seo %}
 
+{%- comment -%}
+  Both, in this order: browsers that understand SVG icons take the SVG and
+  ignore the .ico; the rest fall back to it. Without the .ico entry the file
+  ships but is never requested — nothing asks for it at this path, since the
+  automatic /favicon.ico probe hits the domain root, not the baseurl.
+{%- endcomment -%}
+<link rel="icon" href="{{ '/assets/img/favicon.ico' | relative_url }}" sizes="48x48">
 <link rel="icon" href="{{ '/assets/img/favicon.svg' | relative_url }}" type="image/svg+xml">
 <link rel="stylesheet" href="{{ '/assets/css/style.css' | relative_url }}">
 
