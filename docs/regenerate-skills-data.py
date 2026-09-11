@@ -14,12 +14,21 @@
 # along with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 
-"""Regenerate docs/_data/skills.yml from the vendored skill manifests.
+"""Regenerate the DevHub's skill data from the vendored skill manifests.
 
-The DevHub's skill catalog is generated rather than hand-maintained so it cannot
-drift from what the plugins actually ship. Run this after `scripts/sync-skills.sh`:
+The catalog is generated rather than hand-maintained so it cannot drift from
+what the plugins actually ship. `scripts/sync-skills.sh` runs this at the end;
+run it by hand after any other change to the vendored skills:
 
-    python3 docs/regenerate-skills-data.py
+    python3 docs/regenerate-skills-data.py      # or: npm run docs:skills
+
+Writes two things:
+
+  * docs/_data/skills.yml  — the catalog the Skills page renders.
+  * docs/_config.yml       — the `skill_count` key, which is quoted in prose on
+    the home page, the Skills page and How It Works. Regenerating only the
+    catalog would leave the site listing 78 skills while the hero still said
+    76, which is exactly the kind of silent drift this script exists to stop.
 
 Reads the `dev` plugin's manifest for the full list and the `sql` plugin's for
 the subset marker, both from the `claude/` plugins (all harnesses vendor the
@@ -27,12 +36,14 @@ same content).
 """
 
 import json
+import re
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
 DEV = REPO / "claude/dev-plugin/skills/.skills-manifest.json"
 SQL = REPO / "claude/sql-plugin/skills/.skills-manifest.json"
 OUT = REPO / "docs/_data/skills.yml"
+CONFIG = REPO / "docs/_config.yml"
 
 # Prose for each manifest layer. A layer with no entry here still renders, using
 # its raw id as the title — so a new upstream layer shows up rather than vanishing.
@@ -83,6 +94,32 @@ def names(manifest_path):
     return manifest["layers"]
 
 
+def update_config_count(total):
+    """Rewrite `skill_count:` in _config.yml, leaving the rest of the file alone.
+
+    A line-level substitution rather than a YAML round-trip on purpose: loading
+    and re-dumping would reflow the whole file, discard its comments and reorder
+    keys, for the sake of one integer.
+    """
+    text = CONFIG.read_text()
+    new, n = re.subn(
+        r"^(skill_count:[ \t]*)\d+$",
+        lambda m: f"{m.group(1)}{total}",
+        text,
+        count=1,
+        flags=re.MULTILINE,
+    )
+    if n == 0:
+        raise SystemExit(
+            f"{CONFIG}: no `skill_count: <number>` line to update — "
+            "the key was renamed or removed, so the site's counts would go stale."
+        )
+    if new == text:
+        return False
+    CONFIG.write_text(new)
+    return True
+
+
 def main():
     dev_layers = names(DEV)
     sql_names = {s["name"] for layer in names(SQL).values() for s in layer["skills"]}
@@ -106,6 +143,10 @@ def main():
     total = sum(len(layer["skills"]) for layer in dev_layers.values())
     print(f"{OUT.relative_to(REPO)}: {len(dev_layers)} layers, "
           f"{total} dev skills, {len(sql_names)} in the sql subset")
+
+    changed = update_config_count(total)
+    state = f"skill_count -> {total}" if changed else f"skill_count already {total}"
+    print(f"{CONFIG.relative_to(REPO)}: {state}")
 
 
 if __name__ == "__main__":

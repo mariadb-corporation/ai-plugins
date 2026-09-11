@@ -373,6 +373,25 @@ else
   echo "warning: failed to fetch $CONTRIB_REPO@$CONTRIB_REF — skipping contributor plugins" >&2
 fi
 
+# --- Keep the DevHub's generated skill data in step -------------------------
+# docs/ renders its catalog from docs/_data/skills.yml and quotes the skill
+# count in prose from docs/_config.yml, both derived from the manifests just
+# written. Regenerating here is the only way they cannot go stale — a note in
+# CONTRIBUTING.md asking someone to remember is not.
+#
+# Soft dependency on purpose: every plugin is already vendored and correct by
+# this point, so a machine without python3 gets a warning rather than a sync
+# that reports failure after doing all its work.
+REGEN="$REPO_ROOT/docs/regenerate-skills-data.py"
+if [ -f "$REGEN" ]; then
+  if command -v python3 >/dev/null 2>&1; then
+    python3 "$REGEN" \
+      || echo "warning: $REGEN failed — the DevHub's skill data may be stale" >&2
+  else
+    echo "warning: python3 not found — run 'npm run docs:skills' to refresh the DevHub's skill data" >&2
+  fi
+fi
+
 total_plugins=$(( ${#TARGET_PLUGINS[@]} + ${#SQL_PLUGINS[@]} ))
 echo "Done. Synced $total_plugins plugin(s) from $SOURCE_REPO@$REF" \
      "and $CONTRIB_SYNCED contributor plugin(s) from $CONTRIB_REPO@$CONTRIB_REF."

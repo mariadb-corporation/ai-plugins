@@ -83,8 +83,11 @@ ai-plugins/
 
 ### Skills sync
 
-> After a sync, regenerate the DevHub's skill catalog so the published counts and
-> names cannot drift from what actually ships: `npm run docs:skills`.
+> The last thing it does is regenerate the DevHub's skill data
+> (`docs/_data/skills.yml` and the `skill_count` in `docs/_config.yml`) so the
+> published catalog and counts cannot drift from what actually ships. That step
+> needs `python3`; without it the sync still succeeds and warns, and
+> `npm run docs:skills` catches up.
 
 Skills are **vendored** into each plugin — the plugins are self-contained and are
 never edited by hand. [scripts/sync-skills.sh](scripts/sync-skills.sh) is the

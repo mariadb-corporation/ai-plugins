@@ -126,9 +126,14 @@ belongs to one, and add its `area` to the filter buttons in
 
 ## Keeping the skill catalog honest
 
-[`_data/skills.yml`](_data/skills.yml) is **generated** from the plugins' own
-vendored manifests so the catalog cannot drift from what ships. After a
-`scripts/sync-skills.sh` run:
+[`_data/skills.yml`](_data/skills.yml) and the `skill_count` in
+[`_config.yml`](_config.yml) are both **generated** from the plugins' own
+vendored manifests, so neither the catalog nor the counts quoted in prose can
+drift from what ships.
+
+`scripts/sync-skills.sh` runs the generator itself as its last step, so a normal
+sync needs nothing extra. Run it by hand after any other change to the vendored
+skills — or if the sync warned that `python3` was missing:
 
 ```sh
 npm run docs:skills      # or: python3 docs/regenerate-skills-data.py
@@ -139,8 +144,9 @@ It reads `claude/dev-plugin/skills/.skills-manifest.json` for the full list and
 its raw id as the title until prose for it is added to `LAYER_TEXT` in the
 script — it shows up rather than vanishing.
 
-The counts quoted in prose (`skill_count`, `tool_count`, `shell_floor`) are
-`_config.yml` variables, so they are changed in one place.
+`tool_count`, `shell_floor` and `mariadb_baseline` are still hand-maintained
+`_config.yml` variables — nothing derives them — but they are each in one place
+and read from Liquid, so a change is a single edit.
 
 ## Design notes
 
