@@ -165,9 +165,11 @@ under `%USERPROFILE%\MariaDB\mariadb-shell\sandboxes\<port>\` on Windows.
 
 Four things to know regarding sandbox instances:
 
-- MariaDB Server needs to be installed on the development machine — see the
-  [macOS install instructions](https://mariadb.com/docs/server/server-management/install-and-upgrade-mariadb/installing-mariadb/binary-packages/installing-mariadb-on-macos-using-homebrew)
-  or the [Linux and Windows install instructions](https://mariadb.com/docs/server/mariadb-quickstart-guides/installing-mariadb-server-guide).
+- **MariaDB Server does not need to be installed.** The sandbox looks for a
+  server on the `PATH`, then among the versions it has already downloaded, then
+  in its published index — fetching, checksum-verifying and unpacking one if it
+  has to. You can also ask for a version (`server_version="11.8"`), and
+  `sandbox.list_available_versions` says what is on offer for your platform.
 - A database connection to the sandbox is automatically registered with the MCP server.
 - The sandbox is deployed without TLS, so command-line clients may need `--skip-ssl`.
 - A `root@'%'` account is created and the sandbox listens on all interfaces,

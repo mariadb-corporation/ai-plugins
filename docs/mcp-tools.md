@@ -115,8 +115,8 @@ See [Tutorial 4]({{ '/tutorials/sandbox-lifecycle/' | relative_url }}).
 
 | Tool | Arguments | Notes |
 | --- | --- | --- |
-| `sandbox.list_available_versions` | `series` | Versions `deploy` can be asked for. |
-| `sandbox.deploy` | `port`, `password`, `sandbox_dir`, `allow_root_from`, `server_id`, `ssl=False`, `server_version`, `mariadbd_path`, `mariadbd_options`, `timeout` | Creates and starts an instance, and **registers its connection with the MCP server**. Needs MariaDB Server installed locally. |
+| `sandbox.list_available_versions` | `series` | Versions `deploy` can be asked for. No argument: the newest patch of each series. `series="11.8"` or `"11"`: every release below it. Only packages built for this platform are listed, and anything listed can be deployed. |
+| `sandbox.deploy` | `port`, `password`, `sandbox_dir`, `allow_root_from`, `server_id`, `ssl=False`, `server_version`, `mariadbd_path`, `mariadbd_options`, `timeout` | Creates and starts an instance, and **registers its connection with the MCP server**. Resolves a server from the `PATH`, then already-downloaded versions, then the published index — **no MariaDB Server need be installed**. `server_version` accepts `11.8.9`, `11.8` or `11`, and is refused together with `mariadbd_path`. |
 | `sandbox.start` | `port`, `sandbox_dir`, `mariadbd_path`, `timeout` | Restarts an existing instance with its data intact. |
 | `sandbox.stop` | `port`, `sandbox_dir`, `password`, `timeout` | Graceful shutdown. **Needs the root password.** |
 | `sandbox.kill` | `port`, `sandbox_dir` | Forceful. The fallback when `stop` will not. |
@@ -134,10 +134,20 @@ on TLS means `ssl: True` without `openssl` — the default of `False` is what yo
 want.
 </div>
 
+<div class="callout callout--warn" markdown="1">
+**A downloaded server changes how you stop and restart it.** It is not on the
+`PATH`, so `sandbox.start` needs the `mariadbd_path` the deploy reported, and
+shutdown needs **`sandbox.kill`** — `sandbox.stop` takes no `mariadbdPath` and
+cannot find the binary. The deploy message says so at the time.
+</div>
+
 Instances live in `~/.mariadb-shell/sandboxes/<port>/` on macOS and Linux, and
-`%USERPROFILE%\MariaDB\mariadb-shell\sandboxes\<port>\` on Windows. They create a
-`root@'%'` account and listen on all interfaces, so they are a development tool
-and not something to leave running on an untrusted network.
+`%USERPROFILE%\MariaDB\mariadb-shell\sandboxes\<port>\` on Windows. Downloaded
+servers live separately, one directory per version, under
+`~/.local/share/mariadb-sandbox-server/` (`%LOCALAPPDATA%\Programs\mariadb-sandbox-server`
+on Windows). Instances create a `root@'%'` account and listen on all interfaces,
+so they are a development tool and not something to leave running on an untrusted
+network.
 
 ## `migrator.*` — MySQL to MariaDB
 

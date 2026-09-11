@@ -30,16 +30,17 @@
 - id: operate
   title: Operate and Optimize
   level: intermediate
-  duration: "~2 hours"
+  duration: "~2.5 hours"
   description: >-
     The day-to-day work after the schema exists: managing throwaway servers to
-    test against, reading an existing database you did not design, and getting
-    the agent to diagnose a slow query with EXPLAIN instead of guessing at
-    indexes.
+    test against, reading an existing database you did not design, getting the
+    agent to diagnose a slow query with EXPLAIN instead of guessing at indexes,
+    and checking a schema against two MariaDB releases at once.
   steps:
     - sandbox-lifecycle
     - browse-schema-objects
     - diagnose-a-slow-query
+    - compare-server-versions
 
 - id: build-and-move
   title: Build an API, or Move off MySQL
