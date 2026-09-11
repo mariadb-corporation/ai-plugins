@@ -17,7 +17,7 @@ that only appears when the migration tooling is installed.
 | --- | --- | --- |
 | [`db.*`](#db--connections-and-sql) | 8 | List connections and schemas, describe objects, run SQL |
 | [`msm.*`](#msm--schema-management) | 12 | Versioned schema projects, releases, deployments |
-| [`sandbox.*`](#sandbox--throwaway-servers) | 7 | Deploy, start, stop and delete local server instances |
+| [`sandbox.*`](#sandbox--throwaway-servers) | 8 | List deployable server versions; deploy, start, stop and delete local instances |
 | [`migrator.*`](#migrator--mysql-to-mariadb) | 4 | MySQL-to-MariaDB migration — **optional, not counted above** |
 
 </div>
