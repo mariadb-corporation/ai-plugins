@@ -23,7 +23,8 @@
 # codex and pi) AND
 # the fallback default baked into the launcher scripts (mariadb-mcp-launcher.sh/
 # .cmd), for both the dev-* and sql-* plugins across
-# claude/, codex/, opencode/ and pi/.
+# claude/, codex/, opencode/ and pi/ — plus `shell_floor` in docs/_config.yml,
+# which is where the DevHub quotes the floor in prose.
 # Keeping all of them on the same version means every plugin accepts the same
 # binary (see scripts/mariadb-mcp-launcher.sh — the version is the minimum each
 # plugin will run, so one version == one shared install rather than one install
@@ -78,7 +79,7 @@ if [ -z "$VERSION" ]; then
   exit 1
 fi
 
-# Reject anything that is not version-shaped rather than writing it into 35
+# Reject anything that is not version-shaped rather than writing it into 36
 # files. A mistyped flag used to be accepted as the version and substituted
 # everywhere, which is a tedious thing to undo.
 case "$VERSION" in
@@ -119,12 +120,21 @@ while IFS= read -r f; do files+=("$f"); done < <(
 
 [ "${#files[@]}" -gt 0 ] || { echo "error: no plugin files found under $REPO_ROOT" >&2; exit 1; }
 
+# The DevHub quotes the floor in prose from this key, so it is a version site
+# like any other. It lives outside the plugin dirs, hence the separate append —
+# this script's reach has lagged a new version site four times now (pi, the
+# *_disabled launchers, the setup-codex-mcp scripts, and this), so check it
+# whenever a file gains one.
+DOCS_CONFIG="$REPO_ROOT/docs/_config.yml"
+[ -f "$DOCS_CONFIG" ] && files+=("$DOCS_CONFIG")
+
 # Shapes the version appears in:
 #   JSON MCP config / README example:  "MARIADB_SHELL_VERSION": "<v>"
 #   bash launcher:                     VERSION="${MARIADB_SHELL_VERSION:-<v>}"
 #   cmd launcher:                      set "MARIADB_SHELL_VERSION=<v>"
 #   setup-pi-mcp.sh:                   SHELL_VERSION="<v>"
 #   README prose:                      `MARIADB_SHELL_VERSION` (default `<v>`)
+#   docs/_config.yml:                  shell_floor: "<v>"
 V="$VERSION" perl -i -pe '
   my $v = $ENV{V};
   s/("MARIADB_SHELL_VERSION"\s*:\s*")[^"]*(")/${1}${v}${2}/g;
@@ -132,9 +142,10 @@ V="$VERSION" perl -i -pe '
   s/(set "MARIADB_SHELL_VERSION=)[^"]*(")/${1}${v}${2}/g;
   s/^(SHELL_VERSION=")[^"]*(")/${1}${v}${2}/g;
   s/(MARIADB_SHELL_VERSION` \(default `)[^`]*(`\))/${1}${v}${2}/g;
+  s/^(shell_floor:\s*")[^"]*(")/${1}${v}${2}/g;
 ' "${files[@]}"
 
 echo "Set MARIADB_SHELL_VERSION -> $VERSION in ${#files[@]} file(s):"
-grep -rn 'SHELL_VERSION' "${files[@]}" \
+grep -rn 'SHELL_VERSION\|shell_floor' "${files[@]}" \
   | grep -E "\-${VERSION}\}|=\"?${VERSION}\"|: \"${VERSION}\"" \
   | sed 's/^/  /'
