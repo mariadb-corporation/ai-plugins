@@ -24,7 +24,7 @@ Installing a plugin gives you three things:
 
 Works with [Claude Code](https://claude.com/claude-code), [Codex](https://openai.com/codex), [OpenCode](https://opencode.ai) and [Pi](https://pi.dev) — see [Installation](#installation).
 
-> **Prefer a guided start?** The **[DevHub](https://mariadb-corporation.github.io/ai-plugins/)**
+> **Prefer a guided start?** The **[DevHub](https://mariadb.github.io/ai-plugins/)**
 > has the same installation steps plus hands-on tutorials — building a schema and
 > deploying it on a throwaway server, versioned migrations with MSM, REST
 > endpoints, and migrating off MySQL. Its source is in [docs/](docs/).

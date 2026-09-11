@@ -16,7 +16,7 @@ description: >-
   agent skills and the mariadb-shell MCP server.
 
 # Change both of these if the site moves to a custom domain (then baseurl: "").
-url: "https://mariadb-corporation.github.io"
+url: "https://mariadb.github.io"
 baseurl: "/ai-plugins"
 
 repo: "https://github.com/mariadb/ai-plugins"

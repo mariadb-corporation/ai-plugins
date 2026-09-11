@@ -15,7 +15,7 @@ bundle (Jekyll 3.x) on every push to `main`.
 Only two settings in [`_config.yml`](_config.yml) are environment-specific:
 
 ```yaml
-url: "https://mariadb-corporation.github.io"
+url: "https://mariadb.github.io"
 baseurl: "/ai-plugins"
 ```
 
