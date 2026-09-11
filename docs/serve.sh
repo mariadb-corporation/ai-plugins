@@ -135,22 +135,72 @@ else
 fi
 
 # --- Preflight the plugins --------------------------------------------------
+# Ask the Ruby that will actually run Jekyll, NOT whatever `gem` comes first on
+# PATH. macOS ships a system Ruby whose `gem` at /usr/bin/gem has a completely
+# separate gem set — it reports zero jekyll gems while a Homebrew Ruby has them
+# all. A PATH that reaches the gem bin directory (so `jekyll` resolves) without
+# reaching /opt/homebrew/bin (so `gem` does not) is easy to end up with, and an
+# editor launched from the Dock rather than a shell often has exactly that. The
+# old `gem list -i` check then failed on gems that were installed and working.
+#
 # Only meaningful for the non-bundler path; under `bundle exec` the gems come
-# from the lockfile and `gem list` says nothing useful about them.
-if [ "$BUNDLED" = "0" ]; then
-  missing=()
-  for plugin in jekyll-seo-tag jekyll-sitemap; do
-    gem list -i "$plugin" >/dev/null 2>&1 || missing+=("$plugin")
-  done
-  if [ "${#missing[@]}" -gt 0 ]; then
-    cat >&2 <<ERR
-serve.sh: missing required gem(s): ${missing[*]}
+# from the lockfile instead.
 
-  gem install ${missing[*]}
+# The interpreter from the jekyll shim's shebang, or nothing if it cannot be read.
+ruby_for_jekyll() {
+  local line interp
+  line="$(head -1 "$JEKYLL" 2>/dev/null || true)"
+  case "$line" in
+    "#!"*) interp="${line#\#!}" ;;
+    *)     return 1 ;;
+  esac
+  case "$interp" in
+    # "#!/usr/bin/env ruby" — look the interpreter up on PATH instead.
+    */env[[:space:]]*) interp="$(command -v "${interp##*[[:space:]]}" 2>/dev/null || true)" ;;
+    # Otherwise drop any arguments after the interpreter path.
+    *)                 interp="${interp%%[[:space:]]*}" ;;
+  esac
+  [ -n "$interp" ] && [ -x "$interp" ] || return 1
+  printf '%s\n' "$interp"
+}
+
+# A false "missing gem" is worse than no preflight, so when the Ruby cannot be
+# identified this is skipped and Jekyll reports the real problem itself.
+# NB the rescue clause: find_by_name raises Gem::MissingSpecError, whose ancestry
+# is Gem::LoadError < LoadError < ScriptError < Exception — it is NOT a
+# StandardError, so a bare `rescue` does not catch it. Getting that wrong made
+# the whole check inert: ruby aborted, the status was discarded, and every gem
+# looked present.
+#
+# The status is honoured here too: a ruby that fails for any other reason means
+# "could not determine", and the preflight is skipped rather than passed.
+if [ "$BUNDLED" = "0" ] && RUBY_BIN="$(ruby_for_jekyll)" &&
+   missing="$("$RUBY_BIN" -e '
+     puts ARGV.reject { |name|
+       begin
+         Gem::Specification.find_by_name(name)
+         true
+       rescue Gem::LoadError, StandardError
+         false
+       end
+     }.join(" ")
+   ' jekyll-seo-tag jekyll-sitemap 2>/dev/null)"
+then
+  if [ -n "$missing" ]; then
+    cat >&2 <<ERR
+serve.sh: missing required gem(s): $missing
+
+  gem install $missing
 
 These are not optional decoration. _includes/head.html calls {% seo %}, which is
 an unknown Liquid tag without jekyll-seo-tag, and Jekyll aborts on any plugin in
 _config.yml it cannot require.
+
+Checked against the Ruby that runs jekyll:
+  jekyll: $JEKYLL
+  ruby:   $RUBY_BIN
+Install into that Ruby. Running gem from a different Ruby installs elsewhere
+and will not help.
 ERR
     exit 1
   fi
