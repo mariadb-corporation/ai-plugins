@@ -203,6 +203,11 @@ img, svg { max-width: 100%; }
 
 hr { border: 0; border-top: 1px solid var(--ch-border); margin: 2rem 0; }
 
+/* The `hidden` attribute has to win. Its `display: none` comes from the UA
+   stylesheet, which ANY author rule outranks — so `.card { display: flex }`
+   quietly beat `card.hidden = true` and the tutorial filters did nothing. */
+[hidden] { display: none !important; }
+
 .container { max-width: var(--ch-maxw); margin: 0 auto; padding: 0 1.5rem; }
 .container--narrow { max-width: 860px; }
 /* A reading column that stays flush with the wide sections above and below it. */
@@ -277,7 +282,9 @@ html:not([data-theme="dark"]) .theme-icon--light { display: none; }
   .navbar__link--active { border-bottom-color: var(--ch-border); }
 }
 @media (min-width: 901px) {
-  .navbar__links[hidden] { display: flex; }
+  /* The mobile toggle leaves the attribute set; above its breakpoint the links
+     show regardless, so this has to outrank the global rule above. */
+  .navbar__links[hidden] { display: flex !important; }
 }
 
 /* --- Hero ---------------------------------------------------------------- */
