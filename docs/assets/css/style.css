@@ -20,131 +20,153 @@
    Design tokens and components. Light + dark, no build step, no framework.
    ========================================================================== */
 
-/* --- Tokens: light -------------------------------------------------------- */
+/* --- Tokens: light --------------------------------------------------------
+   The palette is taken verbatim from the reference design at
+   devhub.gridgain.com — same hex values, same clamps, same shadows. Only the
+   handful of tokens that design does not define are ours, and they are marked.
+   -------------------------------------------------------------------------- */
 :root {
-  /* MariaDB brand: Blue #1F305F, Brown #C0765A */
-  --ch-primary: #1f305f;
-  --ch-primary-hover: #16234a;
-  --ch-primary-light: #8f9dc4;
+  --ch-primary: #3a7882;
+  --ch-primary-hover: #2d5e67;
+  --ch-primary-light: #7fb4bb;
 
-  --ch-bg: #f3f5fa;
+  --ch-bg: #f1f9f7;
   --ch-bg-surface: #fff;
   --ch-bg-elevated: #fff;
-  --ch-bg-dim: #101a35;
+  --ch-callout-bg: #fff;
+  --ch-feedback-bg: #fdf8f3;
 
-  --ch-border: #dfe3ec;
-  --ch-highlight-bg: #f6eee7;
-  --ch-highlight-border: #e6cdbc;
+  --ch-border: #e3e3e3;
+  --ch-highlight-bg: #f4ebd6;
+  --ch-highlight-border: #e6d5ac;
+  --ch-highlight-link: #2d5e67;
 
   --ch-on-primary: #fff;
-  --ch-brand-action: #a8563a;        /* MariaDB brown, darkened for AA text */
-  --ch-brand-action-hover: #8c4630;
-  --ch-accent: #c0765a;              /* the brand brown itself, decorative */
+  --ch-brand-action: #be2026;
+  --ch-brand-action-hover: #9e1b20;
   --ch-accent-btn: var(--ch-brand-action);
   --ch-accent-btn-hover: var(--ch-brand-action-hover);
-  --ch-action-outline: #a8563a;
-  --ch-action-outline-text: #a8563a;
+  --ch-action-outline: #be2026;
+  --ch-action-outline-text: #be2026;
 
   --ch-text: #36414e;
   --ch-text-heading: #16263b;
   --ch-text-muted: #54616e;
-  --ch-text-faint: #6b7681;
+  --ch-text-faint: #636e7a;
 
   --ch-amber: #c9a227;
   --ch-amber-ink: #8c6c08;
-  --ch-red: #c0392b;
+  --ch-red: #d92a27;
   --ch-orange: #b15919;
   --ch-yellow: #916b0c;
-  --ch-green: #4f7a3a;
+  --ch-green: #6a780d;
   --ch-aqua: #287f5e;
   --ch-blue: #2e78a0;
   --ch-purple: #7b5ea7;
 
-  --ch-footer-bg: #101a35;
-  --ch-footer-link: #a9b6d8;
-  --ch-footer-text: #ccd2e0;
-
-  --ch-code-bg: #f5f7fb;
-  --ch-code-border: #e2e7f0;
-  --ch-code-text: #263043;
+  --ch-footer-bg: #013d4f;
+  --ch-footer-link: #a8d5db;
+  --ch-footer-text: #d4d4d4;
 
   --ch-spacing-xs: clamp(.5rem, .4rem + .3vw, 1rem);
   --ch-spacing-sm: clamp(1rem, .8rem + .5vw, 1.5rem);
   --ch-spacing-md: clamp(1.5rem, 1.2rem + .8vw, 2rem);
   --ch-spacing-lg: clamp(2rem, 1.5rem + 1.5vw, 3rem);
   --ch-spacing-xl: clamp(3rem, 2.5rem + 1.5vw, 4rem);
+  --ch-spacing-2xl: clamp(4rem, 3rem + 2vw, 5rem);
 
   --ch-section-sm: clamp(3rem, 2.5rem + 2vw, 5rem);
-  --ch-section-md: clamp(4rem, 3.2rem + 2.4vw, 6rem);
+  --ch-section-md: clamp(5rem, 4rem + 3vw, 7rem);
+  --ch-section-lg: clamp(7rem, 6rem + 4vw, 10rem);
 
   --ch-radius-sm: .5rem;
   --ch-radius-md: .75rem;
   --ch-radius-lg: 1rem;
+  --ch-radius-xl: 1.5rem;
   --ch-radius-full: 9999px;
 
-  --ch-shadow-sm: 0 1px 3px rgba(16, 26, 53, .07);
-  --ch-shadow-md: 0 4px 12px rgba(16, 26, 53, .10);
-  --ch-shadow-lg: 0 8px 24px rgba(16, 26, 53, .13);
+  --ch-shadow-sm: 0 1px 3px rgba(0, 0, 0, .06);
+  --ch-shadow-md: 0 4px 12px rgba(0, 0, 0, .08);
+  --ch-shadow-lg: 0 8px 24px rgba(0, 0, 0, .1);
 
   --ch-transition-fast: .15s ease;
   --ch-transition-normal: .25s ease;
 
-  --ch-hero-gradient: linear-gradient(135deg, #0b1226 0%, #24386c 100%);
-  --ch-hero-texture-rgb: 143, 157, 196;
-  --ch-hero-text: #eef1f8;
-  --ch-hero-muted: #c3cce2;
-  --ch-hero-accent: #a9b6d8;
-  --ch-hero-badge-border: rgba(143, 157, 196, .30);
+  --ch-hero-gradient: linear-gradient(135deg, #082a34 0%, #0c4a5e 100%);
+  --ch-hero-texture-rgb: 127, 180, 187;
+  --ch-hero-text: #eaf1f2;
+  --ch-hero-muted: #c7e4e8;
+  --ch-hero-accent: #a8d5db;
+  --ch-hero-badge-bg: rgba(127, 180, 187, .14);
+  --ch-hero-badge-border: rgba(127, 180, 187, .28);
+  --ch-bg-dim: #0a2026;
 
+  /* Ours: code. The reference renders code BLOCKS with the One Dark prism
+     theme in both site themes, so --ch-code-* is identical in the dark block.
+     Inline code is a separate, light treatment there (--ifm-code-background). */
+  --ch-code-bg: hsl(220, 13%, 18%);
+  --ch-code-text: hsl(220, 14%, 71%);
+  --ch-code-border: hsl(220, 13%, 26%);
+  --ch-inline-code-bg: #f6f7f8;
+  --ch-inline-code-border: rgba(0, 0, 0, .1);
+
+  /* Ours: layout constants the reference has no token for. */
   --ch-wave-h: clamp(48px, 5vw, 80px);
   --ch-navbar-h: 60px;
   --ch-maxw: 1200px;
 }
 
-/* --- Tokens: dark --------------------------------------------------------- */
+/* --- Tokens: dark ---------------------------------------------------------
+   Also verbatim from the reference. Note what it does NOT override: the brand
+   action red, the hero gradient and the code colours are shared with light.
+   -------------------------------------------------------------------------- */
 html[data-theme="dark"] {
-  --ch-primary: #9fb2e0;
-  --ch-primary-hover: #c2cfef;
-  --ch-primary-light: #4a5d90;
+  --ch-primary: #7fb4bb;
+  --ch-primary-hover: #52909a;
+  --ch-on-primary: #0a2026;
 
-  --ch-bg: #12161f;
-  --ch-bg-surface: #191e29;
-  --ch-bg-elevated: #1d2330;
-  --ch-bg-dim: #0b0e15;
+  --ch-accent-btn: var(--ch-brand-action);
+  --ch-accent-btn-hover: var(--ch-brand-action-hover);
+  --ch-action-outline: #e5484d;
+  --ch-action-outline-text: #eaf1f2;
 
-  --ch-border: #2a3242;
-  --ch-highlight-bg: #241c17;
-  --ch-highlight-border: #4a382c;
+  --ch-bg: #0f2a31;
+  --ch-bg-dim: #0a2026;
+  --ch-bg-surface: #163840;
+  --ch-bg-elevated: #1c434c;
+  --ch-callout-bg: #163840;
+  --ch-feedback-bg: #14333b;
 
-  --ch-on-primary: #101a35;
-  --ch-brand-action: #c0765a;
-  --ch-brand-action-hover: #d18b70;
-  --ch-action-outline: #c0765a;
-  --ch-action-outline-text: #d3937b;
+  --ch-border: #2a4e58;
+  --ch-highlight-bg: #2b281f;
+  --ch-highlight-border: #46412f;
+  --ch-highlight-link: #7fb4bb;
 
-  --ch-text: #c8cfda;
-  --ch-text-heading: #eef1f8;
-  --ch-text-muted: #9aa5b4;
-  --ch-text-faint: #7d8898;
+  --ch-text: #d4d4d4;
+  --ch-text-heading: #e8eef0;
+  --ch-text-muted: #aeb7bf;
+  --ch-text-faint: #949da5;
 
-  --ch-amber: #d9b64a;
-  --ch-amber-ink: #f0dda4;
-  --ch-red: #e57373;
-  --ch-orange: #d98a4f;
-  --ch-yellow: #ceac4d;
-  --ch-green: #85b06a;
-  --ch-aqua: #56b795;
-  --ch-blue: #6fa8c9;
-  --ch-purple: #a48ac9;
+  --ch-red: #e98e90;
+  --ch-orange: #e69875;
+  --ch-yellow: #dbbc7f;
+  --ch-amber-ink: #d9b860;
+  --ch-green: #a7c080;
+  --ch-aqua: #83c092;
+  --ch-blue: #7fbbb3;
+  --ch-purple: #c0a8d6;
 
-  --ch-footer-bg: #0b0e15;
-  --ch-code-bg: #141a24;
-  --ch-code-border: #2a3242;
-  --ch-code-text: #cdd6e3;
+  --ch-footer-bg: var(--ch-bg-dim);
+  --ch-footer-link: #a8d5db;
+  --ch-footer-text: var(--ch-text);
 
-  --ch-shadow-sm: 0 1px 3px rgba(0, 0, 0, .35);
-  --ch-shadow-md: 0 4px 12px rgba(0, 0, 0, .45);
-  --ch-shadow-lg: 0 8px 24px rgba(0, 0, 0, .55);
+  --ch-shadow-sm: 0 1px 3px rgba(0, 0, 0, .2);
+  --ch-shadow-md: 0 4px 12px rgba(0, 0, 0, .3);
+  --ch-shadow-lg: 0 8px 24px rgba(0, 0, 0, .4);
+
+  /* Ours: inline code only — the code blocks stay One Dark in both themes. */
+  --ch-inline-code-bg: rgba(255, 255, 255, .1);
+  --ch-inline-code-border: rgba(255, 255, 255, .12);
 }
 
 /* --- Base ---------------------------------------------------------------- */
@@ -289,14 +311,14 @@ html:not([data-theme="dark"]) .theme-icon--light { display: none; }
   font-size: .75rem; font-weight: 600;
   color: var(--ch-hero-accent);
   border: 1px solid var(--ch-hero-badge-border);
-  background: rgba(16, 26, 53, .55);
+  background: rgba(39, 46, 51, .75);
   backdrop-filter: blur(4px);
 }
 .hero__card {
   border-radius: var(--ch-radius-md); padding: 1.25rem;
-  border-top: 3px solid var(--ch-accent);
+  border-top: 3px solid var(--ch-green);
   background: var(--ch-bg-elevated);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, .3);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, .25);
 }
 .hero__card .code-block { margin: 0; }
 .hero__caption { color: var(--ch-hero-muted); font-size: .8rem; margin: .85rem 0 0; line-height: 1.6; }
@@ -349,7 +371,7 @@ html:not([data-theme="dark"]) .theme-icon--light { display: none; }
   display: inline-flex; align-items: center; justify-content: center;
   width: 2.5rem; height: 2.5rem; margin-bottom: .9rem;
   border-radius: var(--ch-radius-md);
-  background: color-mix(in srgb, var(--ch-primary) 11%, transparent);
+  background: color-mix(in srgb, var(--ch-primary) 12%, transparent);
   color: var(--ch-primary);
 }
 .section-icon svg { width: 1.4rem; height: 1.4rem; }
@@ -419,9 +441,9 @@ html:not([data-theme="dark"]) .theme-icon--light { display: none; }
   padding: .2rem .6rem; font-size: .73rem; font-weight: 600;
   max-width: 100%; overflow-wrap: anywhere;
 }
-.chip--beginner     { background: color-mix(in srgb, var(--ch-green) 16%, var(--ch-bg));  color: var(--ch-green); }
-.chip--intermediate { background: color-mix(in srgb, var(--ch-yellow) 16%, var(--ch-bg)); color: var(--ch-yellow); }
-.chip--advanced     { background: color-mix(in srgb, var(--ch-orange) 16%, var(--ch-bg)); color: var(--ch-orange); }
+.chip--beginner     { background: color-mix(in srgb, var(--ch-green) 15%, var(--ch-bg));  color: var(--ch-green); }
+.chip--intermediate { background: color-mix(in srgb, var(--ch-yellow) 15%, var(--ch-bg)); color: var(--ch-yellow); }
+.chip--advanced     { background: color-mix(in srgb, var(--ch-orange) 15%, var(--ch-bg)); color: var(--ch-orange); }
 .chip--time { color: var(--ch-text-faint); font-size: .74rem; padding-left: 0; }
 
 .tag {
@@ -430,8 +452,7 @@ html:not([data-theme="dark"]) .theme-icon--light { display: none; }
   background: color-mix(in srgb, var(--ch-primary) 12%, var(--ch-bg));
   color: var(--ch-primary);
 }
-.tag--tool { background: color-mix(in srgb, var(--ch-accent) 20%, var(--ch-bg)); color: var(--ch-brand-action); }
-html[data-theme="dark"] .tag--tool { color: var(--ch-accent); }
+.tag--tool { background: var(--ch-amber); color: #1a1a1a; }
 
 .card__footer {
   margin-top: .75rem; padding-top: .65rem; border-top: 1px solid var(--ch-border);
@@ -451,11 +472,10 @@ html[data-theme="dark"] .tag--tool { color: var(--ch-accent); }
   border-radius: var(--ch-radius-md);
 }
 .card-icon svg { width: 1.5rem; height: 1.5rem; }
-.card-icon--amber { background: color-mix(in srgb, var(--ch-amber) 14%, transparent); color: var(--ch-amber-ink); }
-.card-icon--green { background: color-mix(in srgb, var(--ch-green) 14%, transparent); color: var(--ch-green); }
-.card-icon--blue  { background: color-mix(in srgb, var(--ch-blue) 14%, transparent);  color: var(--ch-blue); }
-.card-icon--brown { background: color-mix(in srgb, var(--ch-accent) 18%, transparent); color: var(--ch-brand-action); }
-html[data-theme="dark"] .card-icon--brown { color: var(--ch-accent); }
+.card-icon--amber { background: color-mix(in srgb, var(--ch-amber) 12%, transparent); color: var(--ch-amber-ink); }
+.card-icon--green { background: color-mix(in srgb, var(--ch-green) 12%, transparent); color: var(--ch-green); }
+.card-icon--blue  { background: color-mix(in srgb, var(--ch-blue) 12%, transparent);  color: var(--ch-blue); }
+.card-icon--brown { background: color-mix(in srgb, var(--ch-orange) 12%, transparent); color: var(--ch-orange); }
 .icon-card h3 { font-size: 1.05rem; margin: 0 0 .5rem; }
 .icon-card p { color: var(--ch-text-muted); font-size: .88rem; line-height: 1.65; margin: 0 0 1rem; }
 .icon-card ul { margin: 0 0 1rem; padding-left: 1.15rem; color: var(--ch-text-muted); font-size: .86rem; }
@@ -549,11 +569,12 @@ html[data-theme="dark"] .card-icon--brown { color: var(--ch-accent); }
 code {
   font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
   font-size: .86em;
-  background: var(--ch-code-bg); border: 1px solid var(--ch-code-border);
-  border-radius: .3rem; padding: .1rem .34rem; color: var(--ch-code-text);
+  background: var(--ch-inline-code-bg); border: 1px solid var(--ch-inline-code-border);
+  border-radius: .3rem; padding: .1rem .34rem; color: var(--ch-text);
 }
 pre {
   background: var(--ch-code-bg); border: 1px solid var(--ch-code-border);
+  color: var(--ch-code-text);
   border-radius: var(--ch-radius-sm); padding: 1rem 1.1rem;
   overflow-x: auto; font-size: .82rem; line-height: 1.6; margin: 1.25rem 0;
 }
@@ -561,35 +582,35 @@ pre code { background: none; border: 0; padding: 0; font-size: inherit; color: i
 .code-block { margin: 1.25rem 0; }
 .code-block__title {
   font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em;
-  color: var(--ch-text-faint); background: var(--ch-code-bg);
+  color: hsl(220, 14%, 71%); background: var(--ch-code-bg);
   border: 1px solid var(--ch-code-border); border-bottom: none;
   border-radius: var(--ch-radius-sm) var(--ch-radius-sm) 0 0; padding: .45rem .9rem;
 }
 .code-block__title + pre { margin-top: 0; border-radius: 0 0 var(--ch-radius-sm) var(--ch-radius-sm); }
 
-/* Rouge syntax highlighting — tuned per theme. */
-.highlight .c, .highlight .c1, .highlight .cm { color: #7c8798; font-style: italic; }
-.highlight .k, .highlight .kd, .highlight .kn, .highlight .kr, .highlight .kt { color: #1f5f8b; font-weight: 600; }
-.highlight .s, .highlight .s1, .highlight .s2, .highlight .sb { color: #2f7d4f; }
-.highlight .m, .highlight .mi, .highlight .mf { color: #a8563a; }
-.highlight .nf, .highlight .nb { color: #7b5ea7; }
-.highlight .nt { color: #1f5f8b; }
-.highlight .na { color: #a8563a; }
-.highlight .n, .highlight .nn, .highlight .nc { color: var(--ch-code-text); }
-.highlight .nv, .highlight .vg { color: #7b5ea7; }
-.highlight .err { color: var(--ch-red); background: none; }
-.highlight .o, .highlight .p { color: var(--ch-code-text); }
-html[data-theme="dark"] .highlight .k, html[data-theme="dark"] .highlight .kd,
-html[data-theme="dark"] .highlight .kn, html[data-theme="dark"] .highlight .kr,
-html[data-theme="dark"] .highlight .kt, html[data-theme="dark"] .highlight .nt { color: #6fa8c9; }
-html[data-theme="dark"] .highlight .s, html[data-theme="dark"] .highlight .s1,
-html[data-theme="dark"] .highlight .s2, html[data-theme="dark"] .highlight .sb { color: #85b06a; }
-html[data-theme="dark"] .highlight .m, html[data-theme="dark"] .highlight .mi,
-html[data-theme="dark"] .highlight .mf, html[data-theme="dark"] .highlight .na { color: #d3937b; }
-html[data-theme="dark"] .highlight .nf, html[data-theme="dark"] .highlight .nb,
-html[data-theme="dark"] .highlight .nv, html[data-theme="dark"] .highlight .vg { color: #a48ac9; }
-html[data-theme="dark"] .highlight .c, html[data-theme="dark"] .highlight .c1,
-html[data-theme="dark"] .highlight .cm { color: #6b7789; }
+/* Rouge syntax highlighting — the One Dark prism palette the reference uses.
+   It applies that theme in BOTH site themes, so there is no per-theme override
+   here: code blocks are dark on a light page too. Rouge's token classes are
+   mapped onto prism's token groups, which is the closest a different tokenizer
+   can get. */
+.highlight .c, .highlight .c1, .highlight .cm, .highlight .cp,
+.highlight .cs, .highlight .cd                       { color: hsl(220, 10%, 40%); font-style: italic; }
+.highlight .p, .highlight .pi                        { color: hsl(220, 14%, 71%); }
+.highlight .m, .highlight .mi, .highlight .mf, .highlight .mh, .highlight .mo,
+.highlight .kc, .highlight .no, .highlight .nc,
+.highlight .na                                       { color: hsl(29, 54%, 61%); }
+.highlight .k, .highlight .kd, .highlight .kn, .highlight .kp,
+.highlight .kr, .highlight .kt                       { color: hsl(286, 60%, 67%); }
+.highlight .nt, .highlight .nb, .highlight .gd       { color: hsl(355, 65%, 65%); }
+.highlight .s, .highlight .s1, .highlight .s2, .highlight .sb, .highlight .sc,
+.highlight .sd, .highlight .se, .highlight .sh, .highlight .si, .highlight .sx,
+.highlight .sr, .highlight .ss, .highlight .gi       { color: hsl(95, 38%, 62%); }
+.highlight .nv, .highlight .vg, .highlight .vi,
+.highlight .o, .highlight .ow, .highlight .nf        { color: hsl(207, 82%, 66%); }
+.highlight .nl, .highlight .n, .highlight .nn        { color: var(--ch-code-text); }
+.highlight .err                                      { color: hsl(355, 65%, 65%); background: none; }
+.highlight .gs                                       { font-weight: 700; }
+.highlight .ge                                       { font-style: italic; }
 
 /* --- Tables -------------------------------------------------------------- */
 .prose table {
@@ -597,7 +618,7 @@ html[data-theme="dark"] .highlight .cm { color: #6b7789; }
   border-collapse: collapse; margin: 1.5rem 0; font-size: .88rem;
 }
 .prose th, .prose td { border: 1px solid var(--ch-border); padding: .5rem .75rem; text-align: left; vertical-align: top; }
-.prose th { background: var(--ch-code-bg); font-weight: 700; color: var(--ch-text-heading); }
+.prose th { background: var(--ch-inline-code-bg); font-weight: 700; color: var(--ch-text-heading); }
 .table-wrap { overflow-x: auto; max-width: 100%; }
 
 /* --- Prose / article ----------------------------------------------------- */
@@ -700,7 +721,7 @@ html[data-theme="dark"] .highlight .cm { color: #6b7789; }
 
 /* --- CTA band ------------------------------------------------------------ */
 .cta {
-  background: var(--ch-bg-dim); color: var(--ch-hero-text);
+  background: var(--ch-hero-gradient); color: var(--ch-hero-text);
   padding: var(--ch-section-sm) 0; text-align: center;
 }
 .cta h2 { color: var(--ch-hero-text); font-size: 1.4rem; margin: 0 0 .75rem; }
@@ -717,7 +738,7 @@ html[data-theme="dark"] .highlight .cm { color: #6b7789; }
 .skill-list li {
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   font-size: .76rem; padding: .22rem .55rem; border-radius: .3rem;
-  background: var(--ch-code-bg); border: 1px solid var(--ch-code-border); color: var(--ch-code-text);
+  background: var(--ch-inline-code-bg); border: 1px solid var(--ch-inline-code-border); color: var(--ch-text);
 }
 
 /* --- Footer -------------------------------------------------------------- */
