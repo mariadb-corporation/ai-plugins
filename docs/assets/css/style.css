@@ -102,6 +102,12 @@
   --ch-hero-accent: #a8d5db;
   --ch-hero-badge-bg: rgba(127, 180, 187, .14);
   --ch-hero-badge-border: rgba(127, 180, 187, .28);
+
+  /* MariaDB's "sublime" gradient, copied from mariadb.com's app.beedb9.css
+     (--btn-sublime-gradient). The bare 25% and 75% entries are colour
+     interpolation hints, not stops — they move the midpoint of each transition
+     rather than adding a colour. */
+  --btn-sublime-gradient: linear-gradient(90deg, #51d9f7 0%, 25%, #8ce786 50%, 75%, #cdf70a);
   --ch-bg-dim: #0a2026;
 
   /* Ours: code. The reference renders code BLOCKS with the One Dark prism
@@ -302,6 +308,20 @@ html:not([data-theme="dark"]) .theme-icon--light { display: none; }
   color: var(--ch-hero-text); margin: 0 0 1.25rem;
   font-size: clamp(1.65rem, 1.2rem + 1.8vw, 2.4rem); line-height: 1.2;
 }
+/* Copied from mariadb.com, where it paints text with the sublime gradient.
+   Guarded: without background-clip support the transparent fill leaves the text
+   invisible rather than merely flat, which is a much worse failure. */
+@supports ((-webkit-background-clip: text) or (background-clip: text)) {
+  .text-sublime-gradient {
+    display: inline-block;
+    background-image: var(--btn-sublime-gradient);
+    -webkit-background-clip: text;
+            background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+  }
+}
+
 .hero__sub { color: var(--ch-hero-muted); font-size: .98rem; line-height: 1.75;
   max-width: 660px; margin: 0 0 1.75rem; }
 .hero__actions { display: flex; flex-wrap: wrap; gap: .75rem; margin-bottom: 1.5rem; }
