@@ -315,13 +315,76 @@ html:not([data-theme="dark"]) .theme-icon--light { display: none; }
   background: rgba(39, 46, 51, .75);
   backdrop-filter: blur(4px);
 }
+/* The hero card: a dark panel with a lit gradient edge, dark in both themes
+   because it always sits on the dark hero. Every colour is a local custom
+   property so the whole treatment retunes from this one block. */
 .hero__card {
-  border-radius: var(--ch-radius-md); padding: 1.25rem;
-  border-top: 3px solid var(--ch-green);
-  background: var(--ch-bg-elevated);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, .25);
+  --card-edge: linear-gradient(125deg, #22d3ee 0%, #3b82f6 36%, #a855f7 66%, #e879f9 100%);
+  --card-bg: #0d1524;
+  --card-line: rgba(255, 255, 255, .09);
+  --card-fill: rgba(255, 255, 255, .045);
+
+  position: relative;
+  padding: 1.15rem 1.1rem 1.35rem;
+  border: 3px solid transparent;
+  border-radius: 1.7rem;
+  /* Two backgrounds: the fill clipped to the padding box, the gradient to the
+     border box. That paints a gradient border with no extra element — and the
+     fill must stay opaque or the bloom below shows through the middle. */
+  background:
+    linear-gradient(var(--card-bg), var(--card-bg)) padding-box,
+    var(--card-edge) border-box;
+  box-shadow: 0 18px 50px rgba(0, 0, 0, .45);
 }
-.hero__card .code-block { margin: 0; }
+/* The bloom. Same gradient, blurred, behind the card — so only the part that
+   spills past the edge is visible. */
+.hero__card::before {
+  content: ""; position: absolute; inset: -3px; z-index: -1;
+  border-radius: inherit;
+  background: var(--card-edge);
+  filter: blur(22px);
+  opacity: .75;
+}
+
+.hero-panel + .hero-panel { margin-top: 1.35rem; }
+
+.hero-panel__label {
+  display: flex; align-items: center; justify-content: space-between; gap: .75rem;
+  background: var(--card-fill);
+  border: 1px solid var(--card-line);
+  border-radius: .7rem;
+  padding: .78rem 1.05rem;
+  color: #fff; font-size: .78rem; font-weight: 700;
+  letter-spacing: .08em; text-transform: uppercase;
+}
+.hero-panel__check { width: 18px; height: 18px; color: rgba(255, 255, 255, .45); flex-shrink: 0; }
+
+/* Inset from the label bar, as in the reference. */
+.hero-panel__body {
+  margin: .9rem 1.5rem 0;
+  background: rgba(255, 255, 255, .028);
+  border: 1px solid var(--card-line);
+  border-radius: .7rem;
+  padding: .95rem 1.1rem;
+  overflow-x: auto;
+}
+
+.hero-code {
+  margin: 0; padding: 0; border: 0; background: none;
+  font-size: .78rem; line-height: 1.9;
+  color: rgba(255, 255, 255, .84);
+}
+/* The One Dark hues the rest of the site's code blocks use, under names local
+   to the card so this markup needs no Rouge classes. */
+.hero-code .t-fn  { color: hsl(207, 82%, 66%); }
+.hero-code .t-num { color: hsl(29, 54%, 61%); }
+.hero-code .t-str { color: hsl(95, 38%, 62%); }
+.hero-code .t-dim { color: rgba(255, 255, 255, .42); }
+
+@media (max-width: 560px) {
+  .hero__card { padding: .9rem .85rem 1.05rem; border-radius: 1.2rem; }
+  .hero-panel__body { margin: .8rem .6rem 0; padding: .8rem .9rem; }
+}
 .hero__caption { color: var(--ch-hero-muted); font-size: .8rem; margin: .85rem 0 0; line-height: 1.6; }
 
 .hero--page { padding-bottom: 0; }
