@@ -1,0 +1,44 @@
+<footer class="footer">
+  <div class="footer__inner">
+    <div class="footer__grid">
+      <div>
+        <div class="footer__brand-name">MariaDB AI Plugins</div>
+        <p class="footer__tagline">
+          MariaDB skills and the <code style="background:none;border:0;color:inherit;padding:0">mariadb-shell</code>
+          MCP server for AI coding agents — Claude Code, Codex, OpenCode and Pi.
+        </p>
+      </div>
+      <div>
+        <h4>Learn</h4>
+        <ul>
+          <li><a href="{{ '/get-started/' | relative_url }}">Get Started</a></li>
+          <li><a href="{{ '/tutorials/' | relative_url }}">Tutorials</a></li>
+          <li><a href="{{ '/learning-paths/' | relative_url }}">Learning Paths</a></li>
+          <li><a href="{{ '/skills/' | relative_url }}">Skill Catalog</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Reference</h4>
+        <ul>
+          <li><a href="{{ '/how-it-works/' | relative_url }}">How It Works</a></li>
+          <li><a href="{{ '/mcp-tools/' | relative_url }}">MCP Tool Reference</a></li>
+          <li><a href="https://mariadb.com/docs/" rel="noopener">MariaDB Docs</a></li>
+          <li><a href="https://modelcontextprotocol.io" rel="noopener">Model Context Protocol</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Project</h4>
+        <ul>
+          <li><a href="{{ site.repo }}" rel="noopener">GitHub</a></li>
+          <li><a href="{{ site.repo }}/blob/main/CONTRIBUTING.md" rel="noopener">Contributing</a></li>
+          <li><a href="{{ site.repo }}/issues" rel="noopener">Issues</a></li>
+          <li><a href="{{ site.repo }}/blob/main/LICENSE" rel="noopener">License (GPL-2.0)</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer__bottom">
+      <span>&copy; {{ 'now' | date: "%Y" }} MariaDB plc. Plugin code is GPL-2.0; bundled skills keep their original licenses.</span>
+      <span>Skills baseline: MariaDB {{ site.mariadb_baseline }}</span>
+    </div>
+  </div>
+</footer>

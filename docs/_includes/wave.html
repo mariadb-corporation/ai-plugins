@@ -1,0 +1,10 @@
+{%- comment -%}
+  The curve that carries a dark hero into the page body.
+  `fill` defaults to the page background; pass "surface" for a white section.
+{%- endcomment -%}
+<div class="divider" aria-hidden="true">
+  <svg viewBox="0 0 1440 80" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M0 80 L0 50 Q360 0, 720 40 Q1080 80, 1440 30 L1440 80 Z"
+          fill="var(--ch-{% if include.fill == 'surface' %}bg-surface{% else %}bg{% endif %})"/>
+  </svg>
+</div>

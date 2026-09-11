@@ -1,0 +1,32 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+{%- comment -%}
+  jekyll-seo-tag writes <title>, the description, canonical, og:*, twitter:* and
+  the JSON-LD block from `page.title` / `page.description` with `site.title` and
+  `site.description` as the fallbacks. The home page deliberately carries no
+  `title` in its front matter so this renders "<site.title> | <site.tagline>"
+  there rather than "Home | …".
+{%- endcomment -%}
+{% seo %}
+
+{%- comment -%}
+  Both, in this order: browsers that understand SVG icons take the SVG and
+  ignore the .ico; the rest fall back to it. Without the .ico entry the file
+  ships but is never requested — nothing asks for it at this path, since the
+  automatic /favicon.ico probe hits the domain root, not the baseurl.
+{%- endcomment -%}
+<link rel="icon" href="{{ '/assets/img/favicon.ico' | relative_url }}" sizes="48x48">
+<link rel="icon" href="{{ '/assets/img/favicon.svg' | relative_url }}" type="image/svg+xml">
+<link rel="stylesheet" href="{{ '/assets/css/style.css' | relative_url }}">
+
+<!-- Set the theme before first paint so the page never flashes the wrong one. -->
+<script>
+  (function () {
+    try {
+      var t = localStorage.getItem('mdb-theme');
+      if (!t) t = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      document.documentElement.setAttribute('data-theme', t);
+    } catch (e) { /* private mode — fall through to the light default */ }
+  })();
+</script>

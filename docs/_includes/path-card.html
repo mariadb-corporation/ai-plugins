@@ -1,0 +1,35 @@
+{%- comment -%} include.p = an entry from _data/paths.yml {%- endcomment -%}
+{%- assign p = include.p -%}
+<div class="path-card path-card--{{ p.level }}" id="{{ p.id }}">
+  <h3 class="path-card__title">{{ p.title }}</h3>
+  <p class="path-card__desc">{{ p.description }}</p>
+  <div class="path-card__meta">
+    <span>{{ p.steps | size }} tutorials</span>
+    <span>&middot;</span>
+    <span>{{ p.duration }}</span>
+    <span>&middot;</span>
+    <span>{{ p.level | capitalize }}</span>
+  </div>
+  <ol class="path-steps">
+    {%- for slug in p.steps -%}
+      {%- assign t = site.tutorials | where: "slug", slug | first -%}
+      {%- if t -%}
+      <li class="path-step">
+        <span class="path-step__num">{{ forloop.index }}</span>
+        <div class="path-step__info">
+          <div class="path-step__title"><a href="{{ t.url | relative_url }}">{{ t.title }}</a></div>
+          <div class="path-step__meta">
+            <span class="chip chip--{{ t.level | downcase }}">{{ t.level | capitalize }}</span>
+            <span class="path-step__time">{{ t.duration }}</span>
+          </div>
+        </div>
+      </li>
+      {%- endif -%}
+    {%- endfor -%}
+  </ol>
+  {%- assign first = p.steps | first -%}
+  {%- assign firstT = site.tutorials | where: "slug", first | first -%}
+  {%- if firstT -%}
+  <a class="btn btn--outline" href="{{ firstT.url | relative_url }}">Start the path &rarr;</a>
+  {%- endif -%}
+</div>

@@ -1,0 +1,86 @@
+---
+layout: default
+title: Tutorials
+permalink: /tutorials/
+description: Hands-on tutorials for the MariaDB agent skills and the mariadb-shell MCP server — schemas, sandboxes, versioned migrations, REST endpoints and MySQL migration.
+---
+
+<section class="hero hero--page">
+  <div class="hero__bg"></div>
+  <div class="hero__inner">
+    <h1 class="hero__title">Tutorials</h1>
+    <p class="hero__sub">
+      Every tutorial is something you can run today, on a throwaway server, in
+      under an hour. They build on each other in order, but each one states what
+      it assumes so you can start anywhere.
+    </p>
+    <div class="hero__badges">
+      <span class="hero__badge">Runnable on a sandbox</span>
+      <span class="hero__badge">No cloud account</span>
+      <span class="hero__badge">Nothing left behind</span>
+    </div>
+  </div>
+</section>
+{% include wave.html %}
+
+<section class="section section--sm">
+  <div class="container">
+    <div class="section-head">
+      <h2 class="section-title">All tutorials</h2>
+      <p class="section-sub">
+        Filter by difficulty or by which part of the plugin it exercises. The
+        <span class="tag tag--tool">tool.name</span> chips on each card name the
+        MCP tools it uses.
+      </p>
+    </div>
+
+    <div class="filters" data-filters>
+      <div class="filter-group">
+        <div class="filter-group__label">Difficulty</div>
+        <div class="filter-group__buttons">
+          <button class="filter-btn" data-group="level" data-value="all" aria-pressed="true">All</button>
+          <button class="filter-btn" data-group="level" data-value="beginner" aria-pressed="false">Beginner</button>
+          <button class="filter-btn" data-group="level" data-value="intermediate" aria-pressed="false">Intermediate</button>
+          <button class="filter-btn" data-group="level" data-value="advanced" aria-pressed="false">Advanced</button>
+        </div>
+      </div>
+      <div class="filter-group">
+        <div class="filter-group__label">Area</div>
+        <div class="filter-group__buttons">
+          <button class="filter-btn" data-group="area" data-value="all" aria-pressed="true">All</button>
+          <button class="filter-btn" data-group="area" data-value="getting-started" aria-pressed="false">Getting started</button>
+          <button class="filter-btn" data-group="area" data-value="sql" aria-pressed="false">SQL</button>
+          <button class="filter-btn" data-group="area" data-value="sandbox" aria-pressed="false">Sandbox</button>
+          <button class="filter-btn" data-group="area" data-value="performance" aria-pressed="false">Performance</button>
+          <button class="filter-btn" data-group="area" data-value="schema-management" aria-pressed="false">Schema management</button>
+          <button class="filter-btn" data-group="area" data-value="rest" aria-pressed="false">REST</button>
+          <button class="filter-btn" data-group="area" data-value="migration" aria-pressed="false">Migration</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card-grid">
+      {%- assign all = site.tutorials | sort: "order" -%}
+      {%- for t in all -%}
+        {% include tutorial-card.html t=t %}
+      {%- endfor -%}
+    </div>
+    <p class="filter-empty" id="filter-empty" hidden>
+      No tutorial matches that combination yet. Try widening one of the filters.
+    </p>
+  </div>
+</section>
+
+<section class="cta">
+  <div class="container">
+    <h2>Prefer a route through them?</h2>
+    <p>
+      The learning paths connect these tutorials into progressions, each aimed at
+      one thing you might actually be trying to do.
+    </p>
+    <div class="cta__actions">
+      <a class="btn btn--primary" href="{{ '/learning-paths/' | relative_url }}">View Learning Paths</a>
+      <a class="btn btn--ghost" href="{{ '/skills/' | relative_url }}">Browse the Skill Catalog</a>
+    </div>
+  </div>
+</section>

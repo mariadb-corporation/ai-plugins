@@ -17,3 +17,13 @@ test-results/
 # Node / pi extensions (pi install runs `npm install` into the plugin dir)
 node_modules/
 package-lock.json
+
+# Jekyll (docs/ — GitHub Pages builds it, the output is never committed)
+docs/_site/
+docs/.jekyll-cache/
+docs/.jekyll-metadata
+docs/Gemfile.lock
+docs/vendor/
+
+# macOS Finder
+.DS_Store

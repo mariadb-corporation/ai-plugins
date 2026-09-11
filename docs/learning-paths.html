@@ -1,0 +1,93 @@
+---
+layout: default
+title: Learning Paths
+permalink: /learning-paths/
+description: Four routes through the MariaDB AI Plugins tutorials, each aimed at one thing you might be trying to do.
+---
+
+<section class="hero hero--page">
+  <div class="hero__bg"></div>
+  <div class="hero__inner">
+    <h1 class="hero__title">Learning Paths</h1>
+    <p class="hero__sub">
+      Four routes through the tutorials. Pick the one that matches what you are
+      trying to do rather than how experienced you are — the levels describe the
+      material, not you.
+    </p>
+  </div>
+</section>
+{% include wave.html %}
+
+<section class="section section--sm">
+  <div class="container">
+    {%- for p in site.data.paths -%}
+      {% include path-card.html p=p %}
+    {%- endfor -%}
+  </div>
+</section>
+
+<section class="section section--surface">
+  <div class="container">
+    <div class="section-head">
+      <h2 class="section-title">Not sure which one?</h2>
+      <p class="section-sub">Three questions that usually settle it.</p>
+    </div>
+    <div class="card-grid card-grid--2">
+      <div class="icon-card">
+        <span class="card-icon card-icon--green">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/>
+          </svg>
+        </span>
+        <h3>"I just installed this and want to see it work."</h3>
+        <p>
+          Take <strong>First Steps</strong>. Three short tutorials, one throwaway
+          server, and by the end you will know which half of the plugin does what.
+        </p>
+        <a class="btn btn--secondary" href="#first-steps">Go to First Steps</a>
+      </div>
+      <div class="icon-card">
+        <span class="card-icon card-icon--amber">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M3.75 6A2.25 2.25 0 0 1 6 3.75h2.25A2.25 2.25 0 0 1 10.5 6v2.25a2.25 2.25 0 0 1-2.25 2.25H6a2.25 2.25 0 0 1-2.25-2.25V6ZM3.75 15.75A2.25 2.25 0 0 1 6 13.5h2.25a2.25 2.25 0 0 1 2.25 2.25V18a2.25 2.25 0 0 1-2.25 2.25H6A2.25 2.25 0 0 1 3.75 18v-2.25ZM13.5 6a2.25 2.25 0 0 1 2.25-2.25H18A2.25 2.25 0 0 1 20.25 6v2.25A2.25 2.25 0 0 1 18 10.5h-2.25a2.25 2.25 0 0 1-2.25-2.25V6ZM13.5 15.75a2.25 2.25 0 0 1 2.25-2.25H18a2.25 2.25 0 0 1 2.25 2.25V18A2.25 2.25 0 0 1 18 20.25h-2.25A2.25 2.25 0 0 1 13.5 18v-2.25Z"/>
+          </svg>
+        </span>
+        <h3>"My schema has to survive being deployed twice."</h3>
+        <p>
+          Take <strong>The Schema Lifecycle</strong>. It is the difference between
+          a create script and something you can ship version 2 of to servers still
+          running version 1.
+        </p>
+        <a class="btn btn--secondary" href="#schema-lifecycle">Go to Schema Lifecycle</a>
+      </div>
+      <div class="icon-card">
+        <span class="card-icon card-icon--blue">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M3.75 3v11.25A2.25 2.25 0 0 0 6 16.5h2.25M3.75 3h-1.5m1.5 0h16.5m0 0h1.5m-1.5 0v11.25A2.25 2.25 0 0 1 18 16.5h-2.25m-7.5 0h7.5m-7.5 0-1 3m8.5-3 1 3m0 0 .5 1.5m-.5-1.5h-9.5m0 0-.5 1.5M9 11.25v1.5M12 9v4.5m3-6.75v6.75"/>
+          </svg>
+        </span>
+        <h3>"Something is already broken and I need to know why."</h3>
+        <p>
+          Take <strong>Operate and Optimize</strong>. Reading an unfamiliar schema,
+          rehearsing changes on a throwaway server, and getting a real answer out of
+          <code>EXPLAIN</code> rather than a guess about indexes.
+        </p>
+        <a class="btn btn--secondary" href="#operate">Go to Operate and Optimize</a>
+      </div>
+      <div class="icon-card">
+        <span class="card-icon card-icon--brown">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"/>
+          </svg>
+        </span>
+        <h3>"I need an API, or I need to get off MySQL."</h3>
+        <p>
+          Take <strong>Build an API, or Move off MySQL</strong>. The two largest
+          things the plugins automate end to end, and the two with the most
+          MariaDB-specific detail to get wrong.
+        </p>
+        <a class="btn btn--secondary" href="#build-and-move">Go to Build and Move</a>
+      </div>
+    </div>
+  </div>
+</section>

@@ -1,0 +1,19 @@
+{%- comment -%} include.t = a tutorial document {%- endcomment -%}
+{%- assign t = include.t -%}
+<a class="card" href="{{ t.url | relative_url }}"
+   data-level="{{ t.level | downcase }}"
+   data-area="{{ t.area | downcase }}">
+  <div class="card__kicker">Tutorial {{ t.order }}</div>
+  <h3 class="card__title">{{ t.title }}</h3>
+  <p class="card__desc">{{ t.description }}</p>
+  <div class="card__meta">
+    <span class="chip chip--{{ t.level | downcase }}">{{ t.level | capitalize }}</span>
+    <span class="chip chip--time">{{ t.duration }}</span>
+    {%- for tool in t.tools -%}
+      <span class="tag tag--tool">{{ tool }}</span>
+    {%- endfor -%}
+  </div>
+  {%- if t.path_label -%}
+  <div class="card__footer">{{ t.path_label }}</div>
+  {%- endif -%}
+</a>

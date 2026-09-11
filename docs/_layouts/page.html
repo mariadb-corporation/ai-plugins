@@ -1,0 +1,26 @@
+---
+layout: default
+---
+<section class="hero hero--page">
+  <div class="hero__bg"></div>
+  <div class="hero__inner">
+    <h1 class="hero__title">{{ page.title }}</h1>
+    {% if page.subtitle %}<p class="hero__sub">{{ page.subtitle }}</p>{% endif %}
+    {% if page.badges %}
+    <div class="hero__badges">
+      {% for b in page.badges %}<span class="hero__badge">{{ b }}</span>{% endfor %}
+    </div>
+    {% endif %}
+  </div>
+</section>
+{% include wave.html %}
+
+<div class="article-layout">
+  <article class="prose{% if page.steps %} step-content{% endif %}">
+    {{ content }}
+  </article>
+  <aside class="toc" id="toc" hidden>
+    <div class="toc__title">On this page</div>
+    <ul></ul>
+  </aside>
+</div>

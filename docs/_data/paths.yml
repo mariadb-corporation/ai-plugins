@@ -1,0 +1,54 @@
+- id: first-steps
+  title: First Steps with the MariaDB AI Plugins
+  level: beginner
+  duration: "~1 hour"
+  description: >-
+    From a fresh install to an agent that can create a schema, run it on a
+    throwaway server and read the result back. Start here if you have never
+    pointed an AI agent at a database before — every step is reversible and
+    nothing touches a real server.
+  steps:
+    - notes-app-sandbox
+    - run-sql-and-scripts
+    - browse-schema-objects
+
+- id: schema-lifecycle
+  title: The Schema Lifecycle with MSM
+  level: intermediate
+  duration: "~2.5 hours"
+  description: >-
+    A schema is never finished. This path takes the Notes App from a one-off
+    create script to a versioned MariaDB Schema Management project with
+    releases, a filled migration script and an in-place upgrade of a live
+    install — the workflow that keeps a schema deployable to servers running
+    any earlier version.
+  steps:
+    - notes-app-sandbox
+    - versioned-schema-with-msm
+    - ship-a-schema-upgrade
+
+- id: operate
+  title: Operate and Optimize
+  level: intermediate
+  duration: "~2 hours"
+  description: >-
+    The day-to-day work after the schema exists: managing throwaway servers to
+    test against, reading an existing database you did not design, and getting
+    the agent to diagnose a slow query with EXPLAIN instead of guessing at
+    indexes.
+  steps:
+    - sandbox-lifecycle
+    - browse-schema-objects
+    - diagnose-a-slow-query
+
+- id: build-and-move
+  title: Build an API, or Move off MySQL
+  level: advanced
+  duration: "~2 hours"
+  description: >-
+    The two largest things the plugins automate end to end. Put REST endpoints
+    in front of the Notes App schema with the MariaDB REST Service DDL, then
+    drive a full MySQL-to-MariaDB migration with the migrator tooling.
+  steps:
+    - rest-endpoints
+    - mysql-to-mariadb-migration

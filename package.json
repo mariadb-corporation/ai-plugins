@@ -13,7 +13,11 @@
     "test:db": "./run_tests.py -m db",
     "test:eval": "./run_tests.py -m eval",
     "test:e2e": "./run_tests.py -m e2e",
-    "test:shell": "mariadb-shell --py -f run_tests.py"
+    "test:shell": "mariadb-shell --py -f run_tests.py",
+    "docs": "./docs/serve.sh",
+    "docs:open": "./docs/serve.sh --open",
+    "docs:build": "./docs/serve.sh --build",
+    "docs:skills": "python3 docs/regenerate-skills-data.py"
   },
   "keywords": ["mariadb", "sql", "database", "mcp", "mariadb-shell", "pi-package"],
   "dependencies": {

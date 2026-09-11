@@ -1,0 +1,306 @@
+---
+layout: home
+# No `title` here on purpose: jekyll-seo-tag then uses site.title +
+# site.tagline for the home page instead of "Home | …".
+description: MariaDB skills and a live MariaDB connection for AI coding agents. Install a plugin, point it at a database, and build.
+---
+
+<!-- ============================== HERO ============================== -->
+<section class="hero">
+  <div class="hero__bg"></div>
+  <div class="hero__inner">
+    <div class="hero__grid">
+      <div>
+        <h1 class="hero__title">
+          MariaDB, for the agent<br>you already code with.<br><span class="text-sublime-gradient">Skills, tools, a real server.</span>
+        </h1>
+        <p class="hero__sub">
+          Install one plugin and your coding agent gains {{ site.skill_count }} MariaDB
+          skills and {{ site.tool_count }} MCP tools — it can read your schema, run SQL,
+          version a migration and spin up a throwaway MariaDB instance to try it on
+          first. Every tutorial here is something you can run in the next ten minutes.
+        </p>
+        <div class="hero__actions">
+          <a class="btn btn--primary" href="{{ '/get-started/' | relative_url }}">Get Started</a>
+          <a class="btn btn--ghost" href="{{ '/tutorials/' | relative_url }}">Browse Tutorials</a>
+        </div>
+        <div class="hero__badges">
+          <span class="hero__badge">Claude Code</span>
+          <span class="hero__badge">Codex</span>
+          <span class="hero__badge">OpenCode</span>
+          <span class="hero__badge">Pi</span>
+        </div>
+      </div>
+
+      <div>
+        <div class="hero__card">
+          <div class="hero-panel">
+            <div class="hero-panel__label">You say this…</div>
+            <div class="hero-panel__body">
+<pre class="hero-code">Create a schema for a note-taking app,
+deploy a MariaDB sandbox on port 3310
+and run the schema on it.</pre>
+            </div>
+          </div>
+
+          <div class="hero-panel">
+            <div class="hero-panel__label">
+              <span>The agent does this:</span>
+              <svg class="hero-panel__check" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                   stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="m5 13 4 4L19 7"/>
+              </svg>
+            </div>
+            <div class="hero-panel__body">
+<pre class="hero-code"><span class="t-dim"># Writing a SQL file optimized for MariaDB</span>
+echo <span class="t-str">"CREATE SCHEMA notes_app; …"</span> > notes_schema.sql
+sandbox.<span class="t-fn">deploy</span>(port=<span class="t-num">3310</span>, password=<span class="t-str">"…"</span>)
+db.<span class="t-fn">connect</span>(<span class="t-str">"root@127.0.0.1:3310"</span>)
+db.<span class="t-fn">execute_sql_script</span>(sql_script=<span class="t-str">"notes_schema.sql"</span>)
+db.<span class="t-fn">list_objects</span>(schema_name=<span class="t-str">"notes_app"</span>)
+<span class="t-dim">→ user, note, notebook, tag, note_tag</span></pre>
+            </div>
+          </div>
+        </div>
+        <p class="hero__caption">
+          No Docker, no container runtime, no administrator rights, no cloud account —
+          and no risk to a real database, because the sandbox is a throwaway server that
+          lives in a folder you can delete.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+{% include wave.html %}
+
+<!-- ========================= GETTING STARTED ======================== -->
+<section class="section">
+  <div class="container">
+    <div class="section-head">
+      <span class="section-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
+             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="m6.75 7.5 3 2.25-3 2.25m4.5 0h3m-9 8.25h13.5A2.25 2.25 0 0 0 21 18V6a2.25 2.25 0 0 0-2.25-2.25H5.25A2.25 2.25 0 0 0 3 6v12a2.25 2.25 0 0 0 2.25 2.25Z"/>
+        </svg>
+      </span>
+      <h2 class="section-title">Getting Started</h2>
+      <p class="section-sub">
+        Three steps take you from a bare checkout to an agent that has built a schema
+        and deployed it on a running MariaDB server. The skills work immediately with
+        no database at all; the MCP server is one setup command away.
+      </p>
+    </div>
+
+    <div class="step-progress" aria-hidden="true">
+      <span class="step-dot">1</span><span class="step-connector"></span>
+      <span class="step-dot">2</span><span class="step-connector"></span>
+      <span class="step-dot">3</span>
+    </div>
+
+    <div class="step-grid">
+      <div class="step-card">
+        <h3 class="step-card__title"><span class="step-num">1</span> Install into your harness</h3>
+        <p>
+          Claude Code and Codex install from the plugin marketplace in two commands.
+          OpenCode merges one <code>mcp</code> block; Pi installs the repo as a package.
+          The skills are live the moment the plugin loads — no database required.
+        </p>
+        <a class="step-card__link" href="{{ '/get-started/#step-1-install-the-plugin' | relative_url }}">Install the plugin &rarr;</a>
+      </div>
+
+      <div class="step-card">
+        <h3 class="step-card__title"><span class="step-num">2</span> Configure the MCP server</h3>
+        <p>
+          The server starts out allowed to reach <em>nothing</em>. One run of
+          <code>mariadb-shell -- mcp setup</code> tells it which connections it may open
+          and which folders it may touch. Passwords go into the shell's secret store,
+          never into a config file the agent can read.
+        </p>
+        <a class="step-card__link" href="{{ '/get-started/#step-2-configure-the-mcp-server' | relative_url }}">Configure access &rarr;</a>
+      </div>
+
+      <div class="step-wide">
+        <div class="step-card">
+          <h3 class="step-card__title"><span class="step-num">3</span> Build something real</h3>
+          <p>
+            The first tutorial is a complete round trip: the agent designs a Notes App
+            schema using the MariaDB skills, deploys a throwaway sandbox server, runs the
+            schema on it, and reads the objects back to prove it worked.
+          </p>
+          <p>
+            Nothing in it touches a database you care about, and the whole thing is
+            undone by deleting the sandbox.
+          </p>
+          <a class="step-card__link" href="{{ '/tutorials/notes-app-sandbox/' | relative_url }}">Start the first tutorial &rarr;</a>
+        </div>
+        <div>
+          <div class="code-block">
+            <div class="code-block__title">notes_app.sql — written by the agent</div>
+{% highlight sql %}CREATE SCHEMA IF NOT EXISTS `notes_app`
+  CHARACTER SET utf8mb4
+  COLLATE utf8mb4_uca1400_ai_ci;
+
+-- A person who writes notes.
+CREATE OR REPLACE TABLE `notes_app`.`user` (
+  `id`         UUID NOT NULL DEFAULT UUID_v7(),
+  `email`      VARCHAR(255) NOT NULL,
+  `display_name` VARCHAR(120) NOT NULL,
+  `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_user_email` (`email`)
+) ENGINE=InnoDB;
+{% endhighlight %}
+          </div>
+          <p class="text-muted" style="font-size:.82rem;margin:0">
+            The native <code>UUID</code> type and <code>UUID_v7()</code> come from the
+            skills, not from the model's memory — that is the whole point of shipping them.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- =========================== START HERE =========================== -->
+<section class="section section--surface">
+  <div class="container">
+    <div class="section-head">
+      <h2 class="section-title">Start here</h2>
+      <p class="section-sub">The two tutorials that everything else builds on.</p>
+    </div>
+    <div class="card-grid card-grid--2">
+      {%- assign featured = site.tutorials | sort: "order" | slice: 0, 2 -%}
+      {%- for t in featured -%}
+        {% include tutorial-card.html t=t %}
+      {%- endfor -%}
+    </div>
+  </div>
+</section>
+
+<!-- ========================= LEARNING PATHS ========================= -->
+<section class="section">
+  <div class="container">
+    <div class="section-head">
+      <h2 class="section-title">Structured learning paths</h2>
+      <p class="section-sub">
+        Four paths, each one a progression where every tutorial builds on the last.
+        Pick the one that matches what you are trying to do, not your experience level.
+      </p>
+    </div>
+    {%- for p in site.data.paths -%}
+      {% include path-card.html p=p %}
+    {%- endfor -%}
+  </div>
+</section>
+
+<!-- ====================== WHAT YOU ACTUALLY GET ===================== -->
+<section class="section section--surface">
+  <div class="container">
+    <div class="section-head">
+      <h2 class="section-title">Skills, an MCP server, and a shell</h2>
+      <p class="section-sub">Installing a plugin gives you three separate things.</p>
+    </div>
+    <div class="card-grid card-grid--2">
+      <div class="icon-card">
+        <span class="card-icon card-icon--brown">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25"/>
+          </svg>
+        </span>
+        <h3>{{ site.skill_count }} MariaDB skills</h3>
+        <p>
+          Reference material the agent reads when it becomes relevant: how
+          <code>ALTER TABLE</code> behaves in MariaDB, how vector indexes work, which
+          connector to use from Python or Java, what breaks when you move an application
+          over from MySQL. Baseline MariaDB {{ site.mariadb_baseline }}.
+        </p>
+        <ul>
+          <li>Work straight away — no database, no setup</li>
+          <li>Statement-level, function-level, connectors and topical layers</li>
+          <li>Vendored into the plugin, so they ship with a version you control</li>
+        </ul>
+        <a class="btn btn--secondary" href="{{ '/skills/' | relative_url }}">Browse the catalog</a>
+      </div>
+
+      <div class="icon-card">
+        <span class="card-icon card-icon--blue">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M20.25 6.375c0 2.278-3.694 4.125-8.25 4.125S3.75 8.653 3.75 6.375m16.5 0c0-2.278-3.694-4.125-8.25-4.125S3.75 4.097 3.75 6.375m16.5 0v11.25c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125V6.375m16.5 0v3.75m-16.5-3.75v3.75m16.5 0v3.75C20.25 16.153 16.556 18 12 18s-8.25-1.847-8.25-4.125v-3.75"/>
+          </svg>
+        </span>
+        <h3>{{ site.tool_count }} MCP tools</h3>
+        <p>
+          A live connection to a MariaDB server. The agent can list schemas, describe
+          objects, run SQL and scripts, manage versioned schema projects, and deploy a
+          throwaway server instance to try something dangerous on first.
+        </p>
+        <ul>
+          <li><code>db.*</code> — connections, schemas, objects, SQL</li>
+          <li><code>msm.*</code> — versioned schema projects and releases</li>
+          <li><code>sandbox.*</code> — local throwaway MariaDB instances</li>
+        </ul>
+        <a class="btn btn--secondary" href="{{ '/mcp-tools/' | relative_url }}">Tool reference</a>
+      </div>
+
+      <div class="icon-card">
+        <span class="card-icon card-icon--green">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M6.75 7.5l3 2.25-3 2.25m4.5 0h3m-9 8.25h13.5A2.25 2.25 0 0 0 21 18V6a2.25 2.25 0 0 0-2.25-2.25H5.25A2.25 2.25 0 0 0 3 6v12a2.25 2.25 0 0 0 2.25 2.25Z"/>
+          </svg>
+        </span>
+        <h3><code>mariadb-shell</code></h3>
+        <p>
+          MariaDB's command-line shell — a port of MySQL Shell — installed automatically
+          the first time an agent starts the MCP server. The server runs inside it as a
+          plugin, which is where the high-performance connections, the credential store
+          and the sandbox handling come from.
+        </p>
+        <ul>
+          <li>It is also a perfectly good SQL client for you: run it and type <code>\help</code></li>
+          <li>Minimum version {{ site.shell_floor }}; the launcher installs it if nothing suitable is on <code>PATH</code></li>
+        </ul>
+        <a class="btn btn--secondary" href="{{ '/how-it-works/' | relative_url }}">How it fits together</a>
+      </div>
+
+      <div class="icon-card">
+        <span class="card-icon card-icon--amber">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z"/>
+          </svg>
+        </span>
+        <h3>Safe by construction</h3>
+        <p>
+          The MCP server refuses everything it has not been told about. It cannot reach a
+          connection you did not configure, and it cannot read or write a directory you did
+          not allow. Give each MCP account only the privileges it needs — read-only on one
+          schema is a perfectly good setting.
+        </p>
+        <ul>
+          <li>Connections are an allow-list, not a free-form host field</li>
+          <li>File access is an allow-list of paths</li>
+          <li>Passwords live in the shell's secret store, not in agent-readable config</li>
+        </ul>
+        <a class="btn btn--secondary" href="{{ '/get-started/#step-2-configure-the-mcp-server' | relative_url }}">Set the boundaries</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================== CTA =============================== -->
+<section class="cta">
+  <div class="container">
+    <h2>Ready to point an agent at MariaDB?</h2>
+    <p>
+      Install takes two commands. The first tutorial takes twenty minutes and leaves
+      nothing behind but a folder you can delete.
+    </p>
+    <div class="cta__actions">
+      <a class="btn btn--primary" href="{{ '/get-started/' | relative_url }}">Get Started</a>
+      <a class="btn btn--ghost" href="{{ '/tutorials/' | relative_url }}">Browse Tutorials</a>
+    </div>
+  </div>
+</section>

@@ -1,0 +1,114 @@
+---
+layout: default
+title: Skill Catalog
+permalink: /skills/
+description: The MariaDB agent skills shipped by the plugins — statements, functions, tools, connectors, topical guides and the REST/schema-management skills maintained in this repository.
+---
+
+<section class="hero hero--page">
+  <div class="hero__bg"></div>
+  <div class="hero__inner">
+    <h1 class="hero__title">Skill Catalog</h1>
+    <p class="hero__sub">
+      {{ site.skill_count }} skills, baseline MariaDB {{ site.mariadb_baseline }}. A skill is
+      reference material the agent reads when it becomes relevant — it does not
+      need a database, a connection or any configuration. Install a plugin and
+      they are live.
+    </p>
+    <div class="hero__badges">
+      <span class="hero__badge">{{ site.skill_count }} in the dev plugin</span>
+      <span class="hero__badge">47 in the sql plugin</span>
+      <span class="hero__badge">No database required</span>
+    </div>
+  </div>
+</section>
+{% include wave.html %}
+
+<section class="section section--sm">
+  <div class="container">
+    <div class="prose prose--narrow">
+      <h2>How a skill gets used</h2>
+      <p>
+        You never invoke a skill. Each one carries a <code>description</code> saying
+        what it covers and <em>when to use it</em>, and the agent reads the ones that
+        match what you asked. Ask for a <code>CREATE TABLE</code> and it reads
+        <code>mariadb-create-table</code>; ask why a query is slow and it reads
+        <code>mariadb-explain</code> and <code>mariadb-query-optimization</code>.
+      </p>
+      <p>
+        That is why the output is MariaDB SQL rather than generic SQL. The skills
+        carry the version-specific detail a model would otherwise average away — that
+        MariaDB has a native <code>UUID</code> type, that <code>utf8</code> means
+        <code>utf8mb3</code>, that there are no functional indexes, that
+        <code>CREATE OR REPLACE</code> is atomic.
+      </p>
+      <div class="callout">
+        <p>
+          The <code>dev</code> plugin ships all {{ site.skill_count }} of them. The smaller
+          <code>sql</code> variant carries 47 — the statement, function and topical layers
+          plus the create-script skill, but no connectors, REST or schema management.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section section--surface">
+  <div class="container">
+    {%- for layer in site.data.skills -%}
+    <div class="skill-layer" id="{{ layer.id }}">
+      <div class="skill-layer__head">
+        <h3>{{ layer.title }}</h3>
+        <span class="skill-layer__count">{{ layer.skills | size }} skills</span>
+      </div>
+      <p class="skill-layer__desc">{{ layer.description }}</p>
+      <ul class="skill-list">
+        {%- for s in layer.skills -%}
+        <li>{{ s.name }}</li>
+        {%- endfor -%}
+      </ul>
+    </div>
+    {%- endfor -%}
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <div class="prose prose--narrow">
+      <h2>Try them without a database</h2>
+      <p>
+        Every one of these works on a fresh install, with nothing configured. Some
+        prompts that exercise a skill each:
+      </p>
+      <div class="prompt">
+        <p><em>Write a <code>CREATE TABLE</code> for a product catalogue, MariaDB style.</em></p>
+        <p><em>What changes if I move this application from MySQL to MariaDB?</em></p>
+        <p><em>How do I do semantic search in MariaDB?</em></p>
+        <p><em>Show me how to connect to MariaDB from Node.js, with a connection pool.</em></p>
+        <p><em>I need to track every change to this table for a compliance audit.</em></p>
+        <p><em>Explain what <code>ALGORITHM=INSTANT</code> can and cannot do on <code>ALTER TABLE</code>.</em></p>
+      </div>
+      <p>
+        The fifth one is a good test of whether the skills are loaded: the answer
+        should be <strong>system-versioned tables</strong>, a MariaDB feature with no
+        MySQL equivalent, rather than a hand-rolled audit table with triggers.
+      </p>
+
+      <h2>Where they come from</h2>
+      <p>
+        Most skills are vendored from
+        <a href="https://github.com/mariadb-corporation/mariadb-docs/tree/main/agent-skills">mariadb-docs <code>agent-skills/</code></a>
+        and keep their original licenses. The
+        <a href="#additional">last group</a> is maintained in this repository under
+        <code>additional-skills/</code> and is GPL-2.0. The full list of sources and
+        their terms is in
+        <a href="{{ site.repo }}/blob/main/additional-skills/README.md">additional-skills/README.md</a>.
+      </p>
+      <p>
+        Vendoring is deliberate: the skills ship inside the plugin, so the version
+        you have is the version you tested with, and a change upstream never
+        surprises you mid-session.
+      </p>
+    </div>
+  </div>
+</section>

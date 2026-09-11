@@ -1,0 +1,11 @@
+- title: Get Started
+  url: /get-started/
+- title: How It Works
+  url: /how-it-works/
+- title: Tutorials
+  url: /tutorials/
+  match: /tutorials/
+- title: Skills
+  url: /skills/
+- title: Learning Paths
+  url: /learning-paths/
