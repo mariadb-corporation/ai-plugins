@@ -10,7 +10,7 @@ level: advanced
 duration: "60 min"
 area: migration
 tools: ["migrator.set_config", "migrator.plan", "migrator.run", "migrator.resume", "sandbox.deploy"]
-skills: ["mariadb-migrator", "mysql-to-mariadb"]
+skills: ["mariadb-migrator", "mariadb-migrator-modes", "mariadb-migrator-configure", "mariadb-migrator-run", "mariadb-migrator-verify", "mysql-to-mariadb"]
 path_label: "Build an API, Step 2"
 prerequisites:
   - "**Linux or macOS.** The migration tooling is a POSIX shell program and is not available on Windows."

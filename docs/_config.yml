@@ -24,7 +24,7 @@ install_org: "mariadb"          # the install-facing org (a tracking fork)
 mariadb_baseline: "11.8 LTS"
 shell_floor: "26.9.1"
 tool_count: 27
-skill_count: 76
+skill_count: 82
 
 # --- Build -----------------------------------------------------------------
 markdown: kramdown

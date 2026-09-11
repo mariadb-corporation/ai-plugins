@@ -559,6 +559,42 @@
           "baseline_version": "11.8 LTS"
         },
         {
+          "name": "mariadb-migrator-configure",
+          "path": "mariadb-migrator-configure/SKILL.md",
+          "status": "local",
+          "baseline_version": "11.8 LTS"
+        },
+        {
+          "name": "mariadb-migrator-discovery",
+          "path": "mariadb-migrator-discovery/SKILL.md",
+          "status": "local",
+          "baseline_version": "11.8 LTS"
+        },
+        {
+          "name": "mariadb-migrator-modes",
+          "path": "mariadb-migrator-modes/SKILL.md",
+          "status": "local",
+          "baseline_version": "11.8 LTS"
+        },
+        {
+          "name": "mariadb-migrator-run",
+          "path": "mariadb-migrator-run/SKILL.md",
+          "status": "local",
+          "baseline_version": "11.8 LTS"
+        },
+        {
+          "name": "mariadb-migrator-troubleshooting",
+          "path": "mariadb-migrator-troubleshooting/SKILL.md",
+          "status": "local",
+          "baseline_version": "11.8 LTS"
+        },
+        {
+          "name": "mariadb-migrator-verify",
+          "path": "mariadb-migrator-verify/SKILL.md",
+          "status": "local",
+          "baseline_version": "11.8 LTS"
+        },
+        {
           "name": "mariadb-migrator",
           "path": "mariadb-migrator/SKILL.md",
           "status": "local",
