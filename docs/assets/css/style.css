@@ -76,7 +76,10 @@
   --ch-spacing-2xl: clamp(4rem, 3rem + 2vw, 5rem);
 
   --ch-section-sm: clamp(3rem, 2.5rem + 2vw, 5rem);
-  --ch-section-md: clamp(5rem, 4rem + 3vw, 7rem);
+  /* Tightened from the reference's clamp(5rem, 4rem + 3vw, 7rem): the sections
+     here carry less per-section content, so that much air read as drift. Kept
+     above --ch-section-sm at every width so the scale stays in order. */
+  --ch-section-md: clamp(3.5rem, 2.8rem + 2.2vw, 5rem);
   --ch-section-lg: clamp(7rem, 6rem + 4vw, 10rem);
 
   --ch-radius-sm: .5rem;
