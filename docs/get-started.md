@@ -135,17 +135,23 @@ locally — no Docker, no container runtime, no administrator rights:
 
 <div class="prompt" markdown="1">
 *Deploy a MariaDB sandbox on port 3310.*
+
+*Which MariaDB server versions can you deploy? Give me one on 12.3 and one on
+11.8.*
 </div>
 
 Sandbox instances live under `~/.mariadb-shell/sandboxes/<port>/` on macOS and
 Linux, and `%USERPROFILE%\MariaDB\mariadb-shell\sandboxes\<port>\` on Windows.
-Four things to know:
+Five things to know:
 
-- **MariaDB Server must be installed on the machine.** The sandbox starts a
-  local `mariadbd`; it does not download a server. See the
-  [macOS](https://mariadb.com/docs/server/server-management/install-and-upgrade-mariadb/installing-mariadb/binary-packages/installing-mariadb-on-macos-using-homebrew)
-  or [Linux and Windows](https://mariadb.com/docs/server/mariadb-quickstart-guides/installing-mariadb-server-guide)
-  install instructions.
+- **You do not need MariaDB Server installed.** `sandbox.deploy` looks for a
+  server in three places, in order: the `PATH`, then the versions it has already
+  downloaded, then its published index — from which it fetches one, verifies its
+  SHA-256 and unpacks it. A machine with a suitable server on `PATH` downloads
+  nothing.
+- **You can ask for a specific version**, and leave levels off it: `11.8.9`,
+  `11.8` or just `11`, each satisfied by the newest release below it.
+  `sandbox.list_available_versions` says what is on offer for your platform.
 - A connection to the sandbox is **registered with the MCP server automatically**,
   so the agent can connect to it without you running `mcp setup` again.
 - The sandbox is deployed **without TLS**, so command-line clients may need

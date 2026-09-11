@@ -14,7 +14,7 @@ skills: ["mariadb-features"]
 path_label: "Operate and Optimize, Step 1"
 prerequisites:
   - "A plugin installed and `mariadb-shell -- mcp setup` run once."
-  - "**MariaDB Server installed locally.** A sandbox starts a real `mariadbd` from your install; it does not download a server."
+  - "Nothing else. A sandbox needs no MariaDB Server on the machine — it downloads one if it has to."
 ---
 
 The single most useful thing about giving an agent database tools is also the
@@ -29,28 +29,57 @@ what version it is, and leave it running.*
 
 ## What a sandbox actually is
 
-A directory with a data directory and a config file in it, plus a `mariadbd`
-process started from the MariaDB Server you already have installed.
+A directory with a data directory and a config file in it, plus a running
+`mariadbd`.
+
+That server does **not** have to be installed on the machine. `sandbox.deploy`
+resolves one from three places, **in this order**, and the order is the design:
+
+1. **The `PATH`.** A machine that already satisfies the request downloads
+   nothing.
+2. **Versions already downloaded**, one directory per version under
+   `~/.local/share/mariadb-sandbox-server/` (on Windows,
+   `%LOCALAPPDATA%\Programs\mariadb-sandbox-server`).
+3. **The published index** — fetch, verify the SHA-256 as the body streams past,
+   unpack, then use it.
+
+<div class="callout callout--tip" markdown="1">
+**The `PATH` is deliberately not held to "newest".** It holds one server, and
+the only question is whether it satisfies what you asked for. A machine with
+11.8.9 installed will not fetch 11.8.10 because you said `11`. Already-downloaded
+copies and the index *do* take the newest match.
+</div>
 
 ```text
 ~/.mariadb-shell/sandboxes/3310/                     # macOS and Linux
 %USERPROFILE%\MariaDB\mariadb-shell\sandboxes\3310\  # Windows
 ```
 
-That is the whole story. There is no image, no daemon, no root requirement, and
-cleanup is a directory removal. The port doubles as the instance's name:
-every tool takes `port`, and that is how it finds the instance.
+There is no image, no container daemon and no root requirement, and cleanup is a
+directory removal. The port doubles as the instance's name: every tool takes
+`port`, and that is how it finds the instance.
 
 ## Pick a version — `sandbox.list_available_versions`
 
 ```text
-sandbox.list_available_versions()
-sandbox.list_available_versions(series="11.8")
+sandbox.list_available_versions()                 → the newest patch of each series
+sandbox.list_available_versions(series="11.8")    → every 11.8 patch release
+sandbox.list_available_versions(series="11")      → every release under 11
 ```
 
-Ask before you deploy if the version matters — testing an upgrade, or
-reproducing something that only happens on one release. Otherwise let the deploy
-pick.
+With no argument you get **one version per release series** — the newest patch
+of each. Pass a series to see every release below it.
+
+Only versions with a package built for **your** platform are listed, and
+anything listed can always be deployed: if it is not on the machine already,
+`sandbox.deploy` fetches it.
+
+<div class="callout" markdown="1">
+**The index is a static file inside the plugin, not a live lookup.** What a given
+plugin version can install is therefore reproducible and reviewable in a diff,
+and listing costs no network. The flip side: publishing a new server version
+means shipping a new plugin.
+</div>
 
 ## Deploy — `sandbox.deploy`
 
@@ -64,7 +93,7 @@ The parameters worth knowing:
 | --- | --- |
 | `port` | Required. Also the instance's identity for every other tool. |
 | `password` | The `root` password. **Never leave it blank** — see below. |
-| `server_version` | Deploy a specific release rather than the default. |
+| `server_version` | The release to run — `11.8.9`, `11.8` or `11`. Each level you leave off is satisfied by the newest release below it; a leading `v` is fine. **Cannot be combined with `mariadbd_path`**: both name the server to run. |
 | `ssl` | Defaults to `False`. Turning it on needs `openssl` on the machine. |
 | `sandbox_dir` | Put the instance somewhere other than the default root. Must be on the allowed-paths list. |
 | `allow_root_from` | Which hosts the `root` account may connect from. |
@@ -73,7 +102,10 @@ The parameters worth knowing:
 
 Three things happen on a successful deploy:
 
-1. The data directory is initialized and `mariadbd` starts.
+1. A server is resolved (see above), the data directory is initialized and
+   `mariadbd` starts. The deploy's own message names where the server came from
+   — **found on the PATH**, **already downloaded**, or **downloaded now** —
+   because two seconds and two minutes deserve different explanations.
 2. A `root@'%'` account is created and the server listens on **all interfaces**.
 3. The connection `root@127.0.0.1:<port>` is **registered with the MCP server**,
    with its password in the shell's secret store — so `db.connect` works
@@ -91,6 +123,16 @@ Three things happen on a successful deploy:
   allow-list problem. Always pass a password.
 - **It fails on TLS.** `ssl: True` without `openssl` on the machine. Deploy with
   `ssl: False`, which is the default, unless you are specifically testing TLS.
+- **It refuses `server_version` and `mariadbd_path` together.** Both name the
+  server to run, so the tool will not guess which you meant.
+</div>
+
+<div class="callout callout--warn" markdown="1">
+**A downloaded server is not on your `PATH`, and two tools need to know that.**
+`sandbox.start` has to be given the same `mariadbd_path` the deploy reported, and
+**shutdown needs `sandbox.kill` rather than `sandbox.stop`** — the shell's stop
+path takes no `mariadbdPath` and so cannot find the binary. The deploy message
+tells you both. It does not apply to a server that came from the `PATH`.
 </div>
 
 Because it listens on all interfaces with a `root@'%'` account, a sandbox is a
@@ -153,8 +195,9 @@ one sandbox.
 
 Other jobs in the same shape:
 
-- **Test a version upgrade.** Two sandboxes on different `server_version`s, the
-  same schema on both.
+- **Test a version upgrade, or check compatibility across releases.** Two
+  sandboxes on different `server_version`s and the same script on both — that is
+  [Tutorial 10](../compare-server-versions/).
 - **Reproduce a bug on a clean server.** No local state, no "works on my
   machine".
 - **Try a config change.** `mariadbd_options` on deploy, then measure.

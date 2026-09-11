@@ -15,7 +15,7 @@ path_label: "First Steps, Step 1 · Schema Lifecycle, Step 1"
 prerequisites:
   - "A plugin installed in your harness — see [Get Started](../../get-started/)."
   - "`mariadb-shell -- mcp setup` run once, with the directory you will work in on the allowed-paths list."
-  - "MariaDB Server installed locally, because the sandbox starts a real `mariadbd`."
+  - "Nothing else — the sandbox brings its own MariaDB Server if the machine has none."
 ---
 
 This is the tutorial everything else builds on. By the end you will have a
@@ -116,9 +116,12 @@ sandbox.deploy(port=3310, password="demo-pw", ssl=False)
 
 Three things happen that are worth knowing about:
 
-- A real `mariadbd` starts from your local MariaDB Server install, with its data
-  directory under `~/.mariadb-shell/sandboxes/3310/`. Nothing is downloaded and
-  no container runtime is involved.
+- A real `mariadbd` starts, with its data directory under
+  `~/.mariadb-shell/sandboxes/3310/`. No container runtime is involved. The
+  server itself comes from your `PATH` if one there fits; otherwise the tool
+  downloads a version, verifies its checksum and unpacks it — so this works on a
+  machine with no MariaDB Server at all. The deploy's message says which of the
+  two happened.
 - The connection `root@127.0.0.1:3310` is **registered with the MCP server
   automatically**, password and all. You do not have to re-run `mcp setup` to
   let the agent connect to it.
