@@ -175,5 +175,17 @@
       sql: false
     - name: mariadb-schema-management
       sql: false
+    - name: mariadb-migrator-configure
+      sql: false
+    - name: mariadb-migrator-discovery
+      sql: false
+    - name: mariadb-migrator-modes
+      sql: false
+    - name: mariadb-migrator-run
+      sql: false
+    - name: mariadb-migrator-troubleshooting
+      sql: false
+    - name: mariadb-migrator-verify
+      sql: false
     - name: mariadb-migrator
       sql: false
