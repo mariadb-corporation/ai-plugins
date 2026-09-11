@@ -24,6 +24,11 @@ Installing a plugin gives you three things:
 
 Works with [Claude Code](https://claude.com/claude-code), [Codex](https://openai.com/codex), [OpenCode](https://opencode.ai) and [Pi](https://pi.dev) — see [Installation](#installation).
 
+> **Prefer a guided start?** The **[DevHub](https://mariadb-corporation.github.io/ai-plugins/)**
+> has the same installation steps plus hands-on tutorials — building a schema and
+> deploying it on a throwaway server, versioned migrations with MSM, REST
+> endpoints, and migrating off MySQL. Its source is in [docs/](docs/).
+
 ## Installation
 
 The MariaDB AI Plugins use the standard plugin system of the harness where
@@ -201,6 +206,16 @@ The MCP server is surfaced through the community
 [`pi-mcp-adapter`](https://pi.dev/packages/pi-mcp-adapter) extension, which pi
 loads only as a package in its own right — so it is installed alongside this one,
 not pulled in by it. See [pi/README.md](pi/README.md).
+
+## Documentation site
+
+[docs/](docs/) holds the **DevHub** — a static Getting Started site served by
+GitHub Pages' built-in Jekyll from the `/docs` folder of `main`. It has no build
+step and no theme gem. See [docs/README.md](docs/README.md) for how to publish
+it, preview it locally, and add a tutorial.
+
+Note that its skill catalog is generated from the vendored manifests — re-run
+`python3 docs/regenerate-skills-data.py` after `scripts/sync-skills.sh`.
 
 ## Contributing
 

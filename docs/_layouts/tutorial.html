@@ -1,0 +1,66 @@
+---
+layout: default
+---
+<header class="article-head">
+  <div class="article-head__inner">
+    <nav class="breadcrumb">
+      <a href="{{ '/tutorials/' | relative_url }}">Tutorials</a> &nbsp;/&nbsp; Tutorial {{ page.order }}
+    </nav>
+    <h1>{{ page.title }}</h1>
+    <p class="article-head__sub">{{ page.description }}</p>
+    <div class="article-head__meta">
+      <span class="chip chip--{{ page.level | downcase }}">{{ page.level | capitalize }}</span>
+      <span class="chip chip--time">{{ page.duration }}</span>
+      {% for tool in page.tools %}<span class="tag tag--tool">{{ tool }}</span>{% endfor %}
+      {% for s in page.skills %}<span class="tag">{{ s }}</span>{% endfor %}
+    </div>
+  </div>
+</header>
+
+<div class="article-layout">
+  <article class="prose step-content">
+    {% if page.prerequisites %}
+    <div class="prereq">
+      <strong>Before you start</strong>
+      <ul>
+        {% for p in page.prerequisites %}<li>{{ p | markdownify | remove: '<p>' | remove: '</p>' }}</li>{% endfor %}
+      </ul>
+    </div>
+    {% endif %}
+
+    {{ content }}
+
+    {%- assign sorted = site.tutorials | sort: "order" -%}
+    {%- assign prev = nil -%}{%- assign next = nil -%}
+    {%- for t in sorted -%}
+      {%- if t.order == page.order -%}
+        {%- assign i = forloop.index0 -%}
+        {%- assign pi = i | minus: 1 -%}
+        {%- assign ni = i | plus: 1 -%}
+        {%- if i > 0 -%}{%- assign prev = sorted[pi] -%}{%- endif -%}
+        {%- assign next = sorted[ni] -%}
+      {%- endif -%}
+    {%- endfor -%}
+    {%- if prev or next -%}
+    <nav class="pager">
+      {%- if prev -%}
+      <a class="pager__link" href="{{ prev.url | relative_url }}">
+        <div class="pager__dir">&larr; Previous</div>
+        <div class="pager__title">{{ prev.title }}</div>
+      </a>
+      {%- endif -%}
+      {%- if next -%}
+      <a class="pager__link pager__link--next" href="{{ next.url | relative_url }}">
+        <div class="pager__dir">Next &rarr;</div>
+        <div class="pager__title">{{ next.title }}</div>
+      </a>
+      {%- endif -%}
+    </nav>
+    {%- endif -%}
+  </article>
+
+  <aside class="toc" id="toc" hidden>
+    <div class="toc__title">Steps</div>
+    <ul></ul>
+  </aside>
+</div>

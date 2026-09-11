@@ -1,0 +1,179 @@
+# GENERATED FILE — do not edit by hand.
+# Regenerate with: python3 docs/regenerate-skills-data.py
+# Source: claude/{dev,sql}-plugin/skills/.skills-manifest.json
+- id: granular-statements
+  title: "SQL statements"
+  description: "One skill per statement, each covering the MariaDB-specific syntax and behaviour that a generic SQL answer gets wrong — online DDL algorithms on ALTER TABLE, atomic CREATE OR REPLACE, RETURNING on INSERT, IGNORED indexes, and so on."
+  skills:
+    - name: mariadb-create-table
+      sql: true
+    - name: mariadb-alter-table
+      sql: true
+    - name: mariadb-select
+      sql: true
+    - name: mariadb-insert
+      sql: true
+    - name: mariadb-update
+      sql: true
+    - name: mariadb-delete
+      sql: true
+    - name: mariadb-replace
+      sql: true
+    - name: mariadb-create-view
+      sql: true
+    - name: mariadb-create-index
+      sql: true
+    - name: mariadb-drop-table
+      sql: true
+    - name: mariadb-create-database
+      sql: true
+    - name: mariadb-load-data
+      sql: true
+    - name: mariadb-transactions
+      sql: true
+    - name: mariadb-set-transaction
+      sql: true
+    - name: mariadb-lock-tables
+      sql: true
+    - name: mariadb-create-user
+      sql: true
+    - name: mariadb-grant
+      sql: true
+    - name: mariadb-revoke
+      sql: true
+    - name: mariadb-alter-user
+      sql: true
+    - name: mariadb-drop-user
+      sql: true
+    - name: mariadb-create-procedure
+      sql: true
+    - name: mariadb-create-function
+      sql: true
+    - name: mariadb-create-trigger
+      sql: true
+    - name: mariadb-call
+      sql: true
+    - name: mariadb-create-sequence
+      sql: true
+    - name: mariadb-truncate-table
+      sql: true
+    - name: mariadb-rename-table
+      sql: true
+    - name: mariadb-set
+      sql: true
+    - name: mariadb-show
+      sql: true
+    - name: mariadb-explain
+      sql: true
+    - name: mariadb-prepare
+      sql: true
+- id: granular-functions
+  title: "Built-in functions"
+  description: "The function families, grouped by what they operate on. Includes the traps: aggregates skip NULLs, GROUP_CONCAT truncates silently at group_concat_max_len, and ONLY_FULL_GROUP_BY is not in the default sql_mode."
+  skills:
+    - name: mariadb-json-functions
+      sql: true
+    - name: mariadb-string-functions
+      sql: true
+    - name: mariadb-date-time-functions
+      sql: true
+    - name: mariadb-numeric-functions
+      sql: true
+    - name: mariadb-aggregate-functions
+      sql: true
+    - name: mariadb-control-flow-functions
+      sql: true
+    - name: mariadb-window-functions
+      sql: true
+    - name: mariadb-information-functions
+      sql: true
+    - name: mariadb-vector-functions
+      sql: true
+    - name: mariadb-encryption-functions
+      sql: true
+- id: granular-tools
+  title: "Command-line tools"
+  description: "The client and utility programs — how batch mode changes the output format, what --flashback generates, and why mysql is still a symlink for the same binary."
+  skills:
+    - name: mariadb-dump
+      sql: false
+    - name: mariadb-import
+      sql: false
+    - name: mariadb-client
+      sql: false
+    - name: mariadb-binlog
+      sql: false
+- id: granular-connectors
+  title: "Connectors"
+  description: "Two skills per connector: installing and configuring it, and writing application code against it. Placeholder styles, autocommit defaults, prepared-statement behaviour and pooling all differ per connector, and are the usual source of bugs."
+  skills:
+    - name: mariadb-connector-python-install
+      sql: false
+    - name: mariadb-connector-python-usage
+      sql: false
+    - name: mariadb-connector-j-install
+      sql: false
+    - name: mariadb-connector-j-usage
+      sql: false
+    - name: mariadb-connector-nodejs-install
+      sql: false
+    - name: mariadb-connector-nodejs-usage
+      sql: false
+    - name: mariadb-connector-odbc-install
+      sql: false
+    - name: mariadb-connector-odbc-usage
+      sql: false
+    - name: mariadb-connector-r2dbc-install
+      sql: false
+    - name: mariadb-connector-r2dbc-usage
+      sql: false
+    - name: mariadb-connector-cpp-install
+      sql: false
+    - name: mariadb-connector-cpp-usage
+      sql: false
+    - name: mariadb-connector-c-install
+      sql: false
+    - name: mariadb-connector-c-usage
+      sql: false
+- id: topical
+  title: "Topical guides"
+  description: "Cross-cutting subjects that do not map to a single statement: query optimization, vector search, system-versioned tables, and what changes when an application moves from MySQL."
+  skills:
+    - name: mariadb-features
+      sql: true
+    - name: mariadb-query-optimization
+      sql: true
+    - name: mariadb-system-versioned-tables
+      sql: true
+    - name: mysql-to-mariadb
+      sql: true
+    - name: mariadb-vector
+      sql: true
+- id: additional
+  title: "Shipped by this repository"
+  description: "The skills maintained here rather than vendored from the docs repo — the MariaDB REST Service DDL, the Schema Management lifecycle, the create-script conventions, and the MySQL-to-MariaDB migrator."
+  skills:
+    - name: mariadb-schema-create-script
+      sql: true
+    - name: mariadb-rest-service-authorization
+      sql: false
+    - name: mariadb-rest-service-create
+      sql: false
+    - name: mariadb-rest-service-drop
+      sql: false
+    - name: mariadb-rest-service-show
+      sql: false
+    - name: mariadb-rest-service-update-endpoints
+      sql: false
+    - name: mariadb-schema-management-create
+      sql: false
+    - name: mariadb-schema-management-deploy
+      sql: false
+    - name: mariadb-schema-management-develop
+      sql: false
+    - name: mariadb-schema-management-release
+      sql: false
+    - name: mariadb-schema-management
+      sql: false
+    - name: mariadb-migrator
+      sql: false

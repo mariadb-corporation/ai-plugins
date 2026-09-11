@@ -1,0 +1,61 @@
+# ---------------------------------------------------------------------------
+# Jekyll configuration for the MariaDB AI Plugins DevHub.
+#
+# Served by GitHub Pages' built-in Jekyll from this folder:
+#   Settings → Pages → Build and deployment → Deploy from a branch
+#                    → Branch: main, Folder: /docs
+#
+# No custom plugins: everything here is either core Jekyll or on the
+# GitHub Pages allow-list, so the site builds unchanged on GitHub.
+# ---------------------------------------------------------------------------
+
+title: MariaDB AI Plugins
+tagline: DevHub
+description: >-
+  Learn MariaDB with AI coding agents — hands-on tutorials for the MariaDB
+  agent skills and the mariadb-shell MCP server.
+
+# Change both of these if the site moves to a custom domain (then baseurl: "").
+url: "https://mariadb-corporation.github.io"
+baseurl: "/ai-plugins"
+
+repo: "https://github.com/mariadb-corporation/ai-plugins"
+install_org: "mariadb"          # the install-facing org (a tracking fork)
+mariadb_baseline: "11.8 LTS"
+shell_floor: "26.9.1"
+tool_count: 27
+skill_count: 76
+
+# --- Build -----------------------------------------------------------------
+markdown: kramdown
+kramdown:
+  input: GFM
+  syntax_highlighter: rouge
+  toc_levels: 2..3
+
+plugins:
+  - jekyll-seo-tag
+  - jekyll-sitemap
+
+collections:
+  tutorials:
+    output: true
+    permalink: /tutorials/:name/
+
+defaults:
+  - scope: { path: "", type: "tutorials" }
+    values:
+      layout: tutorial
+  - scope: { path: "" }
+    values:
+      layout: page
+
+exclude:
+  - Gemfile
+  - regenerate-skills-data.py
+  - Gemfile.lock
+  - vendor
+  - README.md
+
+sass:
+  style: compressed

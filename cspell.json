@@ -16,9 +16,29 @@
         "opencode",
         "pytest",
         "frontmatter",
-        "evals"
+        "evals",
+        "jekyll",
+        "kramdown",
+        "rouge",
+        "liquid",
+        "permalink",
+        "baseurl",
+        "favicon",
+        "utf8mb4",
+        "utf8mb3",
+        "mariadbd",
+        "mysqldump",
+        "binlog",
+        "sargable",
+        "colocation",
+        "devhub",
+        "webrick",
+        "backdrop",
+        "srgb"
     ],
     "ignorePaths": [
-        ".venv"
+        ".venv",
+        "docs/_site",
+        "docs/.jekyll-cache"
     ]
 }
