@@ -76,7 +76,7 @@ docs/
 ├── _includes/                # navbar, footer, hero wave, the two card partials
 ├── _layouts/                 # default → home | page | tutorial
 ├── _tutorials/               # the tutorial collection, one file per tutorial
-├── assets/{css,js,img}/      # one stylesheet, one script, one favicon
+├── assets/{css,js,img}/      # one stylesheet, one script, the wordmarks + favicon
 ├── serve.sh                  # local preview (npm run docs)
 ├── index.html                # home
 ├── get-started.md            # install + MCP setup + the working example

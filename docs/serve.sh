@@ -218,7 +218,11 @@ fi
 BASEURL="$(grep -E '^baseurl:' _config.yml | head -1 | sed -E 's/^baseurl:[[:space:]]*"?([^"#]*)"?.*/\1/' | tr -d '[:space:]')"
 echo "serve.sh: http://${HOST}:${PORT}${BASEURL}/"
 
-SERVE_ARGS=(serve --config "$CONFIGS" --host "$HOST" --port "$PORT" --livereload)
+# Derive the LiveReload port from the site port. Jekyll's default is a fixed
+# 35729, so a second instance on a different --port still collides with the
+# first and dies with "no acceptor (port is in use)".
+SERVE_ARGS=(serve --config "$CONFIGS" --host "$HOST" --port "$PORT"
+            --livereload --livereload-port "$(( (PORT % 20000) + 35729 ))")
 [ "$OPEN" = "1" ] && SERVE_ARGS+=(--open-url)
 
 exec "${RUNNER[@]}" "${SERVE_ARGS[@]}" ${PASSTHRU[@]+"${PASSTHRU[@]}"}

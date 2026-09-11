@@ -1,7 +1,16 @@
-<svg viewBox="0 0 32 32" aria-hidden="true" role="img">
-  <rect width="32" height="32" rx="7" fill="#0c4a5e"/>
-  <path d="M8 22V10.5c0-.4.5-.6.8-.3l3.6 3.4c.2.2.5.2.7 0l3.6-3.4c.3-.3.8-.1.8.3V22"
-        fill="none" stroke="#be2026" stroke-width="2.1" stroke-linecap="round"/>
-  <path d="M20.5 22c3 0 4.5-1.7 4.5-4.2 0-2-1.3-3.3-3.4-3.3-1.6 0-2.7.7-3.2 1.7"
-        fill="none" stroke="#a8d5db" stroke-width="2.1" stroke-linecap="round"/>
-</svg>
+{%- comment -%}
+  The wordmark, one file per theme (the artwork is navy on light, white on dark).
+  Swapped with `display`, which also keeps the hidden one out of the
+  accessibility tree — so both can carry the same alt text without it being
+  announced twice.
+
+  The files declare width="100%" height="100%" and so have no intrinsic size.
+  The width/height attributes below give the layout its aspect ratio; the
+  rendered height comes from .navbar__logo.
+{%- endcomment -%}
+<img class="navbar__logo navbar__logo--light" width="293" height="73"
+     src="{{ '/assets/img/MariaDB-AI-Plugins-Logo.svg' | relative_url }}"
+     alt="MariaDB AI Plugins">
+<img class="navbar__logo navbar__logo--dark" width="293" height="73"
+     src="{{ '/assets/img/MariaDB-AI-Plugins-Logo-Dark.svg' | relative_url }}"
+     alt="MariaDB AI Plugins">

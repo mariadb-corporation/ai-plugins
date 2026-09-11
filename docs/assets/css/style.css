@@ -221,11 +221,13 @@ hr { border: 0; border-top: 1px solid var(--ch-border); margin: 2rem 0; }
   max-width: var(--ch-maxw); margin: 0 auto; padding: 0 1.5rem;
   height: 100%; display: flex; align-items: center; gap: 1.75rem;
 }
-.navbar__brand { display: flex; align-items: center; gap: .6rem; font-weight: 700;
-  color: var(--ch-text-heading); font-size: 1rem; white-space: nowrap; }
-.navbar__brand:hover { text-decoration: none; color: var(--ch-text-heading); }
-.navbar__brand svg { height: 26px; width: 26px; flex-shrink: 0; }
-.navbar__brand .navbar__sub { color: var(--ch-text-faint); font-weight: 500; }
+.navbar__brand { display: flex; align-items: center; flex-shrink: 0; }
+.navbar__brand:hover { text-decoration: none; }
+/* The wordmark files carry no intrinsic size, so the height is set here and the
+   width follows from the width/height attributes on the <img>. */
+.navbar__logo { display: block; height: 34px; width: auto; }
+html[data-theme="dark"] .navbar__logo--light { display: none; }
+html:not([data-theme="dark"]) .navbar__logo--dark { display: none; }
 .navbar__links { display: flex; gap: 1.4rem; align-items: center; }
 .navbar__link {
   color: var(--ch-text-muted); font-size: .9rem; font-weight: 600;
@@ -250,11 +252,7 @@ html:not([data-theme="dark"]) .theme-icon--light { display: none; }
 
 @media (max-width: 560px) {
   .navbar__inner { gap: .75rem; padding: 0 1rem; }
-  .navbar__brand { font-size: .92rem; }
-  .navbar__brand .navbar__sub { display: none; }
-}
-@media (max-width: 400px) {
-  .navbar__brand span { overflow: hidden; text-overflow: ellipsis; }
+  .navbar__logo { height: 26px; }
 }
 
 @media (max-width: 900px) {
