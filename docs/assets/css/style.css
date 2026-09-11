@@ -690,14 +690,33 @@ pre {
   overflow-x: auto; font-size: .82rem; line-height: 1.6; margin: 1.25rem 0;
 }
 pre code { background: none; border: 0; padding: 0; font-size: inherit; color: inherit; }
-.code-block { margin: 1.25rem 0; }
+/* A titled code panel. The panel owns the border and the background, and the
+   code is inset on top of it, so the surface carrying the title continues down
+   both sides and along the bottom — the title reads as the panel's header
+   rather than as a tab with an open bottom edge.
+
+   The wrapper is addressed by class, not with `__title + pre`: Liquid's
+   highlight tag wraps the <pre> in <figure class="highlight"> and a kramdown
+   fence in <div class="highlight">, so the <pre> is a descendant and not a
+   sibling. The figure also carries the UA's `margin: 1em 40px`, which is what
+   the inset margin below replaces. */
+.code-block {
+  margin: 1.25rem 0; padding-bottom: .5rem;
+  background: var(--ch-code-bg);
+  border: 1px solid var(--ch-code-border); border-radius: var(--ch-radius-sm);
+}
 .code-block__title {
   font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em;
-  color: hsl(220, 14%, 71%); background: var(--ch-code-bg);
-  border: 1px solid var(--ch-code-border); border-bottom: none;
-  border-radius: var(--ch-radius-sm) var(--ch-radius-sm) 0 0; padding: .45rem .9rem;
+  color: var(--ch-code-text); padding: .5rem .9rem .45rem;
+  border-bottom: 1px solid var(--ch-code-border);
 }
-.code-block__title + pre { margin-top: 0; border-radius: 0 0 var(--ch-radius-sm) var(--ch-radius-sm); }
+.code-block .highlight { margin: .5rem; }
+.code-block pre {
+  margin: .5rem; box-shadow: var(--ch-shadow-sm);
+  background: color-mix(in srgb, var(--ch-code-text) 6%, var(--ch-code-bg));
+  border-radius: calc(var(--ch-radius-sm) - .15rem);
+}
+.code-block .highlight pre { margin: 0; }
 
 /* Rouge syntax highlighting — the One Dark prism palette the reference uses.
    It applies that theme in BOTH site themes, so there is no per-theme override
