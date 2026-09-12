@@ -41,9 +41,13 @@ and can be run individually (`pytest -k step4`). The steps:
      and views) → the release composed the full schema.
 
 MSM tool calls are path-gated by the MCP server's `settings.json` allow-list. To
-keep the run hermetic the fixture points `MYSQLSH_USER_CONFIG_HOME` at a throwaway
-dir and pre-seeds that allow-list with the project dir, so nothing touches the
-user's real `~/.mysqlsh` and no interactive path-trust elicitation is needed.
+keep the run hermetic the fixture builds an isolated shell config home via
+`lib.sandbox._prepare_config_home()` (the same helper the db tier uses) that
+points `MYSQLSH_USER_CONFIG_HOME` at a throwaway dir, pre-seeds that allow-list
+with the project dir, and symlinks in the real config home's plugins/ — without
+that last part the server has no `mcp` object registered at all and dies
+immediately. So nothing touches the user's real `~/.mysqlsh` and no interactive
+path-trust elicitation is needed.
 
 Deselected by default (see pyproject.toml `addopts`). It self-skips unless the
 toolchain is present:
@@ -56,7 +60,6 @@ Knobs (all optional): CLAUDE_BIN, E2E_MODEL, E2E_TIMEOUT.
 
 from __future__ import annotations
 
-import json
 import os
 import re
 import shutil
@@ -64,6 +67,8 @@ import subprocess
 from pathlib import Path
 
 import pytest
+
+from lib import sandbox
 
 pytestmark = pytest.mark.e2e
 
@@ -126,7 +131,13 @@ def _require_toolchain():
 
 # --------------------------------------------------------------------------- #
 # Wiring: an isolated project dir + skills + MCP config + a private shell config
-# home whose allow-list already trusts the project dir.
+# home whose allow-list already trusts the project dir. The config home itself
+# comes from lib.sandbox._prepare_config_home(), which also symlinks in the
+# real config home's plugins/ — without that the server has no `mcp` object
+# registered at all and dies immediately (reproduced directly: `mariadb-shell
+# -- mcp start-server` under a bare MYSQLSH_USER_CONFIG_HOME prints "ERROR:
+# There is no object registered under name 'mcp'"), which is what surfaced here
+# as claude reporting CONNECTION_CLOSED on every MSM tool call.
 # --------------------------------------------------------------------------- #
 def _write_mcp_config(dest: Path) -> Path:
     """Materialize the plugin's .mcp.json with ${CLAUDE_PLUGIN_ROOT} resolved."""
@@ -142,29 +153,6 @@ def _expose_skills(project: Path) -> None:
     skills_link = project / ".claude" / "skills"
     skills_link.parent.mkdir(parents=True, exist_ok=True)
     skills_link.symlink_to(PLUGIN_DIR / "skills", target_is_directory=True)
-
-
-def _seed_allowed_path(config_home: Path, allowed: Path) -> None:
-    """Pre-trust `allowed` in the MCP server's on-disk allow-list.
-
-    The MSM tools reject paths outside the server's allowed list and otherwise
-    fall back to an interactive elicitation the headless CLI can't answer. The
-    list lives at `<user config home>/plugin_data/mcp_plugin/settings.json`;
-    with MYSQLSH_USER_CONFIG_HOME pointed at a throwaway dir this stays fully
-    isolated from the user's real `~/.mysqlsh`.
-    """
-    settings = config_home / "plugin_data" / "mcp_plugin" / "settings.json"
-    settings.parent.mkdir(parents=True, exist_ok=True)
-    settings.write_text(
-        json.dumps({"allowedPaths": [str(allowed)]}, indent=4), encoding="utf-8"
-    )
-
-
-def _launcher_env(config_home: Path) -> dict:
-    """Env for claude (and thus the MCP launcher): inherit + isolate the shell config."""
-    env = dict(os.environ)
-    env["MYSQLSH_USER_CONFIG_HOME"] = str(config_home)
-    return env
 
 
 def _run_claude(project: Path, mcp_config: Path, env: dict, prompt: str) -> subprocess.CompletedProcess:
@@ -238,25 +226,27 @@ def workflow(tmp_path_factory):
     _require_toolchain()
 
     project = tmp_path_factory.mktemp("notes_app_msm_e2e")
-    config_home = tmp_path_factory.mktemp("shell_config_home")
     mcp_config = _write_mcp_config(project)
     _expose_skills(project)
-    _seed_allowed_path(config_home, project)
-    env = _launcher_env(config_home)
+    config_home = sandbox._prepare_config_home(project)
+    env = sandbox._server_env(config_home)
 
     ctx = {"project": project, "timed_out": False, "diagnostics": ""}
     try:
-        proc = _run_claude(project, mcp_config, env, _build_prompt())
-        ctx["diagnostics"] = (
-            f"\n--- claude stdout ---\n{proc.stdout}\n--- claude stderr ---\n{proc.stderr}"
-        )
-    except subprocess.TimeoutExpired:
-        ctx["timed_out"] = True
-        ctx["diagnostics"] = f"\nclaude did not finish within {TIMEOUT}s"
+        try:
+            proc = _run_claude(project, mcp_config, env, _build_prompt())
+            ctx["diagnostics"] = (
+                f"\n--- claude stdout ---\n{proc.stdout}\n--- claude stderr ---\n{proc.stderr}"
+            )
+        except subprocess.TimeoutExpired:
+            ctx["timed_out"] = True
+            ctx["diagnostics"] = f"\nclaude did not finish within {TIMEOUT}s"
 
-    # Resolve the project dir once for the steps (None if never scaffolded).
-    ctx["msm_project"] = _find_project(project)
-    yield ctx
+        # Resolve the project dir once for the steps (None if never scaffolded).
+        ctx["msm_project"] = _find_project(project)
+        yield ctx
+    finally:
+        shutil.rmtree(config_home, ignore_errors=True)
 
 
 def test_step0_run_finished(workflow):
