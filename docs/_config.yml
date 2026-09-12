@@ -17,7 +17,7 @@ description: >-
 
 # Change both of these if the site moves to a custom domain (then baseurl: "").
 url: "https://mariadb.github.io"
-baseurl: "/ai-plugins"
+baseurl: ""
 
 repo: "https://github.com/mariadb/ai-plugins"
 install_org: "mariadb"          # the install-facing org (a tracking fork)
