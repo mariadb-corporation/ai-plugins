@@ -37,6 +37,9 @@ Start by finding out what is on the server at all:
 *What schemas are on the sandbox on port 3310?*
 </div>
 
+You never type that call yourself. The agent makes it and reports back what
+came out:
+
 ```text
 db.list_schemas(connection_id="…")
   → information_schema, mysql, performance_schema, sys, notes_app

@@ -35,6 +35,8 @@ newest 11.8 on port 3311 and one on the newest 12.3 on port 3312, run
 *Which MariaDB server versions can you deploy on this machine?*
 </div>
 
+That question becomes a tool call the agent makes on your behalf:
+
 ```text
 sandbox.list_available_versions()
   → 11.8.9, 12.3.3
@@ -91,6 +93,8 @@ Never take the version from the request. Take it from the server:
 *Connect to both sandboxes and run `SELECT VERSION()` on each, so we are
 comparing what the servers say rather than what we asked for.*
 </div>
+
+This is what the agent will execute:
 
 ```text
 sandbox.version(port=3311)   → 11.8.9

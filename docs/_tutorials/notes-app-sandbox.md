@@ -102,6 +102,9 @@ Now the MCP tools take over, and a real server appears:
 *Spin up a MariaDB sandbox instance on port 3310.*
 </div>
 
+That is everything you type. What the agent runs in response is the call below —
+shown so you can recognise it going past:
+
 ```text
 sandbox.deploy(port=3310, password="…", ssl=False)
 ```
@@ -133,6 +136,8 @@ agent — a command-line client, a GUI, an application you are pointing at it:
 *Spin up a MariaDB sandbox instance on port 3310 with root password `demo-pw`.*
 </div>
 
+The same call the agent made before, now carrying the password you chose:
+
 ```text
 sandbox.deploy(port=3310, password="demo-pw", ssl=False)
 ```
@@ -158,6 +163,9 @@ With the sandbox up, point the agent at the file you made in step 1:
 <div class="prompt" markdown="1">
 *Connect to that sandbox and run `notes_app.sql` against it.*
 </div>
+
+Two calls this time by the agent — one to open the connection, one to run
+the file down it:
 
 ```text
 db.connect(uri="root@127.0.0.1:3310")
@@ -208,6 +216,8 @@ The sandbox is a real server process. Stop it and delete it when you are done:
 <div class="prompt" markdown="1">
 *Stop and delete the sandbox on port 3310.*
 </div>
+
+Which the agent carries out as two calls, in this order:
 
 ```text
 sandbox.stop(port=3310, password="…")

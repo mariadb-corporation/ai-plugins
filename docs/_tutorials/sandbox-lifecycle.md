@@ -62,6 +62,9 @@ copies and the index *do* take the newest match.
 just the newest.*
 </div>
 
+One call covers both halves of that question — the agent just varies what it
+asks for:
+
 ```text
 sandbox.list_available_versions()               → the newest patch of each series
 sandbox.list_available_versions(series="11.8")  → every 11.8 patch release
@@ -156,6 +159,8 @@ Never take the version from the request — take it from the server:
 <div class="prompt" markdown="1">
 *What version and vendor is the server on 3310 actually running?*
 </div>
+
+The agent reads both straight off the running server:
 
 ```text
 sandbox.version(port=3310)   → "11.8.x"

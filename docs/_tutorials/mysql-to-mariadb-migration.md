@@ -59,6 +59,9 @@ downloaded and set up for you. A MySQL sandbox is built from a local MySQL
 Server installation, so that one has to be there first.
 </div>
 
+If you lose track of which port got which server, ask. The agent checks the
+servers rather than assuming, with a call like this:
+
 ```text
 sandbox.vendor(port=3307)   → "MySQL"
 sandbox.vendor(port=3308)   → "MariaDB"
@@ -143,7 +146,8 @@ which makes it free to run as often as you like.
 and to the target, before we run anything.*
 </div>
 
-Read the step list — it is the contract for what `run` will do.
+Read the step list — it is the contract for what `run` will do. The call the
+agent makes to produce it:
 
 ```text
 migrator.plan(mode="one_step")   → the resolved step list, nothing executed
@@ -156,6 +160,9 @@ Once the plan looks right, run it.
 <div class="prompt" markdown="1">
 *Go ahead and run it.*
 </div>
+
+This is the one that actually moves data. The agent invokes it; you watch what
+comes back:
 
 ```text
 migrator.run(mode="one_step")   → a report, one entry per step
@@ -186,7 +193,8 @@ be picked up where it left off rather than started again.
 Steps already marked `DONE` are skipped and the run picks up at the first one
 that is not. Resuming needs the stopped run's artifacts directory, so ask in the
 same session, while the agent still has it — otherwise tell it which run
-directory to use.
+directory to use. The agent fills that directory in from the stopped run and
+calls:
 
 ```text
 migrator.resume(mode="one_step", out="artifacts/migrate_one_step_…")

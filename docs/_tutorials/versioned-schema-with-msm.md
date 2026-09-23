@@ -81,6 +81,9 @@ versioned schema project. Create an MSM schema project for a schema named
 `notes_app` in the current directory.*
 </div>
 
+The scaffolding is a tool call the agent makes; this is what goes past in the
+transcript:
+
 ```text
 msm.create_project(schema_name="notes_app", target_path="/abs/path")
 ```

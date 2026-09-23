@@ -31,6 +31,9 @@ configured, and asking is the first move of almost every session:
 *Which database connections do you have available?*
 </div>
 
+The agent answers that with a tool call. You will see it in the transcript; it is
+not something you run:
+
 ```text
 db.list_connections()
   → ["root@127.0.0.1:3310", "app_ro@db.internal:3306"]
