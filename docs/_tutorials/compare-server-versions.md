@@ -57,7 +57,7 @@ Two things this list is telling you, and both matter here:
 
 <div class="prompt" markdown="1">
 *Deploy a sandbox on the newest 11.8 on port 3311 and one on the newest 12.3 on
-port 3312, both with root password `demo-pw`.*
+port 3312.*
 </div>
 
 Pin as much or as little as you care about. "The newest 11.8" and "anything on

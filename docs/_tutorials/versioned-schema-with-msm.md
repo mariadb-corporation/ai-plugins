@@ -148,8 +148,8 @@ Deploying needs a server to deploy onto, so ask for a sandbox in the same breath
 if you do not have a target:
 
 <div class="prompt" markdown="1">
-*Spin up a sandbox on port 3310 with root password `demo-pw`, connect to it, and
-deploy version 1.0.0 of the schema.*
+*Spin up a sandbox on port 3310, connect to it, and deploy version 1.0.0 of the
+schema.*
 </div>
 
 Against anything whose contents you would miss, ask for a backup first — *"take
