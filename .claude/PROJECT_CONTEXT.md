@@ -55,7 +55,7 @@ both repos. `releases/latest` 404s on both — the endpoint excludes
 prereleases, and nothing consumes it.
 
 Both remotes are present (`git remote -v`): `origin` =
-`mariadb-corporation/ai-plugins`, `fork` = `mariadb/ai-plugins` (GitHub now
-spells it `MariaDB/`). `fork/main` = `22bd0be` = `origin/main` as of #26 plus the
+`mariadb-corporation/ai-plugins`, `fork` = `MariaDB/ai-plugins` (canonical casing;
+see repo conventions). `fork/main` = `22bd0be` = `origin/main` as of #26 plus the
 fork-only `docs/CNAME` / `_config.yml` `url:`. See
 [repo conventions](context/repo-conventions.md) for what each is for.

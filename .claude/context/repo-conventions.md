@@ -44,9 +44,14 @@ therefore refuses them (`-D` skips the very check you want). Heads kept in case
 one is ever wanted back: `9262c79`, `ab05169`, `f1acb15`, `3015a48`; PR #11's
 remote head was `005c15b`.
 
-**The fork repo is now spelled `MariaDB/ai-plugins`** — pushes to
-`git@github.com:mariadb/ai-plugins.git` print "This repository moved" (seen
-2026-09-24) but still work, as GitHub owner names are case-insensitive. The
-`fork` remote was left as is.
+**The fork's canonical name is `MariaDB/ai-plugins`** — the org login has been
+`MariaDB` since 2013, and the repo was never renamed or transferred. The `fork`
+remote was re-added in lowercase (`mariadb/`), and GitHub prints "This
+repository moved" on every **push** to a URL whose case differs from the
+canonical one; fetches and clones print nothing, and the web UI serves both
+spellings. Fixed locally 2026-09-24 with `git remote set-url fork
+git@github.com:MariaDB/ai-plugins.git` — if the remote is ever re-added, use
+that casing. The ~20 lowercase `mariadb/ai-plugins` references in READMEs and
+manifests are left alone: users only fetch, so the notice never reaches them.
 
 **Both fork PRs are CLOSED** on `mariadb/ai-plugins` (#1 and #2).
