@@ -112,7 +112,7 @@ else already there):
     "mariadb": {
       "command": "<plugin>/scripts/mariadb-mcp-launcher.sh",
       "args": [],
-      "env": { "MARIADB_SHELL_VERSION": "26.9.3" },
+      "env": { "MARIADB_SHELL_VERSION": "26.9.4" },
       "lifecycle": "lazy"
     }
   }
