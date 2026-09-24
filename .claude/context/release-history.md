@@ -2,14 +2,14 @@
 
 [← Project Context](../PROJECT_CONTEXT.md)
 
-## Landed on `main` (through PR #25)
+## Landed on `main` (through PR #26)
 
 **#25** `5d07abf` added the **`/release <version>` command**
 (`.claude/commands/release.md`): checks the version is the newest mariadb-shell
 release, runs the three scripts, CHANGELOG, static tests, checkpoint, PR; after
 the merge, tag + prereleases on both repos and a merge-based fork sync that
-keeps the fork's `docs/CNAME`. **Release 26.9.4 is in progress** on
-`wip/26.9.4` — its PR is the first cut with that command. **#24**/**#23**
+keeps the fork's `docs/CNAME`. **#26** `2bbdb2a` was release 26.9.4, the first
+cut with that command (below). **#24**/**#23**
 recorded the `.org` fork domain; **#22** rewrote the tutorials; **#21** was the
 26.9.3 checkpoint.
 
@@ -35,9 +35,13 @@ overview + six topic skills), **#12** `ed6fd43` (**the DevHub**). So the long-op
 PR #12 is merged and the "enable GitHub Pages" step is done — the site is live
 at **https://ai-plugins.mariadb.com/**.
 
-## Release v26.9.4 (2026-09-24) — in progress
+## Release v26.9.4 (2026-09-24)
 
-- Branch `wip/26.9.4`: shell floor (33 files), plugin version (17 files), a
+- **Merged as `2bbdb2a` (#26), tagged `v26.9.4`** (annotated object `f0e1c3c`),
+  pushed to both remotes as the same object, **prerelease on both repos**;
+  bodies identical to the annotation bar GitHub's trailing newline. Fork synced
+  by merge as `22bd0be`, `docs/CNAME` still `.org`.
+- Contents: shell floor (33 files), plugin version (17 files), a
   provenance-only re-vendor (docs `1a89bd3` → `bb6522c`, shell `291bf84` →
   `8adaada`; counts 82 / 47 / 2), CHANGELOG `[26.9.4]` in all ten plugins.
   Static tier green (667 per suite). mariadb-shell `v26.9.4` published

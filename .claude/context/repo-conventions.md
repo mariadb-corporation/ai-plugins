@@ -44,4 +44,9 @@ therefore refuses them (`-D` skips the very check you want). Heads kept in case
 one is ever wanted back: `9262c79`, `ab05169`, `f1acb15`, `3015a48`; PR #11's
 remote head was `005c15b`.
 
+**The fork repo is now spelled `MariaDB/ai-plugins`** — pushes to
+`git@github.com:mariadb/ai-plugins.git` print "This repository moved" (seen
+2026-09-24) but still work, as GitHub owner names are case-insensitive. The
+`fork` remote was left as is.
+
 **Both fork PRs are CLOSED** on `mariadb/ai-plugins` (#1 and #2).
