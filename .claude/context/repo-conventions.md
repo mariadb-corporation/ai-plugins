@@ -54,4 +54,6 @@ git@github.com:MariaDB/ai-plugins.git` — if the remote is ever re-added, use
 that casing. The ~20 lowercase `mariadb/ai-plugins` references in READMEs and
 manifests are left alone: users only fetch, so the notice never reaches them.
 
-**Both fork PRs are CLOSED** on `mariadb/ai-plugins` (#1 and #2).
+**Fork PRs**: #1 and #2 are CLOSED (transferred as #9 / #7); #3 was our own `.org` domain change, merged on the fork. **#4** (`Add Laravel skills for MariaDB`, @Rhaima96, still OPEN on the fork) was transferred on 2026-09-25 as **origin PR #28** — close it with a link back once #28 merges.
+
+**How a fork PR is transferred** (the #28 recipe): `git fetch fork pull/<N>/head:fork-pr-<N>`, branch from `origin/main`, then **cherry-pick only the contributor's commits** (`git log main..fork-pr-<N>` also lists the fork-only CNAME/sync commits, which must stay out). Cherry-pick keeps the original author and author date and makes you the committer. Fixes of ours go on top as separate commits, never amended into theirs. The PR body opens with a credit line (`Transferred from MariaDB/ai-plugins#<N> by @<login>`) followed by their original description.
