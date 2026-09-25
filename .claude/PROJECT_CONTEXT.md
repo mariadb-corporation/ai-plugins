@@ -6,7 +6,7 @@ layout, the context-file table and the current git state.
 
 ## Project
 
-**Latest work streams**: (**NEW**) **Release 26.9.4 is SHIPPED** (PR #26, squash `2bbdb2a`; tag `v26.9.4` = object `f0e1c3c`, prerelease on both repos; fork synced as `22bd0be`), the first cut with the new **`/release <version>` command** (PR #25, `5d07abf`): both versions to 26.9.4 (33 + 17 files), a provenance-only re-vendor, CHANGELOG entries. See [release history](context/release-history.md). (0) **Release 26.9.3 is SHIPPED** (PR #20, squash `b6ed467`; annotated tag `v26.9.3` = object `a38774d`, published as a prerelease on both repos): both versions to 26.9.3, a skills re-vendor that changed nothing but provenance, and CHANGELOG entries for 26.9.3 *and* — retroactively — 26.9.2, which had shipped with none. **Tags and releases now run v26.9.0 → v26.9.3 with no gaps on both repos**, and `origin` carries only `main` now that the stale `wip/*` remotes are deleted. See [release history](context/release-history.md). (0) **DevHub polish — merged as PR #18** (squash `054e1a5`, 2026-09-15; `wip/docs-improvements` now deleted): an `MCP` nav link, `.btn--primary` re-skinned from mariadb.com's own button classes, and two hero-card fixes for narrow panels. See "DevHub polish" in [current state](context/current-state.md). (0) **The DevHub is merged and LIVE** at **https://ai-plugins.mariadb.com/** — PR #12 landed as `ed6fd43`, then #14, #15, and a custom domain (`docs/CNAME` + `baseurl: ""`). A static Getting Started site in `docs/`, served by GitHub Pages' built-in Jekyll from `main` + `/docs`. Ten tutorials, a filterable catalog, four learning paths, a generated skill catalog, an architecture page and an MCP tool reference. It also grew tooling that reaches outside `docs/`: `scripts/sync-skills.sh` now regenerates the site's skill data as its last step. See "DevHub (`docs/`)" in [architecture](context/architecture.md). (0) **Release 26.9.1 is out** (2026-09-08, tag `v26.9.1` = `4003d0d`, prerelease on both repos). It merged two independently-moved versions — the **mariadb-shell floor** (direct to `main`, `a693a28`) and the **plugin package version** (PR #11) — and shipped the repo-local **`mariadb-migrator`** skill (MySQL→MariaDB via the `migrator.*` MCP tools; new `additional-skills/migrator/` subfolder, dev plugins 75 → 76 skills), a skills re-vendor, a new **`CONTRIBUTING.md`** holding the maintainer docs, and README fixes. (a) **Codex now registers its own MCP server** — merged as PR #6; see Codex fact 5 in [architecture](context/architecture.md). (b) **`db.connect` coverage** on `wip/DB-CONNECT-TESTS`, which closed the last untested path an agent actually takes. (c) **PR transfers from the tracking fork** `MariaDB/ai-plugins` (remote `fork`) into `origin` — both of its PRs are transferred and merged (#9, #7). Earlier stream, merged:  rewrote the `mariadb-mcp-launcher.{sh,cmd}` scripts in all plugins to stop downloading release assets themselves and instead delegate to the shell's own `install.sh` / `install.ps1`; bumped the version gate to 26.8.0 (now explicitly a *minimum*); added a repo-root `LICENSE`, `.gitattributes` and `SECURITY.md`; restructured the main README (Installation moved directly under the harness table, new `## Plugin variants` heading, new "configure the MCP server" step propagated to all 7 MCP-bearing plugin READMEs); switched the install-facing org to **`mariadb`**; and added the GPL-2.0 copyright header to all 46 source files. Details in "Launcher rewrite" below.
+**Latest work streams**: (**NEW**) **Laravel skills — PR #28 open on `origin`, awaiting review**, transferred from fork PR 4 (@Rhaima96) with authorship intact: a new dev-only `additional-skills/laravel/` subfolder with three skills, an exec-bit fix on `sync-skills.sh`, and the vendored copies (dev 82 → 85). See [current state](context/current-state.md) and the transfer recipe in [repo conventions](context/repo-conventions.md). (0) **Release 26.9.4 is SHIPPED** (PR #26, squash `2bbdb2a`; tag `v26.9.4` = object `f0e1c3c`, prerelease on both repos; fork synced as `22bd0be`), the first cut with the new **`/release <version>` command** (PR #25, `5d07abf`): both versions to 26.9.4 (33 + 17 files), a provenance-only re-vendor, CHANGELOG entries. See [release history](context/release-history.md). (0) **Release 26.9.3 is SHIPPED** (PR #20, squash `b6ed467`; annotated tag `v26.9.3` = object `a38774d`, published as a prerelease on both repos): both versions to 26.9.3, a skills re-vendor that changed nothing but provenance, and CHANGELOG entries for 26.9.3 *and* — retroactively — 26.9.2, which had shipped with none. **Tags and releases now run v26.9.0 → v26.9.3 with no gaps on both repos**, and `origin` carries only `main` now that the stale `wip/*` remotes are deleted. See [release history](context/release-history.md). (0) **DevHub polish — merged as PR #18** (squash `054e1a5`, 2026-09-15; `wip/docs-improvements` now deleted): an `MCP` nav link, `.btn--primary` re-skinned from mariadb.com's own button classes, and two hero-card fixes for narrow panels. See "DevHub polish" in [current state](context/current-state.md). (0) **The DevHub is merged and LIVE** at **https://ai-plugins.mariadb.com/** — PR #12 landed as `ed6fd43`, then #14, #15, and a custom domain (`docs/CNAME` + `baseurl: ""`). A static Getting Started site in `docs/`, served by GitHub Pages' built-in Jekyll from `main` + `/docs`. Ten tutorials, a filterable catalog, four learning paths, a generated skill catalog, an architecture page and an MCP tool reference. It also grew tooling that reaches outside `docs/`: `scripts/sync-skills.sh` now regenerates the site's skill data as its last step. See "DevHub (`docs/`)" in [architecture](context/architecture.md). (0) **Release 26.9.1 is out** (2026-09-08, tag `v26.9.1` = `4003d0d`, prerelease on both repos). It merged two independently-moved versions — the **mariadb-shell floor** (direct to `main`, `a693a28`) and the **plugin package version** (PR #11) — and shipped the repo-local **`mariadb-migrator`** skill (MySQL→MariaDB via the `migrator.*` MCP tools; new `additional-skills/migrator/` subfolder, dev plugins 75 → 76 skills), a skills re-vendor, a new **`CONTRIBUTING.md`** holding the maintainer docs, and README fixes. (a) **Codex now registers its own MCP server** — merged as PR #6; see Codex fact 5 in [architecture](context/architecture.md). (b) **`db.connect` coverage** on `wip/DB-CONNECT-TESTS`, which closed the last untested path an agent actually takes. (c) **PR transfers from the tracking fork** `MariaDB/ai-plugins` (remote `fork`) into `origin` — both of its PRs are transferred and merged (#9, #7). Earlier stream, merged:  rewrote the `mariadb-mcp-launcher.{sh,cmd}` scripts in all plugins to stop downloading release assets themselves and instead delegate to the shell's own `install.sh` / `install.ps1`; bumped the version gate to 26.8.0 (now explicitly a *minimum*); added a repo-root `LICENSE`, `.gitattributes` and `SECURITY.md`; restructured the main README (Installation moved directly under the harness table, new `## Plugin variants` heading, new "configure the MCP server" step propagated to all 7 MCP-bearing plugin READMEs); switched the install-facing org to **`mariadb`**; and added the GPL-2.0 copyright header to all 46 source files. Details in "Launcher rewrite" below.
 
 `ai-plugins` packages MariaDB agent skills (+ the native `mariadb-shell` MCP server) as installable plugins for four coding agents: Claude Code (`claude/`), Codex (`codex/`), OpenCode (`opencode/`), and Pi/pi.dev (`pi/`). Each agent has `dev` (full skills + MCP), `sql` (SQL subset + MCP), `contributor` (skills-only) variants. Skills are vendored (never hand-edited) by `scripts/sync-skills.sh`. **This work stream** added a set of **MariaDB REST Service** skills (a fork of the MySQL REST Service) and **Schema Management (MSM)** lifecycle skills under `additional-skills/`, reorganized `additional-skills/` into `sql/`/`rest/`/`schema-management/` subfolders with per-plugin selection, added **two Claude e2e tests** that exercise the REST skills and the MSM lifecycle skills end-to-end (both pass), and updated the README. Latterly it also **unified how the tests run** across the plugins: a repo-root `run_tests.py` drives every suite with the Python inside `mariadb-shell` and one combined coverage report, and the `db` tier deploys its own sandbox instance instead of needing a server on 3306.
 
@@ -15,7 +15,7 @@ layout, the context-file table and the current git state.
 | Path | What it is |
 | --- | --- |
 | `claude/`, `codex/`, `opencode/`, `pi/` | One dir per coding agent, each with `dev` / `sql` / `contributor` plugin variants plus its `*-plugin-test*` suite |
-| `additional-skills/` | This repo's own skills, in `sql/` `rest/` `schema-management/` `migrator/`, plus the sources & licensing README |
+| `additional-skills/` | This repo's own skills, in `sql/` `rest/` `schema-management/` `migrator/` (+ `laravel/` on PR #28), plus the sources & licensing README |
 | `docs/` | The DevHub — Jekyll site served by GitHub Pages, live at https://ai-plugins.mariadb.com/ |
 | `scripts/` | `sync-skills.sh` (vendors skills), `set-plugin-version.sh`, `set-mariadb-shell-version.sh` |
 | `run_tests.py`, `pytest-coverage.ini` | Unified runner across every suite, one combined coverage report |
@@ -37,25 +37,26 @@ layout, the context-file table and the current git state.
 
 ## Git state
 
-`git status --short` at checkpoint time: clean apart from this checkpoint's own
-edits, which are this branch's only commit.
+`git status --short` at checkpoint time: this checkpoint's `.claude/` edits plus
+the uncommitted re-vendor (the three Laravel skill folders in each of the four dev
+plugins, ten `skills-source.json`, four `.skills-manifest.json`,
+`docs/_data/skills.yml`, `docs/_config.yml`). Both are committed together right
+after this checkpoint.
 
-`git branch --show-current`: **`wip/checkpoint-26.9.4`**, one commit ahead of
-`main`. `main` is level with `origin/main` at `2bbdb2a` (release 26.9.4, #26).
-`origin` otherwise carries only `main`; `wip/26.9.4` and `wip/release-command`
-were auto-deleted by GitHub on merge.
+`git branch --show-current`: **`wip/laravel-skills`**, tracking
+`origin/wip/laravel-skills` = **PR #28**. It is built on `origin/main` =
+`c7dc7e3`, and local `main` is level with it.
 
-**No PR is open** beyond the one this checkpoint opens. Recently merged: **#26**
-`2bbdb2a` (release 26.9.4), **#25** `5d07abf` (`/release` command), **#24**
-`2a63cc2` and **#23** `359e610` (the `.org` fork domain).
+**Open PRs**: **#28** on `origin` (Laravel skills). On the fork, **#4** stays open
+until #28 merges. Recently merged: **#27** `470e929` (checkpoint), **#26**
+`2bbdb2a` (release 26.9.4), **#25** `5d07abf` (`/release` command).
 
 **Tags and releases run v26.9.0 → v26.9.4 with no gaps**, each an annotated tag
 pushed to `origin` **and** `fork` as the same object, each a **prerelease** on
-both repos. `releases/latest` 404s on both — the endpoint excludes
-prereleases, and nothing consumes it.
+both repos.
 
 Both remotes are present (`git remote -v`): `origin` =
-`mariadb-corporation/ai-plugins`, `fork` = `MariaDB/ai-plugins` (canonical casing;
-see repo conventions). `fork/main` = `22bd0be` = `origin/main` as of #26 plus the
-fork-only `docs/CNAME` / `_config.yml` `url:`. See
-[repo conventions](context/repo-conventions.md) for what each is for.
+`mariadb-corporation/ai-plugins`, `fork` = `MariaDB/ai-plugins`. A local ref
+`fork-pr-4` holds the fork PR's head (`5bc1357`) and can be deleted once #28
+merges. See [repo conventions](context/repo-conventions.md) for what each remote
+is for.
