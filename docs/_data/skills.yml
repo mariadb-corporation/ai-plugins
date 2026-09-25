@@ -189,3 +189,9 @@
       sql: false
     - name: mariadb-migrator
       sql: false
+    - name: mariadb-laravel-ai-sdk
+      sql: false
+    - name: mariadb-laravel-connector
+      sql: false
+    - name: mariadb-laravel-vector
+      sql: false

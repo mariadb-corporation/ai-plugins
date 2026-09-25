@@ -599,6 +599,24 @@
           "path": "mariadb-migrator/SKILL.md",
           "status": "local",
           "baseline_version": "11.8 LTS"
+        },
+        {
+          "name": "mariadb-laravel-ai-sdk",
+          "path": "mariadb-laravel-ai-sdk/SKILL.md",
+          "status": "local",
+          "baseline_version": "11.8 LTS"
+        },
+        {
+          "name": "mariadb-laravel-connector",
+          "path": "mariadb-laravel-connector/SKILL.md",
+          "status": "local",
+          "baseline_version": "11.8 LTS"
+        },
+        {
+          "name": "mariadb-laravel-vector",
+          "path": "mariadb-laravel-vector/SKILL.md",
+          "status": "local",
+          "baseline_version": "11.8 LTS"
         }
       ]
     }
