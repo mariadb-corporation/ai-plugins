@@ -1,6 +1,6 @@
 # MariaDB plugin for OpenCode
 
-Version **26.9.4**
+Version **26.9.5**
 
 This plugin gives [OpenCode](https://opencode.ai) first-class MariaDB support
 through two parts:
