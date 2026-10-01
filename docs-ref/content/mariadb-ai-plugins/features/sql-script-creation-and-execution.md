@@ -111,7 +111,7 @@ Work in the current folder and complete these steps in order:
 
 ## Run Scripts on Development and Production Servers
 
-Besides sandbox instances, the agent can run queries and scripts on your existing development and production servers. To give the agent access to a server, add a connection for it with `mariadb-shell -- mcp setup`, as described in [Configuring the MCP Server](../configuring-the-mcp-server/README.md). The agent finds the configured connections with `db.list_connections`, and you refer to a connection in your request, for example:
+Besides sandbox instances, the agent can run queries and scripts on your existing development and production servers. To give the agent access to a server, add a connection for it with `mariadb-shell -- mcp setup`, as described in [Configuring the MCP Server](../configuring-the-mcp-server/README.md). If a server is only reachable through an SSH host, configure the connection with a `mariadb+ssh://` URI, as described in [Tunnel Database Connections via SSH](../configuring-the-mcp-server/tunnel-database-connections-via-ssh.md). The agent finds the configured connections with `db.list_connections`, and you refer to a connection in your request, for example:
 
 ```
 Run notes_app.sql on the development server mcp@dev-db.example.com:3306.

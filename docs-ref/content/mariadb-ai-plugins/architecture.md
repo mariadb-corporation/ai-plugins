@@ -1,14 +1,52 @@
 ---
 description: >-
-  How the components of MariaDB AI Plugins work together, how the launcher
-  installs MariaDB Shell, and how the plugins are packaged for each harness.
+  How MariaDB AI Plugins are delivered to a coding agent, how their
+  components work together, how the launcher installs MariaDB Shell, and how
+  the plugins are packaged for each harness.
 ---
 
 # Architecture
 
-A MariaDB AI Plugin consists of three components: the skills, the MCP server, and MariaDB Shell. This page describes how they work together, how MariaDB Shell is installed, and how the plugins are packaged for each harness.
+This page describes how MariaDB AI Plugins reach a coding agent, how their components work together, how MariaDB Shell is installed, and how the plugins are packaged for each harness.
+
+## Overview
+
+MariaDB AI Plugins involve three parts: the coding agent, the agent plugin, and the native tools package. The agent plugin is specific to each coding agent, while the native tools package is shared by all of them.
+
+![The architecture of MariaDB AI Plugins: coding agents with their MariaDB plugins, which are installed from GitHub and download a shared native tools package for the operating system and CPU architecture](../.gitbook/assets/MariaDB_AI-Plugins_Architecture.svg)
+
+_A plugin is installed from GitHub (1 and 2), and downloads the native tools package for its platform on first use (3)._
+
+### Coding Agent
+
+The coding agent, which this documentation calls the *harness*, is the AI tool you work with: Claude Code, Codex, OpenCode, or Pi. Each coding agent has its own way of installing and loading extensions, so there is a separate MariaDB plugin for each of them.
+
+You install the plugin with the commands of your coding agent (1). In Claude Code, for example, you add the MariaDB marketplace with `/plugin marketplace add mariadb/ai-plugins` and install the plugin with `/plugin install dev@mariadb`. See [Installation](installation/).
+
+### Agent Plugin
+
+The coding agent downloads the plugin from the [MariaDB AI Plugins repository](https://github.com/mariadb/ai-plugins) on GitHub (2). Depending on the coding agent, a plugin can contain skills, agents, hooks, and the configuration of MCP servers and language servers. The MariaDB plugins contain:
+
+* The skills, which the agent reads when a request concerns MariaDB.
+* The configuration of the `mariadb-shell` MCP server, which tells the coding agent how to start it.
+* The launcher scripts, which find or install MariaDB Shell before they start the MCP server.
+* For Pi, an extension that registers the MCP server with the `pi-mcp-adapter` package.
+
+The plugin itself contains no binaries. It consists of text files only, so the same plugin works on every operating system.
+
+### Native Tools Package
+
+The binaries that the plugin needs are in a separate native tools package, which is published with the releases of [MariaDB Shell](https://github.com/mariadb-corporation/mariadb-shell) on GitHub. When the MCP server is started for the first time, the launcher downloads the package that matches the operating system and CPU architecture of your machine, and installs it in your user directory (3). It verifies the checksum of the package before it installs it, and needs no administrator rights.
+
+The package contains MariaDB Shell, together with the Python runtime and all dependencies that the MCP server needs, and the MCP server itself, which runs as a MariaDB Shell plugin. Because the runtime is part of the package, the MCP server doesn't depend on a Python installation on your machine.
+
+All plugins on a machine use the same native tools package. If you use MariaDB AI Plugins in several coding agents, MariaDB Shell is downloaded and installed only once. Each release of the package is installed in a directory of its own, so several releases can exist side by side. Each plugin release requires a minimum version of MariaDB Shell, and the launcher uses any installed release that meets it. See [The Launcher](#the-launcher).
+
+The diagram also shows tools that aren't part of the package yet, marked as planned.
 
 ## Components
+
+At run time, the plugin works with the following components:
 
 | Part | What it is | Needs |
 | --- | --- | --- |

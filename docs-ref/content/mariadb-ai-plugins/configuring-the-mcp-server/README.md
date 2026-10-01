@@ -42,7 +42,7 @@ The installer doesn't add this directory to your `PATH`; it only prints a hint. 
 
 ### Connections
 
-The setup asks for the connection URIs of the databases the agent may connect to. For each connection, it prompts for the password, verifies it, and stores it in the MariaDB Shell secret store, separately from your other MariaDB Shell connections. The agent has no access to the passwords.
+The setup asks for the connection URIs of the databases the agent may connect to. For the format of the URI and its options, see [Adding Database Connections](adding-database-connections.md). To reach a server through an SSH host, use a `mariadb+ssh://` URI, as described in [Tunnel Database Connections via SSH](tunnel-database-connections-via-ssh.md). For each connection, it prompts for the password, verifies it, and stores it in the MariaDB Shell secret store, separately from your other MariaDB Shell connections. The agent has no access to the passwords.
 
 {% hint style="warning" %}
 Use a dedicated MariaDB account for each connection, and grant it only the privileges the agent needs, for example read-only access to specific schemas. The MCP server controls which servers the agent can connect to, but the account privileges determine what the agent can do on them. See [Database Accounts for the MCP Server](database-accounts-for-the-mcp-server.md).
@@ -62,12 +62,34 @@ mariadb-shell -- mcp setup --installMigrator
 
 Then restart the MCP server. The `migrator.*` tools are available after the restart. See [migrator Tools](../mcp-tool-reference/migrator-tools.md).
 
+## Configure from the Command Line
+
+Instead of the walkthrough, you can configure the MCP server with command-line options of `mcp setup`, for example in a setup script for new developer machines. Every setting of the walkthrough has an option, and you can combine several options in one call:
+
+```bash
+mariadb-shell -- mcp setup --addPaths=/home/dev/projects --installMigrator
+```
+
+For all options and their rules, see [Command Line Configuration](command-line-configuration.md).
+
 ## Change the Configuration
 
-Run `mariadb-shell -- mcp setup` again at any time to add or remove connections and paths. For the complete option reference, see the [MCP server documentation](https://github.com/mariadb-corporation/mariadb-shell-plugins/blob/main/mcp_plugin/README.md#configuration-mcpsetup).
+Run `mariadb-shell -- mcp setup` again at any time to add or remove connections and paths. To see the current configuration, run `mariadb-shell -- mcp setup --show`. For the complete option reference, see the [MCP server documentation](https://github.com/mariadb-corporation/mariadb-shell-plugins/blob/main/mcp_plugin/README.md#configuration-mcpsetup).
 
-## Database Accounts
+## Related Topics
 
 {% content-ref url="database-accounts-for-the-mcp-server.md" %}
 [database-accounts-for-the-mcp-server.md](database-accounts-for-the-mcp-server.md)
+{% endcontent-ref %}
+
+{% content-ref url="adding-database-connections.md" %}
+[adding-database-connections.md](adding-database-connections.md)
+{% endcontent-ref %}
+
+{% content-ref url="tunnel-database-connections-via-ssh.md" %}
+[tunnel-database-connections-via-ssh.md](tunnel-database-connections-via-ssh.md)
+{% endcontent-ref %}
+
+{% content-ref url="command-line-configuration.md" %}
+[command-line-configuration.md](command-line-configuration.md)
 {% endcontent-ref %}
