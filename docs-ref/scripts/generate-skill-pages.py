@@ -49,46 +49,46 @@ PAGES = {
         "sql-statement-skills.md",
         "SQL Statement Skills",
         "Reference for the MariaDB AI Plugins skills that cover individual SQL statements and their MariaDB-specific syntax and behavior.",
-        "One skill per SQL statement. Each one covers the MariaDB-specific syntax and behavior that a generic SQL answer gets wrong, such as online DDL algorithms on `ALTER TABLE`, atomic `CREATE OR REPLACE`, and `RETURNING` on `INSERT`.",
+        "Each of these skills covers one SQL statement, with the MariaDB-specific syntax and behavior that general SQL knowledge often gets wrong, for example the online DDL algorithms of `ALTER TABLE`, atomic `CREATE OR REPLACE`, and `RETURNING` in `INSERT`.",
     ),
     "granular-functions": (
         "built-in-function-skills.md",
         "Built-in Function Skills",
         "Reference for the MariaDB AI Plugins skills that cover MariaDB built-in function families.",
-        "One skill per family of built-in functions, grouped by what the functions operate on.",
+        "Each of these skills covers a group of built-in functions, such as the string, date and time, or JSON functions.",
     ),
     "granular-tools": (
         "command-line-tool-skills.md",
         "Command-Line Tool Skills",
         "Reference for the MariaDB AI Plugins skills that cover the MariaDB command-line client and utilities.",
-        "One skill per MariaDB command-line program, covering the options and behavior that differ from their MySQL counterparts.",
+        "Each of these skills covers one MariaDB command-line program, with the options and behavior that differ from the corresponding MySQL program.",
     ),
     "granular-connectors": (
         "connector-skills.md",
         "Connector Skills",
         "Reference for the MariaDB AI Plugins skills that cover installing and using the MariaDB connectors.",
-        "Two skills per MariaDB connector: one for installing and configuring it, one for using it from application code.",
+        "There are two skills for each MariaDB connector. One covers installation and configuration, and the other covers using the connector in application code.",
     ),
     "topical": (
         "topical-skills.md",
         "Topical Skills",
         "Reference for the MariaDB AI Plugins topical skills, which cover subjects that span many statements.",
-        "Skills about a subject rather than a single statement, such as migrating from MySQL or vector search.",
+        "These skills cover topics that span several statements, such as the migration from MySQL or vector search.",
     ),
     "additional": (
         "additional-skills.md",
         "Additional Skills",
-        "Reference for the skills maintained in the MariaDB AI Plugins repository itself: schema scripts, MariaDB REST Service, schema management, migration, and Laravel.",
-        "Skills maintained in the `additional-skills/` directory of the MariaDB AI Plugins repository, rather than vendored from the MariaDB documentation. Many of them drive the MCP server's tools.",
+        "Reference for the skills maintained in the MariaDB AI Plugins repository, including skills for the MariaDB REST Service, schema management, and the migration from MySQL.",
+        "These skills are maintained in the `additional-skills/` directory of the MariaDB AI Plugins repository rather than in the MariaDB documentation. Most of them describe workflows that use the tools of the MCP server.",
     ),
 }
 
 ADDITIONAL_GROUPS = {
-    "sql": ("SQL Scripts", "Writing schema create scripts."),
-    "rest": ("MariaDB REST Service", "Creating and managing REST endpoints with the MariaDB REST Service."),
-    "schema-management": ("Schema Management", "The MariaDB Schema Management (MSM) project lifecycle, driven by the `msm.*` tools."),
-    "migrator": ("MySQL to MariaDB Migration", "Migrating a MySQL database to MariaDB, driven by the optional `migrator.*` tools."),
-    "laravel": ("Laravel", "Using MariaDB from Laravel applications. Shipped with the `dev` plugin only."),
+    "sql": ("SQL Scripts", "Skills for writing SQL scripts that create a schema."),
+    "rest": ("MariaDB REST Service", "Skills for creating and managing REST endpoints with the MariaDB REST Service."),
+    "schema-management": ("Schema Management", "Skills for the project lifecycle of MariaDB Schema Management (MSM), which use the `msm.*` tools."),
+    "migrator": ("MySQL to MariaDB Migration", "Skills for migrating a MySQL database to MariaDB, which use the optional `migrator.*` tools."),
+    "laravel": ("Laravel", "Skills for using MariaDB in Laravel applications. These skills are included in the `dev` plugin only."),
 }
 
 
@@ -180,7 +180,7 @@ def main():
         page(
             "Contributor Skills",
             "Reference for the skills in the MariaDB AI Plugins contributor plugin, for working on MariaDB tooling itself.",
-            "The skills of the `contributor` plugin, vendored from the MariaDB Shell repository. They are for developing MariaDB Shell and its plugins, not for using MariaDB, and the `contributor` plugin ships no MCP server.",
+            "These skills make up the `contributor` plugin and come from the MariaDB Shell repository. They support the development of MariaDB Shell and its plugins rather than work with MariaDB databases. The `contributor` plugin doesn't include the MCP server.",
             body,
         ),
         encoding="utf-8",

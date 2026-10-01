@@ -1,7 +1,7 @@
 ---
 description: >-
-  MariaDB AI Plugins add MariaDB agent skills and the native mariadb-shell MCP
-  server to the Claude Code, Codex, OpenCode, and Pi AI coding agents.
+  MariaDB AI Plugins add MariaDB skills and the mariadb-shell MCP server to the
+  Claude Code, Codex, OpenCode, and Pi coding agents.
 icon: robot
 ---
 
@@ -9,10 +9,10 @@ icon: robot
 
 ## MariaDB AI Plugins
 
-MariaDB AI Plugins give AI coding agents first-class MariaDB support. Installing a plugin gives the agent MariaDB reference material in the form of skills, and a live connection to MariaDB Server through the native `mariadb-shell` MCP server.
+MariaDB AI Plugins are plugins for AI coding agents that help the agent work with MariaDB. They include skills, which are reference documents on MariaDB SQL, tools, and connectors, and the `mariadb-shell` MCP server, which connects the agent to your MariaDB servers.
 
 {% hint style="info" %}
-The skills work as soon as a plugin is installed, without a database or any configuration. The MCP server needs a one-time setup; see [Configuring the MCP Server](configuring-the-mcp-server.md).
+The skills are available as soon as the plugin is installed and don't require a database. Before the agent can use the MCP server, you must configure it as described in [Configuring the MCP Server](configuring-the-mcp-server/README.md).
 {% endhint %}
 
 {% columns %}
@@ -23,7 +23,7 @@ The skills work as soon as a plugin is installed, without a database or any conf
 {% endcolumn %}
 
 {% column %}
-Overview of MariaDB AI Plugins: agent skills for MariaDB, the `mariadb-shell` MCP server, and MariaDB Shell, packaged for Claude Code, Codex, OpenCode, and Pi.
+An overview of the plugins, the coding agents they support, and the MariaDB and MariaDB Shell versions they work with.
 {% endcolumn %}
 {% endcolumns %}
 
@@ -35,19 +35,19 @@ Overview of MariaDB AI Plugins: agent skills for MariaDB, the `mariadb-shell` MC
 {% endcolumn %}
 
 {% column %}
-Install a plugin into Claude Code, Codex, OpenCode, or Pi. On first start, the plugin installs MariaDB Shell if no suitable version is present.
+How to install a plugin in Claude Code, Codex, OpenCode, or Pi.
 {% endcolumn %}
 {% endcolumns %}
 
 {% columns %}
 {% column %}
-{% content-ref url="configuring-the-mcp-server.md" %}
-[configuring-the-mcp-server.md](configuring-the-mcp-server.md)
+{% content-ref url="configuring-the-mcp-server/" %}
+[configuring-the-mcp-server](configuring-the-mcp-server/)
 {% endcontent-ref %}
 {% endcolumn %}
 
 {% column %}
-Run `mcp setup` once per machine to choose the connections and local paths the MCP server may use, and optionally install the migration tooling.
+How to set up the database connections and directories that the MCP server is allowed to use.
 {% endcolumn %}
 {% endcolumns %}
 
@@ -59,7 +59,7 @@ Run `mcp setup` once per machine to choose the connections and local paths the M
 {% endcolumn %}
 
 {% column %}
-What you can ask an agent for with skills alone, with the MCP server connected to your database, and with a throwaway sandbox instance.
+Example requests that use the skills, a configured database, or a sandbox instance.
 {% endcolumn %}
 {% endcolumns %}
 
@@ -71,7 +71,7 @@ What you can ask an agent for with skills alone, with the MCP server connected t
 {% endcolumn %}
 
 {% column %}
-The `dev`, `sql`, and `contributor` plugin variants: which skills each one ships and which ones include the MCP server.
+The differences between the `dev`, `sql`, and `contributor` plugins.
 {% endcolumn %}
 {% endcolumns %}
 
@@ -83,7 +83,7 @@ The `dev`, `sql`, and `contributor` plugin variants: which skills each one ships
 {% endcolumn %}
 
 {% column %}
-Detailed discussions of the plugins' main features: sandbox instances, versioned schemas with Schema Management, REST endpoints with MariaDB REST Service, and migrating from MySQL.
+Detailed descriptions of SQL scripts, sandbox instances, schema management, REST endpoints, and the migration from MySQL.
 {% endcolumn %}
 {% endcolumns %}
 
@@ -95,7 +95,7 @@ Detailed discussions of the plugins' main features: sandbox instances, versioned
 {% endcolumn %}
 
 {% column %}
-How skills, the MCP server, and MariaDB Shell fit together, how the launcher resolves and installs MariaDB Shell, and how each harness packages a plugin.
+How the skills, the MCP server, and MariaDB Shell work together, and how the launcher installs MariaDB Shell.
 {% endcolumn %}
 {% endcolumns %}
 
@@ -107,7 +107,7 @@ How skills, the MCP server, and MariaDB Shell fit together, how the launcher res
 {% endcolumn %}
 
 {% column %}
-The two allow-lists that bound what an agent can reach: configured connections and allowed paths, plus the account privileges you choose.
+How the MCP server limits the databases and directories that the agent can access.
 {% endcolumn %}
 {% endcolumns %}
 
@@ -119,7 +119,7 @@ The two allow-lists that bound what an agent can reach: configured connections a
 {% endcolumn %}
 
 {% column %}
-Reference for every skill the plugins ship: SQL statements, built-in functions, command-line tools, connectors, topical guides, and the repository's own skills.
+A list of all skills included in the plugins, grouped by topic.
 {% endcolumn %}
 {% endcolumns %}
 
@@ -131,7 +131,7 @@ Reference for every skill the plugins ship: SQL statements, built-in functions, 
 {% endcolumn %}
 
 {% column %}
-Reference for the tools of the `mariadb-shell` MCP server: `db.*`, `msm.*`, `sandbox.*`, and the optional `migrator.*` group.
+Descriptions and arguments of all tools that the MCP server provides.
 {% endcolumn %}
 {% endcolumns %}
 
@@ -143,7 +143,7 @@ Reference for the tools of the `mariadb-shell` MCP server: `db.*`, `msm.*`, `san
 {% endcolumn %}
 
 {% column %}
-Environment variables, file locations, and configuration files used by the plugins, the launcher, and the MCP server.
+Environment variables, file locations, and configuration files.
 {% endcolumn %}
 {% endcolumns %}
 
@@ -155,7 +155,7 @@ Environment variables, file locations, and configuration files used by the plugi
 {% endcolumn %}
 
 {% column %}
-Common error messages and symptoms, what causes them, and how to fix them.
+Solutions for common error messages and problems.
 {% endcolumn %}
 {% endcolumns %}
 
@@ -167,7 +167,7 @@ Common error messages and symptoms, what causes them, and how to fix them.
 {% endcolumn %}
 
 {% column %}
-Where to find the changes in each MariaDB AI Plugins release, and how plugin versions relate to MariaDB Shell versions.
+How releases are numbered, and the changes in the latest release.
 {% endcolumn %}
 {% endcolumns %}
 
@@ -179,7 +179,7 @@ Where to find the changes in each MariaDB AI Plugins release, and how plugin ver
 {% endcolumn %}
 
 {% column %}
-MariaDB AI Plugins are licensed under the GNU GPL v2; the bundled skills keep the licenses of their source repositories.
+License terms for the plugin code and the bundled skills.
 {% endcolumn %}
 {% endcolumns %}
 
@@ -191,6 +191,6 @@ MariaDB AI Plugins are licensed under the GNU GPL v2; the bundled skills keep th
 {% endcolumn %}
 
 {% column %}
-Report bugs and request features on GitHub, and report security vulnerabilities privately.
+How to report bugs and security vulnerabilities.
 {% endcolumn %}
 {% endcolumns %}

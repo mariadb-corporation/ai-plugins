@@ -16,7 +16,7 @@ Report bugs and request features in the [MariaDB AI Plugins issue tracker on Git
 * Your operating system.
 * The request you gave the agent, and the tool call or error message that went wrong.
 
-Bugs in a skill's content that comes from the MariaDB documentation are best reported against the [MariaDB documentation](https://github.com/mariadb-corporation/mariadb-docs).
+Report errors in skills that come from the MariaDB documentation in the [MariaDB documentation repository](https://github.com/mariadb-corporation/mariadb-docs).
 
 ## Report a Security Vulnerability
 

@@ -5,7 +5,7 @@ description: >-
 
 # Contributor Skills
 
-The skills of the `contributor` plugin, vendored from the MariaDB Shell repository. They are for developing MariaDB Shell and its plugins, not for using MariaDB, and the `contributor` plugin ships no MCP server.
+These skills make up the `contributor` plugin and come from the MariaDB Shell repository. They support the development of MariaDB Shell and its plugins rather than work with MariaDB databases. The `contributor` plugin doesn't include the MCP server.
 
 | Skill | What it covers |
 | --- | --- |

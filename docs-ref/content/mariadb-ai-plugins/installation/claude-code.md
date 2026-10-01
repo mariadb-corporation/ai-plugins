@@ -19,7 +19,7 @@ To install a different variant, replace `dev` with `sql` or `contributor`. See [
 
 ## Configure the MCP Server
 
-The `dev` and `sql` plugins register the MCP server with Claude Code automatically. Before the agent can use it, choose the connections and paths it may access. See [Configuring the MCP Server](../configuring-the-mcp-server.md).
+The `dev` and `sql` plugins register the MCP server with Claude Code automatically. Before the agent can use the server, you must configure the connections and directories it may access. See [Configuring the MCP Server](../configuring-the-mcp-server/README.md).
 
 ## Verify the Installation
 

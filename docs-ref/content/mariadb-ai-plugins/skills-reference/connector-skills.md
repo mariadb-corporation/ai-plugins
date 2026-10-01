@@ -5,7 +5,7 @@ description: >-
 
 # Connector Skills
 
-Two skills per MariaDB connector: one for installing and configuring it, one for using it from application code.
+There are two skills for each MariaDB connector. One covers installation and configuration, and the other covers using the connector in application code.
 
 | Skill | Plugins | What it covers |
 | --- | --- | --- |

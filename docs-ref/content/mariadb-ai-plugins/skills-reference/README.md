@@ -1,17 +1,15 @@
 ---
 description: >-
-  Reference for every skill the MariaDB AI Plugins ship, by layer: SQL
-  statements, built-in functions, command-line tools, connectors, topical
-  skills, and the repository's own skills.
+  Reference for all skills included in MariaDB AI Plugins, grouped by topic.
 ---
 
 # Skills Reference
 
-A skill is a Markdown document the agent reads when the request matches its description. Skills need no database and no configuration, and work offline.
+A skill is a Markdown document with MariaDB-specific information that the agent reads when it's relevant to a request. Skills don't require a database connection or any configuration.
 
 ## How the Agent Uses Skills
 
-Each skill has a name and a description. The harness shows the agent the descriptions, and the agent reads a skill in full only when it becomes relevant: a request for a `CREATE TABLE` statement loads `mariadb-create-table`, and a question about vector search loads `mariadb-vector`. You don't select skills yourself.
+Each skill has a name and a short description. The harness provides the descriptions to the agent, and the agent reads the full skill when a request matches its description. For example, a request for a `CREATE TABLE` statement causes the agent to read `mariadb-create-table`, and a question about vector search causes it to read `mariadb-vector`. You don't need to select skills yourself.
 
 ## Skill Layers
 
@@ -29,4 +27,4 @@ The skills are verified against MariaDB 11.8 LTS.
 
 ## Skill Versions
 
-Skills are vendored into each plugin at release time, so a plugin version always ships the same skill text. Each plugin records the exact source repository, commit, and sync date of its skills in `skills/skills-source.json`.
+The skills are copied into each plugin when a release is built, so their content doesn't change between releases. Each plugin records the source repository, commit, and synchronization date of its skills in `skills/skills-source.json`.

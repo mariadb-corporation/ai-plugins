@@ -1,18 +1,17 @@
 ---
 description: >-
-  Move an application and its database from MySQL to MariaDB with MariaDB AI
-  Plugins: compatibility guidance from the skills, and the optional migrator
-  tools for the database migration itself.
+  Migrate an application and its database from MySQL to MariaDB with the
+  skills and the optional migrator tools of MariaDB AI Plugins.
 ---
 
 # Migrating from MySQL
 
-The plugins help with a MySQL-to-MariaDB migration at two levels: the skills explain what changes for your SQL and application code, and the optional `migrator.*` tools migrate the database itself.
+MariaDB AI Plugins support a migration from MySQL to MariaDB in two ways. The skills describe the differences between MySQL and MariaDB that affect your SQL and application code, and the optional `migrator.*` tools migrate the database itself.
 
 ## Requirements
 
-* For compatibility guidance: any plugin with the `mysql-to-mariadb` skill, `dev` or `sql`.
-* For the database migration: the `dev` plugin, and the migration tooling installed on Linux or macOS with `mariadb-shell -- mcp setup --installMigrator`.
+* For compatibility guidance, the `dev` or `sql` plugin. Both include the `mysql-to-mariadb` skill.
+* For the database migration, the `dev` plugin and the migration tooling, which you install on Linux or macOS with `mariadb-shell -- mcp setup --installMigrator`.
 * Connections to both the MySQL source and the MariaDB target, configured with `mcp setup`.
 
 ## Skills and Tools
@@ -27,7 +26,7 @@ Ask the agent what changes if you move the application from MySQL to MariaDB. It
 
 ## Configure the Migration
 
-`migrator.set_config` writes the migration configuration. It names configured connections only and refuses passwords.
+The agent writes the migration configuration with `migrator.set_config`. The configuration can only refer to connections that you configured with `mcp setup`, and the tool rejects passwords.
 
 ## Plan and Run
 
@@ -41,4 +40,4 @@ Omit `out` for every new run. A run pointed at the output directory of an earlie
 
 ## Verify the Result
 
-The `mariadb-migrator-verify` skill covers checking the finished migration on the target with the `db.*` tools: object counts per type, foreign keys, row counts, value spot checks, and signing in as each migrated account. To rehearse first, migrate into a [sandbox instance](sandbox-instances.md).
+After the migration, the agent uses the `mariadb-migrator-verify` skill to check the result on the target server with the `db.*` tools. The checks include object counts by type, foreign keys, row counts, spot checks of values, and logins with each migrated account. To test the migration first, migrate into a [sandbox instance](sandbox-instances.md).

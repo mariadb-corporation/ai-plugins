@@ -1,20 +1,19 @@
 ---
 description: >-
-  Install MariaDB AI Plugins into Claude Code, Codex, OpenCode, or Pi. On first
-  start, the plugin installs MariaDB Shell if no suitable version is present.
+  Install MariaDB AI Plugins in Claude Code, Codex, OpenCode, or Pi.
 ---
 
 # Installation
 
-MariaDB AI Plugins use the standard plugin system of each harness where one exists. Installation has two steps:
+If a harness has its own plugin system, you install MariaDB AI Plugins through it. The installation consists of two steps:
 
 1. Install the plugin into your harness, using the page for your harness below.
-2. Configure what the MCP server may access. This step is the same for every harness; see [Configuring the MCP Server](../configuring-the-mcp-server.md).
+2. Configure what the MCP server may access. This step is the same for every harness; see [Configuring the MCP Server](../configuring-the-mcp-server/README.md).
 
-The skills work after step 1. The MCP server refuses every request until step 2 is done.
+The skills are available after the first step. The MCP server rejects all requests until you complete the second step.
 
 {% hint style="info" %}
-On first start, the plugin downloads and extracts the MariaDB Shell package, unless a suitable version is already installed. Depending on your network connection, this can take a minute. It happens only once.
+When the plugin starts for the first time, it downloads and extracts MariaDB Shell, unless a suitable version is already installed. Depending on your network connection, this can take a minute. Later starts use the installed copy.
 {% endhint %}
 
 ## Prerequisites
@@ -23,7 +22,7 @@ On first start, the plugin downloads and extracts the MariaDB Shell package, unl
 * Linux, macOS, or Windows. The optional migration tooling is available on Linux and macOS only.
 * Network access on first start, unless MariaDB Shell 26.9.5 or later is already installed.
 
-MariaDB Server doesn't need to be installed. The MCP server can deploy local [sandbox instances](../features/sandbox-instances.md).
+You don't need a MariaDB Server installation. If you don't have a server, the MCP server can deploy a local [sandbox instance](../features/sandbox-instances.md).
 
 ## Choose Your Harness
 
@@ -45,7 +44,7 @@ MariaDB Server doesn't need to be installed. The MCP server can deploy local [sa
 
 ## Verify the Skills Are Loaded
 
-Ask the agent for something only a skill knows, for example:
+To check that the skills are loaded, ask the agent a question that requires MariaDB-specific knowledge, for example:
 
 ```
 Write a CREATE TABLE for a product catalog, MariaDB style.

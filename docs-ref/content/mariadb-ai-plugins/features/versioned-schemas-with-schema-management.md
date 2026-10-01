@@ -1,18 +1,17 @@
 ---
 description: >-
   Manage a database schema as a versioned project with MariaDB Schema
-  Management: create the project, release versions, and deploy them with the
-  msm tools.
+  Management and the msm tools of the mariadb-shell MCP server.
 ---
 
 # Versioned Schemas with Schema Management
 
-MariaDB Schema Management (MSM) keeps a database schema in a versioned project: a development script, a snapshot of every released version, an update script per release, and generated deployment scripts that create or upgrade the schema on any server.
+MariaDB Schema Management (MSM) manages a database schema as a versioned project. A project contains a development script, a snapshot of each released version, an update script for each release, and generated deployment scripts. A deployment script creates the schema on a new server, or upgrades an existing schema to the version of the release.
 
 ## Requirements
 
 * The `dev` plugin. The schema management skills aren't part of the `sql` plugin.
-* The project directory on the [allowed-paths list](../configuring-the-mcp-server.md#allowed-paths).
+* The project directory on the [allowed-paths list](../configuring-the-mcp-server/README.md#allowed-paths).
 * For deployment, a connection to the target server, or a [sandbox](sandbox-instances.md).
 
 ## Skills and Tools

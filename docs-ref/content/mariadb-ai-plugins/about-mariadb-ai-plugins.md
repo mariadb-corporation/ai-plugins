@@ -1,24 +1,25 @@
 ---
 description: >-
-  Overview of MariaDB AI Plugins: agent skills for MariaDB, the mariadb-shell
-  MCP server, and MariaDB Shell, packaged for Claude Code, Codex, OpenCode, and
-  Pi.
+  An overview of MariaDB AI Plugins, the coding agents they support, and the
+  versions of MariaDB and MariaDB Shell they work with.
 ---
 
 # About MariaDB AI Plugins
 
-MariaDB AI Plugins package MariaDB support for AI coding agents. A plugin installs into the agent's own plugin system, which the documentation calls the *harness*, and gives the agent three things.
+MariaDB AI Plugins extend AI coding agents with knowledge about MariaDB and with access to MariaDB databases. You install a plugin through the plugin system of your coding agent. In this documentation, the coding agent is called the *harness*.
 
 ## What a Plugin Provides
 
+Each plugin consists of the following components:
+
 | Part | What it is | What it needs |
 | --- | --- | --- |
-| Skills | MariaDB reference material the agent reads when it becomes relevant: how `ALTER TABLE` behaves in MariaDB, how vector indexes work, which connector to use from Python or Java, or how to move an application from MySQL to MariaDB. | Nothing. Skills work on a fresh install, offline. |
-| MCP server | A live connection to MariaDB Server, so the agent can read your schema, run queries, analyze a slow query with `EXPLAIN`, or start a throwaway test instance. | A one-time `mcp setup`, and a server to connect to. |
-| MariaDB Shell | MariaDB's command-line shell, a port of MySQL Shell. The MCP server runs inside it as a plugin. You can also use it as a SQL client. | Installed automatically the first time an agent starts the MCP server. |
+| Skills | Reference documents that the agent reads when a request concerns MariaDB, for example on the behavior of `ALTER TABLE`, on vector indexes, on choosing a connector for Python or Java, or on moving an application from MySQL. | Nothing. Skills also work offline. |
+| MCP server | A server through which the agent connects to MariaDB, for example to read your schema, run queries, analyze a slow query with `EXPLAIN`, or start a test instance. | A one-time configuration with `mcp setup`, and a MariaDB server. |
+| MariaDB Shell | The MariaDB command-line shell, a port of MySQL Shell. The MCP server runs as a plugin inside it. You can also use the shell directly as a SQL client. | Installed automatically when the agent starts the MCP server for the first time. |
 
 {% hint style="info" %}
-The Model Context Protocol (MCP) is a standard interface that lets AI agents call tools. Here, the tools are the ones that talk to MariaDB. You don't need to understand the protocol to use the plugins.
+The Model Context Protocol (MCP) is a standard interface through which AI agents call external tools. In MariaDB AI Plugins, these tools access MariaDB. You don't need to know the protocol to use the plugins.
 {% endhint %}
 
 ## Supported Harnesses
@@ -38,7 +39,7 @@ The skills are written and verified against MariaDB 11.8 LTS.
 
 ## Plugin and MariaDB Shell Versions
 
-Plugin releases follow the MariaDB Shell release they require. A plugin at version 26.9.5 requires MariaDB Shell 26.9.5 or later, and installs the newest MariaDB Shell release when no suitable version is installed. See [Release Notes](release-notes.md).
+The version number of a plugin release matches the MariaDB Shell release it requires. For example, version 26.9.5 of the plugins requires MariaDB Shell 26.9.5 or later. If no suitable version of MariaDB Shell is installed, the plugin installs the latest release. See [Release Notes](release-notes.md).
 
 ## Next Steps
 

@@ -1,13 +1,12 @@
 ---
 description: >-
-  How the skills, the mariadb-shell MCP server, and MariaDB Shell fit
-  together, how the launcher resolves and installs MariaDB Shell, and how each
-  harness packages a plugin.
+  How the components of MariaDB AI Plugins work together, how the launcher
+  installs MariaDB Shell, and how the plugins are packaged for each harness.
 ---
 
 # Architecture
 
-A MariaDB AI Plugin consists of three separate parts. Knowing which part does what explains most of what happens when something doesn't work.
+A MariaDB AI Plugin consists of three components: the skills, the MCP server, and MariaDB Shell. This page describes how they work together, how MariaDB Shell is installed, and how the plugins are packaged for each harness.
 
 ## Components
 
@@ -19,25 +18,25 @@ A MariaDB AI Plugin consists of three separate parts. Knowing which part does wh
 
 ## Why the MCP Server Runs Inside MariaDB Shell
 
-MariaDB Shell already provides high-performance database connections, a credential store backed by the platform's secret storage, sandbox deployment, and the schema management engine. Running the MCP server as a MariaDB Shell plugin reuses all of them. As a result:
+MariaDB Shell provides database connections, a credential store that uses the secret storage of the operating system, sandbox deployment, and the schema management engine. The MCP server runs as a MariaDB Shell plugin so that it can use these functions. This has the following consequences:
 
-* Passwords never appear in a configuration file. They live in MariaDB Shell's secret store, and the agent asks for a connection, not for credentials.
-* MariaDB Shell is also available to you as a SQL client.
+* Passwords aren't stored in configuration files but in the MariaDB Shell secret store. The agent requests a connection and never sees the credentials.
+* You can use the same MariaDB Shell installation as a SQL client.
 * The MariaDB Shell configuration directory, `~/.mariadb-shell`, holds the shell's plugins, the secret store, and the MCP server's settings.
 
 ## The Launcher
 
-Every plugin ships a launcher script, `mariadb-mcp-launcher.sh` and its Windows counterpart `mariadb-mcp-launcher.cmd`. The harness starts the launcher, not MariaDB Shell. The launcher resolves a MariaDB Shell binary in this order:
+Every plugin ships a launcher script, `mariadb-mcp-launcher.sh` and its Windows counterpart `mariadb-mcp-launcher.cmd`. The harness doesn't start MariaDB Shell directly but runs the launcher, which looks for a MariaDB Shell binary in the following order:
 
 1. `$MARIADB_SHELL_BIN`, if set.
 2. A `mariadb-shell` on the `PATH` that meets the minimum version.
 3. A local install at `$MARIADB_SHELL_BINDIR/mariadb-shell`. The default is `~/.local/bin`, or `%LOCALAPPDATA%\Programs\mariadb-shell\bin\` on Windows.
-4. Otherwise, it downloads and runs the official MariaDB Shell installer, `install.sh` or `install.ps1`, and starts what it installed.
+4. If none of these is found, the launcher downloads and runs the official MariaDB Shell installer, `install.sh` or `install.ps1`, and uses the installed binary.
 
-It then starts the binary as `mariadb-shell -- mcp start-server --transport=stdio`.
+The launcher then starts the binary as `mariadb-shell -- mcp start-server --transport=stdio`.
 
 {% hint style="info" %}
-`MARIADB_SHELL_VERSION` is a minimum, not a target. If a binary on disk meets it, the launcher starts that binary without any network access. A download happens only when nothing on disk meets the minimum. To upgrade, raise the minimum, remove the managed install, or run the installer yourself.
+`MARIADB_SHELL_VERSION` specifies the minimum version. If an installed binary meets this version, the launcher uses it and doesn't access the network. The launcher downloads MariaDB Shell only if no installed binary meets the minimum version. To upgrade MariaDB Shell, raise the minimum version, remove the installation that the launcher manages, or run the installer yourself.
 {% endhint %}
 
 The launcher writes all of its messages to standard error, because standard output carries the MCP protocol.
@@ -46,7 +45,7 @@ See [Configuration Reference](configuration-reference.md) for all launcher envir
 
 ## How the Harnesses Differ
 
-The content is identical across harnesses; the packaging differs.
+All harnesses get the same skills and the same MCP server, but the plugins are packaged differently:
 
 * **Claude Code** and **Codex** read a marketplace manifest and install a plugin directory.
 * **OpenCode** has no marketplace. You merge an `mcp` block into your configuration, set an environment variable, and link the skills directory.
@@ -54,4 +53,4 @@ The content is identical across harnesses; the packaging differs.
 
 ## Vendored Skills
 
-The skills are copied into each plugin at release time rather than fetched at run time. A plugin release therefore pins the skill versions: what was tested is what ships, and an upstream edit never changes an agent's behavior mid-session. The skills come from the MariaDB documentation repository, the MariaDB Shell repository, and the MariaDB AI Plugins repository itself.
+The skills are copied into each plugin when a release is built, rather than downloaded at run time. Each plugin release therefore contains a fixed version of the skills, tested with that release. Changes in the source repositories don't affect installed plugins until the next release. The skills come from the MariaDB documentation repository, the MariaDB Shell repository, and the MariaDB AI Plugins repository.

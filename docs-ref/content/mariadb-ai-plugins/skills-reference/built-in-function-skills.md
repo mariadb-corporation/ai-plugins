@@ -5,7 +5,7 @@ description: >-
 
 # Built-in Function Skills
 
-One skill per family of built-in functions, grouped by what the functions operate on.
+Each of these skills covers a group of built-in functions, such as the string, date and time, or JSON functions.
 
 | Skill | Plugins | What it covers |
 | --- | --- | --- |

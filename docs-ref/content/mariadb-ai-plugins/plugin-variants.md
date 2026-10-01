@@ -1,20 +1,20 @@
 ---
 description: >-
-  The dev, sql, and contributor variants of MariaDB AI Plugins: which skills
-  each one ships and which ones include the mariadb-shell MCP server.
+  The dev, sql, and contributor variants of MariaDB AI Plugins, the skills
+  they include, and which of them include the mariadb-shell MCP server.
 ---
 
 # Plugin Variants
 
-Each harness ships the same plugin variants, all built from the same sources.
+MariaDB AI Plugins are available in three variants. They differ in the skills they include and in whether they include the MCP server. All variants are built from the same sources.
 
 | Variant | Skills | MCP server |
 | --- | --- | --- |
-| `dev` | The full set: SQL statements, built-in functions, command-line tools, connectors, topical skills, and all of the repository's [additional skills](skills-reference/additional-skills.md). | Yes |
-| `sql` | A SQL-focused subset: SQL statements, built-in functions, topical skills, and the repository's SQL script skills. | Yes |
-| `contributor` | Skills for contributing to MariaDB tooling itself, vendored from MariaDB Shell. | No |
+| `dev` | All skills, covering SQL statements, built-in functions, command-line tools, connectors, and general topics, plus all [additional skills](skills-reference/additional-skills.md) of the repository. | Yes |
+| `sql` | A subset for SQL development, covering SQL statements, built-in functions, and general topics, plus the repository's skill for SQL scripts. | Yes |
+| `contributor` | Skills for developing MariaDB Shell and its plugins, taken from the MariaDB Shell repository. | No |
 
-Unless you know you need a different variant, install `dev`.
+In most cases, install the `dev` plugin.
 
 ## Availability by Harness
 

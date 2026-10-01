@@ -1,32 +1,32 @@
 ---
 description: >-
-  Deploy local, throwaway MariaDB Server instances through the mariadb-shell
-  MCP server, without Docker, a container runtime, or administrator rights.
+  Deploy local MariaDB Server instances for development and testing with the
+  mariadb-shell MCP server.
 ---
 
 # Sandbox Instances
 
-The MCP server can deploy throwaway MariaDB Server instances on your machine. A sandbox needs no Docker, no container runtime, and no administrator rights, and is the quickest way to give the agent a server to work against.
+The MCP server can deploy MariaDB Server instances on your local machine for development and testing. These sandbox instances don't require Docker or another container runtime, and you don't need administrator rights to create them. A sandbox is useful when no database server is available, or when you want to test changes before you apply them to a production database.
 
 ## Deploy a Sandbox
 
-Ask the agent:
+To deploy a sandbox, ask the agent, for example:
 
 ```
 Deploy a MariaDB sandbox on port 3310.
 ```
 
-The agent calls `sandbox.deploy`. The sandbox's connection is registered with the MCP server automatically, so the agent can connect to it without running `mcp setup` again.
+The agent calls `sandbox.deploy`. The MCP server registers a connection to the new instance automatically, so you don't need to run `mcp setup` for it.
 
 ## Server Versions
 
-MariaDB Server doesn't need to be installed. `sandbox.deploy` looks for a server in this order:
+You don't need to install MariaDB Server. To find a server binary, `sandbox.deploy` checks the following locations in order:
 
 1. A `mariadbd` on the `PATH`.
 2. A version the sandbox has already downloaded.
 3. The published index of MariaDB Server releases, from which it downloads a package, verifies its SHA-256 checksum, and unpacks it.
 
-To ask for a version, give a full or partial version number, such as `11.8.9`, `11.8`, or `11`; each is satisfied by the newest release that matches. To see what is available for your platform, ask:
+You can request a specific version with a full or partial version number, such as `11.8.9`, `11.8`, or `11`. For a partial version number, the sandbox uses the latest matching release. To list the versions available for your platform, ask:
 
 ```
 Which MariaDB server versions can you deploy?
@@ -45,7 +45,7 @@ The agent calls `sandbox.list_available_versions`.
 | Delete | `sandbox.delete` | Removes the instance. Refuses a running instance. |
 
 {% hint style="warning" %}
-A downloaded server isn't on the `PATH`. To restart its sandbox, `sandbox.start` needs the `mariadbd_path` that the deploy reported, and to shut it down, use `sandbox.kill`; `sandbox.stop` can't find the binary. The deploy message says so at the time.
+If a sandbox uses a downloaded server, the server binary isn't on the `PATH`. In this case, `sandbox.start` needs the `mariadbd_path` that the deployment reported, and you must use `sandbox.kill` to shut the instance down, because `sandbox.stop` can't find the binary. The message returned by `sandbox.deploy` includes this information.
 {% endhint %}
 
 See [sandbox Tools](../mcp-tool-reference/sandbox-tools.md) for every argument.
@@ -60,8 +60,8 @@ See [sandbox Tools](../mcp-tool-reference/sandbox-tools.md) for every argument.
 ## Security Considerations
 
 {% hint style="danger" %}
-A sandbox creates a `root@'%'` account and listens on all network interfaces. It is a development tool. Don't leave one running on an untrusted network.
+A sandbox creates a `root@'%'` account and listens on all network interfaces. Use sandboxes for development only, and don't leave them running on an untrusted network.
 {% endhint %}
 
 * A sandbox is deployed without TLS, so command-line clients may need `--skip-ssl`.
-* The connection a sandbox registers is the only connection that appears without you configuring it. It points only at the local instance the agent just created.
+* The connection that a sandbox registers is the only connection that the MCP server adds without your configuration. It points to the local sandbox instance only.

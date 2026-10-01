@@ -5,7 +5,7 @@ description: >-
 
 # Topical Skills
 
-Skills about a subject rather than a single statement, such as migrating from MySQL or vector search.
+These skills cover topics that span several statements, such as the migration from MySQL or vector search.
 
 | Skill | Plugins | What it covers |
 | --- | --- | --- |

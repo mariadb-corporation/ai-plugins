@@ -17,15 +17,15 @@ codex plugin add dev@mariadb
 
 To install a different variant, replace `dev` with `sql` or `contributor`. See [Plugin Variants](../plugin-variants.md).
 
-Codex's `/plugins` command browses and enables plugins interactively. It takes no arguments, so add the marketplace with the CLI.
+The `/plugins` command in Codex lets you browse and enable plugins interactively. Because it takes no arguments, you must add the marketplace with the CLI.
 
 ## Configure the MCP Server
 
-The plugin declares its MCP server in a form Codex starts directly, so no separate registration is needed. Before the agent can use the server, choose the connections and paths it may access. See [Configuring the MCP Server](../configuring-the-mcp-server.md).
+Codex starts the MCP server directly from the plugin's configuration, so you don't need to register it separately. Before the agent can use the server, you must configure the connections and directories it may access. See [Configuring the MCP Server](../configuring-the-mcp-server/README.md).
 
 ## Register the MCP Server Manually
 
-If the MCP server doesn't start, register it explicitly with the script shipped in the plugin:
+If the MCP server doesn't start, register it with the script included in the plugin:
 
 {% tabs %}
 {% tab title="Linux and macOS" %}

@@ -49,4 +49,4 @@ The launcher scripts, `mariadb-mcp-launcher.sh` and `mariadb-mcp-launcher.cmd`, 
 
 ## MCP Server Configuration
 
-The connections and allowed paths are set with `mariadb-shell -- mcp setup` and stored in the MariaDB Shell configuration directory. See [Configuring the MCP Server](configuring-the-mcp-server.md) and the [MCP server documentation](https://github.com/mariadb-corporation/mariadb-shell-plugins/blob/main/mcp_plugin/README.md#configuration-mcpsetup).
+The connections and allowed paths are set with `mariadb-shell -- mcp setup` and stored in the MariaDB Shell configuration directory. See [Configuring the MCP Server](configuring-the-mcp-server/README.md) and the [MCP server documentation](https://github.com/mariadb-corporation/mariadb-shell-plugins/blob/main/mcp_plugin/README.md#configuration-mcpsetup).

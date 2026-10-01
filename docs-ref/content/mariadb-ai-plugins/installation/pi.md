@@ -6,7 +6,7 @@ description: >-
 
 # Pi
 
-Pi has no plugin marketplace and no built-in MCP support. The MariaDB AI Plugins repository is itself a Pi package, and MCP support comes from the community [`pi-mcp-adapter`](https://pi.dev/packages/pi-mcp-adapter) extension, which you install alongside it. Pi ships the `dev` plugin only.
+Pi has neither a plugin marketplace nor built-in MCP support. You therefore install the MariaDB AI Plugins repository as a Pi package, and add MCP support with the community extension [`pi-mcp-adapter`](https://pi.dev/packages/pi-mcp-adapter). Only the `dev` plugin is available for Pi.
 
 ## Install the MCP Adapter
 
@@ -46,7 +46,7 @@ Then run `/mcp reconnect mariadb`, or restart Pi. While the server isn't registe
 
 ## Configure the MCP Server
 
-Registering the server with Pi and configuring what it may access are separate steps. See [Configuring the MCP Server](../configuring-the-mcp-server.md).
+Registering the server with Pi doesn't configure which connections and directories it may access. For that step, see [Configuring the MCP Server](../configuring-the-mcp-server/README.md).
 
 {% hint style="warning" %}
 A project-local Pi package must be approved at run time with `--approve`. Without it, the package is configured but never loaded.

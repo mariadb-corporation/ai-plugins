@@ -5,7 +5,7 @@ description: >-
 
 # sandbox Tools
 
-The `sandbox.*` tools manage local, throwaway MariaDB Server instances. See [Sandbox Instances](../features/sandbox-instances.md) for an introduction.
+The `sandbox.*` tools deploy and manage local MariaDB Server instances for development and testing. For an introduction, see [Sandbox Instances](../features/sandbox-instances.md).
 
 ## Overview
 

@@ -9,7 +9,7 @@ description: >-
 
 ## MariaDB AI Plugins
 
-MariaDB AI Plugins bring first-class MariaDB support to AI coding agents. Each plugin packages a curated set of agent skills, which teach the agent MariaDB-specific SQL, tools, and connectors, together with the native `mariadb-shell` MCP server, which lets the agent work against a live MariaDB server. Plugins are available for Claude Code, Codex, OpenCode, and Pi.
+MariaDB AI Plugins extend AI coding agents such as Claude Code, Codex, OpenCode, and Pi with knowledge about MariaDB and with access to MariaDB databases. A plugin contains agent skills with MariaDB-specific guidance on SQL, client tools, and connectors, and it connects the agent to MariaDB Server through the `mariadb-shell` MCP server.
 
 {% content-ref url="mariadb-ai-plugins/" %}
 [mariadb-ai-plugins](mariadb-ai-plugins/)

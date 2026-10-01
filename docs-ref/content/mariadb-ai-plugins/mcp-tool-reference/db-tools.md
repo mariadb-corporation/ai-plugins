@@ -69,7 +69,7 @@ Returns structured details of an object: columns, keys, indexes, and constraints
 | `object_name` | The object's name. |
 | `object_type` | The object type. Default: `table`. |
 
-The result is structured data, not a `CREATE` statement. Agents call this before proposing a schema change.
+The result is returned as structured data rather than as a `CREATE` statement. The agent calls this tool before it proposes a schema change.
 
 ## db.execute_sql
 
@@ -81,7 +81,7 @@ Runs one statement on the connection's session.
 | `sql` | One SQL statement. |
 | `params` | Optional values for the statement's placeholders. |
 
-Use it for statements that return results, take parameters, or depend on session state or transactions.
+Use it for a single statement, in particular one that takes parameters or whose result rows the agent needs.
 
 ## db.execute_sql_script
 
@@ -90,11 +90,18 @@ Runs a multi-statement script.
 | Argument | Description |
 | --- | --- |
 | `connection_id` | A connection ID returned by `db.connect`. |
-| `sql_script` | The script text. |
+| `sql_script` | The script text. Pass either `sql_script` or `file_path`. |
 | `file_path` | A script file. Must be in an allowed path. |
+| `stop_on_error` | Whether the script stops at the first failed statement. Default: `True`. With `False`, every statement runs and each failure is reported. |
+| `limit` | Optional. The maximum number of rows that each `SELECT` without its own `LIMIT` returns. |
+| `column_metadata` | Whether each result set also includes column metadata. Default: `False`. |
 
-{% hint style="warning" %}
-`db.execute_sql_script` runs each statement in a new session. Anything that sets state in one statement and reads it in the next doesn't work: `SET @var`, `USE`, a `START TRANSACTION` and `COMMIT` pair, or MariaDB REST Service statements. Run those individually with `db.execute_sql` on one connection. For a create script with fully qualified object names, `db.execute_sql_script` is the right tool, and much faster.
+The statements run in order on the session of the connection, so session state carries over from one statement to the next. This includes user variables set with `SET @var`, the current schema set with `USE`, open transactions, and the current REST service and REST schema of MariaDB REST Service statements.
+
+The tool returns one entry for each statement that ran. A failed statement doesn't raise an error: its entry contains the error message and the statement text instead of result sets, so the agent must check every entry. A script isn't a transaction, and statements that ran before a failure keep their effect.
+
+{% hint style="info" %}
+If the connection's session was closed because it was idle or lost, the MCP server opens a new session before it runs the script, and the first entry contains `session_restarted: true`. In this case, state from earlier tool calls, such as temporary tables, user variables, the current schema, and an open transaction, no longer exists.
 {% endhint %}
 
 ## db.close

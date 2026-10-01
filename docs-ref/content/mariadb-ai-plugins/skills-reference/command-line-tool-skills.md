@@ -5,7 +5,7 @@ description: >-
 
 # Command-Line Tool Skills
 
-One skill per MariaDB command-line program, covering the options and behavior that differ from their MySQL counterparts.
+Each of these skills covers one MariaDB command-line program, with the options and behavior that differ from the corresponding MySQL program.
 
 | Skill | Plugins | What it covers |
 | --- | --- | --- |

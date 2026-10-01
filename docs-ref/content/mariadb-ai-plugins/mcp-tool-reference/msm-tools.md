@@ -5,7 +5,7 @@ description: >-
 
 # msm Tools
 
-The `msm.*` tools manage database schemas with MariaDB Schema Management (MSM): a versioned schema project, its releases, and the deployment scripts that create or upgrade a schema on a server. See [Versioned Schemas with Schema Management](../features/versioned-schemas-with-schema-management.md) for the workflow.
+The `msm.*` tools manage database schemas with MariaDB Schema Management (MSM). With these tools, the agent creates and edits versioned schema projects, prepares releases, and generates and deploys the scripts that create or upgrade a schema. See [Versioned Schemas with Schema Management](../features/versioned-schemas-with-schema-management.md) for the workflow.
 
 ## Overview
 

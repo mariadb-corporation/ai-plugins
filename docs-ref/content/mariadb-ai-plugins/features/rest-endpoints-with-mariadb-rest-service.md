@@ -1,12 +1,12 @@
 ---
 description: >-
-  Define REST endpoints for a MariaDB schema with the MariaDB REST Service SQL
-  statements, run by the agent through the mariadb-shell MCP server.
+  Create REST endpoints for a MariaDB schema with the MariaDB REST Service and
+  the mariadb-shell MCP server.
 ---
 
 # REST Endpoints with MariaDB REST Service
 
-The MariaDB REST Service turns schema objects into REST endpoints that serve and accept JSON. It is administered entirely through SQL statements, an extended `REST` grammar that MariaDB Shell understands, so the agent defines services and endpoints with the same MCP tools it uses for any other SQL.
+The MariaDB REST Service provides REST endpoints for schema objects, which return and accept JSON. You configure the REST Service with SQL statements that extend the SQL grammar with `REST` keywords. MariaDB Shell supports these statements, so the agent can create REST services and endpoints with the same MCP tools it uses to run other SQL statements.
 
 {% hint style="warning" %}
 As of MariaDB AI Plugins 26.9.5, you can define REST services and endpoints with MariaDB Shell, but the MariaDB REST Daemon that serves them isn't available.
@@ -31,10 +31,8 @@ The agent runs `CONFIGURE REST METADATA` once per server to create the REST Serv
 
 The agent creates a REST service, adds a REST schema to it, and exposes tables and views as REST data mapping views, and stored procedures and functions as REST procedures and functions.
 
-{% hint style="warning" %}
-REST Service statements depend on session state. The agent must run them one at a time with `db.execute_sql` on a single connection, not with `db.execute_sql_script`, which runs each statement in a new session.
-{% endhint %}
+Statements such as `USE REST SERVICE` and `USE REST SCHEMA` set the current REST service and REST schema for the following statements on the same connection. The agent can run the statements as a script with `db.execute_sql_script`, or one at a time with `db.execute_sql`; in both cases, they run on the session of the connection.
 
 ## Control Access
 
-The `mariadb-rest-service-authorization` skill covers requiring login on endpoints: REST authentication apps, REST users, REST roles, and the `GRANT` and `REVOKE` statements for REST privileges at the service, schema, and object level.
+To require authentication for endpoints, the agent uses the `mariadb-rest-service-authorization` skill. It covers REST authentication apps, REST users and roles, and the `GRANT` and `REVOKE` statements for REST privileges on services, schemas, and objects.

@@ -1,44 +1,43 @@
 ---
 description: >-
-  The two allow-lists that bound what an AI agent can reach through the
-  mariadb-shell MCP server, configured connections and allowed paths, and the
-  account privileges you choose.
+  How the mariadb-shell MCP server limits the databases and directories that
+  an AI agent can access.
 ---
 
 # Security Model
 
-The MCP server refuses everything it hasn't been told about. Two allow-lists, both set with `mariadb-shell -- mcp setup`, make up the whole model.
+The MCP server only accesses databases and directories that you have explicitly allowed. You define both in two allow-lists with `mariadb-shell -- mcp setup`. Within a database, the privileges of the MariaDB account determine what the agent can do.
 
 ## Connections
 
-The agent can't connect to a server you haven't configured. `db.connect` checks its argument against the configured connections, and `db.list_connections` is how the agent finds out which ones exist.
+The agent can only connect to the servers in the list of configured connections. `db.connect` checks each connection request against this list, and the agent calls `db.list_connections` to find out which connections exist.
 
-Matching normalizes equivalent spellings: a `mariadb://` or `mysql://` scheme, the host name's case, the default port, and an inline password all match the stored connection. A URI that asks for more than was configured is refused:
+When the MCP server compares a URI with the configured connections, it treats equivalent forms as equal, such as a `mariadb://` or `mysql://` scheme, a different capitalization of the host name, an explicit default port, or a password in the URI. It rejects a URI that requests more than the configured connection, for example a default schema or an additional option:
 
 ```
 root@127.0.0.1:3310/notes_app         → refused (a default schema)
 root@127.0.0.1:3310?ssl-mode=REQUIRED → refused (an option)
 ```
 
-The refusal is deliberate. Returning a connection that silently dropped the schema or the TLS requirement would be worse than refusing.
+The MCP server rejects these requests instead of ignoring the additional parts, because a connection without the requested schema or TLS setting could behave differently from what the agent expects.
 
 {% hint style="warning" %}
-The allow-list controls which server the agent reaches. The MariaDB account controls what the agent can do there. Give each configured connection a dedicated account with only the privileges it needs. Read-only access to one schema is a sensible setting, and far stronger than any instruction in a prompt.
+The list of connections controls which servers the agent can access, and the privileges of the MariaDB account control what the agent can do on these servers. Create a dedicated account for each connection, with only the privileges the agent needs, for example read-only access to a single schema. Account privileges restrict the agent more reliably than instructions in a prompt. See [Database Accounts for the MCP Server](configuring-the-mcp-server/database-accounts-for-the-mcp-server.md).
 {% endhint %}
 
 ## Paths
 
-Every tool that touches a file is limited to the allowed-paths list. This covers `db.execute_sql_script` with a `file_path`, all `msm.*` tools, and `sandbox.deploy` with a `sandbox_dir`. A path that isn't on the list falls back to an interactive confirmation, which an agent can't answer:
+All tools that access files are restricted to the directories in the allowed-paths list. This includes `db.execute_sql_script` with a `file_path`, all `msm.*` tools, and `sandbox.deploy` with a `sandbox_dir`. For a path outside these directories, the MCP server asks for an interactive confirmation, which the agent can't give. As a result:
 
 * The `msm.*` tools fail.
 * `sandbox.deploy` stops responding.
 
-Both mean the same thing: add the directory with `mcp setup`.
+In both cases, add the directory with `mcp setup`.
 
 ## Connections Created by Sandboxes
 
-`sandbox.deploy` registers `root@127.0.0.1:<port>` with its password, so the agent can connect to the instance it just created. This is the only way a connection appears without you configuring it, and it points only at a local, throwaway server.
+`sandbox.deploy` registers `root@127.0.0.1:<port>` with its password, so that the agent can connect to the new instance. This is the only case in which the MCP server adds a connection without your configuration, and the connection points to the local sandbox instance only.
 
 ## Credentials
 
-Passwords are stored in MariaDB Shell's secret store, which uses the platform's secret storage. They are kept separately from your regular MariaDB Shell connections and never written to a file the agent can read. The `migrator.set_config` tool refuses passwords for the same reason.
+Passwords are stored in the MariaDB Shell secret store, which uses the secret storage of the operating system. They are kept separately from your other MariaDB Shell connections and are never written to a file that the agent can read. The `migrator.set_config` tool refuses passwords for the same reason.

@@ -1,15 +1,15 @@
 ---
 description: >-
-  Reference for the skills maintained in the MariaDB AI Plugins repository itself: schema scripts, MariaDB REST Service, schema management, migration, and Laravel.
+  Reference for the skills maintained in the MariaDB AI Plugins repository, including skills for the MariaDB REST Service, schema management, and the migration from MySQL.
 ---
 
 # Additional Skills
 
-Skills maintained in the `additional-skills/` directory of the MariaDB AI Plugins repository, rather than vendored from the MariaDB documentation. Many of them drive the MCP server's tools.
+These skills are maintained in the `additional-skills/` directory of the MariaDB AI Plugins repository rather than in the MariaDB documentation. Most of them describe workflows that use the tools of the MCP server.
 
 ## SQL Scripts
 
-Writing schema create scripts.
+Skills for writing SQL scripts that create a schema.
 
 | Skill | Plugins | What it covers |
 | --- | --- | --- |
@@ -17,7 +17,7 @@ Writing schema create scripts.
 
 ## MariaDB REST Service
 
-Creating and managing REST endpoints with the MariaDB REST Service.
+Skills for creating and managing REST endpoints with the MariaDB REST Service.
 
 | Skill | Plugins | What it covers |
 | --- | --- | --- |
@@ -29,7 +29,7 @@ Creating and managing REST endpoints with the MariaDB REST Service.
 
 ## Schema Management
 
-The MariaDB Schema Management (MSM) project lifecycle, driven by the `msm.*` tools.
+Skills for the project lifecycle of MariaDB Schema Management (MSM), which use the `msm.*` tools.
 
 | Skill | Plugins | What it covers |
 | --- | --- | --- |
@@ -41,7 +41,7 @@ The MariaDB Schema Management (MSM) project lifecycle, driven by the `msm.*` too
 
 ## MySQL to MariaDB Migration
 
-Migrating a MySQL database to MariaDB, driven by the optional `migrator.*` tools.
+Skills for migrating a MySQL database to MariaDB, which use the optional `migrator.*` tools.
 
 | Skill | Plugins | What it covers |
 | --- | --- | --- |
@@ -55,7 +55,7 @@ Migrating a MySQL database to MariaDB, driven by the optional `migrator.*` tools
 
 ## Laravel
 
-Using MariaDB from Laravel applications. Shipped with the `dev` plugin only.
+Skills for using MariaDB in Laravel applications. These skills are included in the `dev` plugin only.
 
 | Skill | Plugins | What it covers |
 | --- | --- | --- |

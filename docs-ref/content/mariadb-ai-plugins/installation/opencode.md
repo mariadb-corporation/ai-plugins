@@ -6,7 +6,7 @@ description: >-
 
 # OpenCode
 
-OpenCode has no central plugin marketplace, so you add the two parts of the plugin to your OpenCode configuration yourself.
+OpenCode doesn't have a plugin marketplace. Instead, you register the MCP server in your OpenCode configuration and make the skills available to OpenCode yourself.
 
 ## Get the Plugin
 
@@ -45,4 +45,4 @@ ln -s "$MARIADB_DEV_PLUGIN/skills" .opencode/skills/mariadb
 
 ## Configure the MCP Server
 
-Before the agent can use the MCP server, choose the connections and paths it may access. See [Configuring the MCP Server](../configuring-the-mcp-server.md).
+Before the agent can use the MCP server, you must configure the connections and directories it may access. See [Configuring the MCP Server](../configuring-the-mcp-server/README.md).

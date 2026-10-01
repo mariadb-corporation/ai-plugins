@@ -1,12 +1,12 @@
 ---
 description: >-
-  Reference for the tools of the mariadb-shell MCP server: db, msm, and
-  sandbox, and the optional migrator group.
+  Reference for the db, msm, sandbox, and migrator tools of the mariadb-shell
+  MCP server.
 ---
 
 # MCP Tool Reference
 
-The `mariadb-shell` MCP server exposes 28 tools in three groups, plus an optional fourth group that appears only when the migration tooling is installed.
+The `mariadb-shell` MCP server provides 28 tools in three groups. A fourth, optional group is available when the migration tooling is installed.
 
 | Group | Tools | What they do |
 | --- | --- | --- |

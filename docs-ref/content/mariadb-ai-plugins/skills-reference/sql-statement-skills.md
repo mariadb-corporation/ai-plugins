@@ -5,7 +5,7 @@ description: >-
 
 # SQL Statement Skills
 
-One skill per SQL statement. Each one covers the MariaDB-specific syntax and behavior that a generic SQL answer gets wrong, such as online DDL algorithms on `ALTER TABLE`, atomic `CREATE OR REPLACE`, and `RETURNING` on `INSERT`.
+Each of these skills covers one SQL statement, with the MariaDB-specific syntax and behavior that general SQL knowledge often gets wrong, for example the online DDL algorithms of `ALTER TABLE`, atomic `CREATE OR REPLACE`, and `RETURNING` in `INSERT`.
 
 | Skill | Plugins | What it covers |
 | --- | --- | --- |
