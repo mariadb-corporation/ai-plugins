@@ -65,23 +65,19 @@ Full steps are in [`opencode/dev-plugin/README.md`]({{ site.repo }}/blob/main/op
 
 ### Pi
 
-Pi installs this repository itself as a package — the `pi` field in the
-repo-root `package.json` is the manifest. Pi has no built-in MCP support, so the
-community `pi-mcp-adapter` is installed alongside it, not pulled in by it:
+Pi 1.0 or later installs this repository itself as a package — the `pi` field in
+the repo-root `package.json` is the manifest. The package's extension registers
+the MCP server with Pi's built-in MCP support, so one command does it all:
 
 ```sh
-pi install npm:pi-mcp-adapter                   # once — connects pi to MCP servers
-pi install git:github.com/{{ site.install_org }}/ai-plugins       # skills + extension
+pi install git:github.com/{{ site.install_org }}/ai-plugins       # skills + extension + MCP server
 # …or from a local checkout, at the repo root:  pi install .
 ```
 
-Then register the server from inside pi and reconnect:
-
-```text
-/mariadb-mcp-setup            # writes the global ~/.config/mcp/mcp.json
-/mariadb-mcp-setup --project  # …or ./.mcp.json, for this project only
-/mcp reconnect mariadb
-```
+Run `/mcp` inside pi to see the `mariadb` server. If you still have
+`pi-mcp-adapter` from an older Pi, remove it (`pi remove npm:pi-mcp-adapter`)
+and turn the built-in `mcp` back on in `pi config`. The adapter replaces the
+built-in MCP support.
 
 ### Check that the skills arrived
 
