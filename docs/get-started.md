@@ -230,3 +230,8 @@ shell's bundled Python as a workaround:
 `/plugin` lists what is installed; in Codex, `/plugins`. In pi, remember that a
 project-local package needs `--approve` at run time or it is configured and
 never loaded.
+
+**In pi, `/mcp` doesn't list the `mariadb` server.** You need Pi 1.0 or later,
+and no `pi-mcp-adapter`: the adapter replaces Pi's built-in MCP, so the server
+the plugin registers never connects. Run `pi remove npm:pi-mcp-adapter`, then
+turn the built-in `mcp` back on in `pi config`.
