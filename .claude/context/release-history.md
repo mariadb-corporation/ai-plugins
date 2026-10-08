@@ -76,7 +76,7 @@ at **https://ai-plugins.mariadb.com/**.
 - Branch `wip/26.10.1` off `1c433bb` (#41's checkpoint merge), five commits, one per step:
   `7494ae8` floor → 26.10.0 (31 files; 33 at 26.9.5 minus the two Pi files #37 removed),
   `9ad453b` plugin version → 26.10.1 (17 files), `48e5f9f` re-vendor, `296e07f` CHANGELOGs,
-  then this checkpoint.
+  `07c530c` checkpoint, `d8f1349` a multi-tenant note in both MCP tool references (see below).
 - **First release since 26.9.5 that moves the shell floor**: mariadb-shell `v26.10.0` was
   published 2026-10-08 (prerelease, the newest), so `set-mariadb-shell-version.sh 26.10.0` ran
   first. Plugin version 26.10.1 (highest tag before it: `v26.10.0`).
@@ -92,6 +92,14 @@ at **https://ai-plugins.mariadb.com/**.
   into `[26.10.1]` as `### Fixed`. All ten CHANGELOGs got the re-vendor + version entry; the
   seven MCP-bearing ones also the floor line.
 - Static tier green: claude 682, codex 686, opencode 682, pi 691 (same as 26.10.0).
+- **mariadb-shell 26.10.0 is the first with the MCP server's multi-tenant mode** (mcp_plugin
+  PR #37, `a5ad8bdf`, 2026-10-07). Checked against this repo on 2026-10-08: tool names and
+  counts unchanged (8 / 12 / 8 + 4); the launchers' stdio start is unaffected (a server
+  configured `--multiTenant=true` refuses stdio with a clear error, so nothing to handle);
+  the new `--toolNameSeparator` defaults to `.`, which is what every doc and skill names.
+  The one doc gap: a multi-tenant server serves only `db` and `msm`, so one paragraph was
+  added under the group table of `docs/mcp-tools.md` and `docs-ref/.../mcp-tool-reference/README.md`
+  (user's call: nothing more about the mode, the plugins launch the server themselves).
 - Still to do after the PR merges (steps 9–11 of `/release`): tag `v26.10.1` on the squash
   commit, push to both remotes, prereleases on both repos, fast-forward `fork/main` (at
   `68bd7d4`, three commits behind), delete `wip/26.10.1`, checkpoint PR.

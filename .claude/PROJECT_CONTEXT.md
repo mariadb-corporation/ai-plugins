@@ -43,12 +43,12 @@ layout, the context-file table and the current git state.
 (`PROJECT_CONTEXT.md`, `context/{release-history,current-state,next-steps,gotchas}.md`),
 to be committed on `wip/26.10.1`.
 
-`git branch --show-current`: **`wip/26.10.1`**, five commits ahead of `main` = `origin/main`
-= `1c433bb` (#41's checkpoint merge): floor, plugin version, re-vendor, CHANGELOGs, checkpoint.
-Not yet pushed; the release PR opens next. `fork/main` is at `68bd7d4` (#39), three commits
+`git branch --show-current`: **`wip/26.10.1`** = `origin/wip/26.10.1`, seven commits ahead of
+`main` = `origin/main` = `1c433bb` (#41's checkpoint merge): floor, plugin version, re-vendor,
+CHANGELOGs, checkpoint, the multi-tenant tool-reference note, this checkpoint fix. **PR #42 is open.** `fork/main` is at `68bd7d4` (#39), three commits
 behind `origin/main` — synced after the release merges.
 
-**Open PRs**: none yet (release 26.10.1 about to open). Recently merged: **#41** `2a6ab29`
+**Open PRs**: **#42** (release 26.10.1, `wip/26.10.1`), awaiting the user's review and merge. Recently merged: **#41** `2a6ab29`
 (MSM skill fixes), **#40** `7f0f593` (26.10.0 checkpoint), **#39** `68bd7d4` (release 26.10.0).
 
 **Tags and releases run v26.9.0 → v26.9.5, then v26.10.0, with no gaps**, each an
