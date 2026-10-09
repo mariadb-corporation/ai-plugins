@@ -62,9 +62,10 @@
 - **Codemode helpers are async and tools live on `tools.`**: `await describeNamespace("mcp__mariadb")`, `await tools.mcp__mariadb__db_list_connections({})`. A weak model that forgets `await` logs `{}` and concludes the server is empty — hand it the exact script.
 - **With Pi 1.0 an e2e model reaches the user's saved connections over MCP** (e.g. `root@127.0.0.1:3313`): an open-ended schema prompt made it create/drop `notes_app_probe` there for 15 min until the timeout. Prompts must pin the scope and forbid DB access; checked afterwards — nothing left behind.
 
-- **`/release`'s `$2` placeholder is never expanded.** Seen twice (2026-10-08 nested in
-  `/read-checkpoint`'s arguments, 2026-10-09 as a plain `/release 26.10.2 26.10.2`): the
-  expanded command text carries `$1`'s value but a literal `$2`, so the shell-floor argument
-  is invisible to the command body. The command file is fine; it is the harness that only
-  substitutes the first positional. Always read both versions off the user's own command
-  line before acting, and never treat a literal `$2` as "no floor given".
+- **Slash-command placeholders: only `$1` (and `$ARGUMENTS`) expand; `$2` arrives literal.** Seen
+  twice with `/release` (2026-10-08 nested in `/read-checkpoint`'s arguments, 2026-10-09 as a
+  plain `/release 26.10.2 26.10.2`): the body got `$1`'s value and a literal `$2`, so the floor
+  argument was invisible. **Fixed on `wip/26.10.2`**: `release.md` now takes `$ARGUMENTS` and
+  splits it itself (first word the plugin version, second the floor, a third word stops it).
+  Write any future command with more than one argument the same way, and if a command body
+  ever shows a literal `$N`, read the arguments off the user's own command line.
