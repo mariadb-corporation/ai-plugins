@@ -1,6 +1,6 @@
 # MariaDB plugin for Codex
 
-Version **26.10.1**
+Version **26.10.2**
 
 This plugin gives [OpenAI Codex](https://developers.openai.com/codex/) first-class
 MariaDB support through two parts:
