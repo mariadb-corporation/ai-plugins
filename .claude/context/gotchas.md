@@ -65,7 +65,7 @@
 - **Slash-command placeholders: only `$1` (and `$ARGUMENTS`) expand; `$2` arrives literal.** Seen
   twice with `/release` (2026-10-08 nested in `/read-checkpoint`'s arguments, 2026-10-09 as a
   plain `/release 26.10.2 26.10.2`): the body got `$1`'s value and a literal `$2`, so the floor
-  argument was invisible. **Fixed on `wip/26.10.2`**: `release.md` now takes `$ARGUMENTS` and
+  argument was invisible. **Fixed in #44** (`13685aa`): `release.md` now takes `$ARGUMENTS` and
   splits it itself (first word the plugin version, second the floor, a third word stops it).
   Write any future command with more than one argument the same way, and if a command body
   ever shows a literal `$N`, read the arguments off the user's own command line.
