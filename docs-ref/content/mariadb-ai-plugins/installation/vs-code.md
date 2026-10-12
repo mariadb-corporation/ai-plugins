@@ -15,10 +15,10 @@ In VS Code, the MariaDB AI Plugins are part of the MariaDB extension for VS Code
 
 ## Install the Extension
 
-Install the MariaDB extension, `MariaDB.mariadb-ext`, from the Extensions view of VS Code, or from the command line:
+Install the MariaDB extension, `MariaDB.mariadb-dev`, from the Extensions view of VS Code, or from the command line:
 
 ```bash
-code --install-extension MariaDB.mariadb-ext
+code --install-extension MariaDB.mariadb-dev
 ```
 
 The skills are available to Copilot as soon as the extension is installed. The MCP server is listed in VS Code as **MariaDB**. To see it, run this command from the Command Palette:

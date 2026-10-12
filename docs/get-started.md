@@ -85,7 +85,7 @@ In VS Code there is nothing to wire up: install the **MariaDB extension for VS
 Code** and Copilot has the `dev` skills and the MCP server.
 
 ```sh
-code --install-extension MariaDB.mariadb-ext
+code --install-extension MariaDB.mariadb-dev
 ```
 
 The server shows up as **MariaDB** under *MCP: List Servers* in the Command

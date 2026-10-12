@@ -95,13 +95,13 @@ below.
 ### VS Code (GitHub Copilot)
 
 Copilot gets the plugin from the **MariaDB extension for VS Code**
-(`MariaDB.mariadb-ext`), not from this repo directly. The extension contributes
+(`MariaDB.mariadb-dev`), not from this repo directly. The extension contributes
 the `dev` skills of the newest release here to Copilot, and offers Copilot the
 `mariadb-shell` MCP server as **MariaDB** in VS Code's MCP server list — no
 configuration files to edit:
 
 ```sh
-code --install-extension MariaDB.mariadb-ext
+code --install-extension MariaDB.mariadb-dev
 ```
 
 The first time Copilot starts the server, the extension installs MariaDB Shell
