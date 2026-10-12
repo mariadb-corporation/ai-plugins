@@ -139,7 +139,8 @@ Each harness ships the same three variants, all built by the same
 </div>
 
 The folders are `<harness>/{dev,sql,contributor}-plugin/` for `claude/`,
-`codex/` and `opencode/`. `pi/` ships `dev` only.
+`codex/` and `opencode/`. `pi/` ships `dev` only. VS Code has no folder at all —
+see below.
 
 ## How the harnesses differ
 
@@ -154,6 +155,12 @@ The content is identical; the packaging is not.
   whole repository installs as one package. Its extension registers the MCP
   server with Pi's built-in MCP support (Pi 1.0+), which exposes the tools
   through codemode by default.
+- **VS Code** (GitHub Copilot) gets the plugin from the **MariaDB extension for
+  VS Code**, not from this repository. When the extension is built, it copies
+  `claude/dev-plugin/skills` from the newest ai-plugins release and contributes
+  those skills to Copilot. At run time it registers the `mariadb-shell` MCP
+  server with VS Code itself, so there is no launcher script and no config file
+  — and it installs MariaDB Shell the first time Copilot starts the server.
 
 ## Why the skills are vendored
 

@@ -30,6 +30,7 @@ The Model Context Protocol (MCP) is a standard interface through which AI agents
 | [Codex](https://openai.com/codex) | `dev`, `sql`, `contributor` | Plugin marketplace |
 | [OpenCode](https://opencode.ai) | `dev`, `sql`, `contributor` | Manual configuration |
 | [Pi](https://pi.dev) | `dev` | Pi package |
+| [GitHub Copilot in VS Code](https://code.visualstudio.com/docs/copilot/overview) | `dev` | MariaDB extension for VS Code |
 
 See [Plugin Variants](plugin-variants.md) for what each variant contains.
 

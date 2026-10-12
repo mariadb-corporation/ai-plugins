@@ -1,7 +1,7 @@
 ---
 description: >-
   MariaDB AI Plugins add MariaDB skills and the mariadb-shell MCP server to the
-  Claude Code, Codex, OpenCode, and Pi coding agents.
+  Claude Code, Codex, OpenCode, Pi, and GitHub Copilot coding agents.
 icon: robot
 ---
 
@@ -35,7 +35,7 @@ An overview of the plugins, the coding agents they support, and the MariaDB and 
 {% endcolumn %}
 
 {% column %}
-How to install a plugin in Claude Code, Codex, OpenCode, or Pi.
+How to install a plugin in Claude Code, Codex, OpenCode, Pi, or VS Code.
 {% endcolumn %}
 {% endcolumns %}
 

@@ -31,6 +31,7 @@ Check that the harness loaded the plugin:
   /plugins
   ```
 * Pi: a project-local package must be approved at run time with `--approve`, or it is configured but never loaded.
+* VS Code: check that the MariaDB extension for VS Code is installed and enabled, and that the `mariadb.copilot.enabled` setting is on.
 
 ## The MCP Server Doesn't Start
 
@@ -38,6 +39,7 @@ Check that the harness loaded the plugin:
 * To use a MariaDB Shell you installed yourself, set `MARIADB_SHELL_BIN`. See [Configuration Reference](configuration-reference.md).
 * For Codex, register the server manually. See [Codex](installation/codex.md#register-the-mcp-server-manually).
 * For Pi, the server requires Pi 1.0 or later and the built-in MCP support of Pi. An installed `pi-mcp-adapter` replaces the built-in support, so the `mariadb` server never connects. Remove the adapter and turn the built-in `mcp` back on. See [Pi](installation/pi.md#upgrade-from-pi-mcp-adapter).
+* For VS Code, the MariaDB extension for VS Code installs MariaDB Shell before the server starts. If that fails, open the **MariaDB** output channel, which records the installation and the reason for the failure.
 
 ## A Sandbox Doesn't Work
 
