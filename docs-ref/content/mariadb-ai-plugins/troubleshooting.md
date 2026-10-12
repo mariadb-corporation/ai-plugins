@@ -36,7 +36,7 @@ Check that the harness loaded the plugin:
 ## The MCP Server Doesn't Start
 
 * The first start downloads MariaDB Shell, which can take a minute. Check the harness's MCP log; the launcher writes all of its messages to standard error.
-* To use a MariaDB Shell you installed yourself, set `MARIADB_SHELL_BIN`. See [Configuration Reference](configuration-reference.md).
+* To use a MariaDB Shell you installed yourself, set `MARIADB_SHELL_BIN`. See [Configuration Reference](configuration-reference.md). In VS Code, put it on the `PATH` instead; the MariaDB extension for VS Code doesn't read `MARIADB_SHELL_BIN`.
 * For Codex, register the server manually. See [Codex](installation/codex.md#register-the-mcp-server-manually).
 * For Pi, the server requires Pi 1.0 or later and the built-in MCP support of Pi. An installed `pi-mcp-adapter` replaces the built-in support, so the `mariadb` server never connects. Remove the adapter and turn the built-in `mcp` back on. See [Pi](installation/pi.md#upgrade-from-pi-mcp-adapter).
 * For VS Code, the MariaDB extension for VS Code installs MariaDB Shell before the server starts. If that fails, open the **MariaDB** output channel, which records the installation and the reason for the failure.

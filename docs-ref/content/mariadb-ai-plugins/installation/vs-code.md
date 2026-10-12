@@ -41,4 +41,4 @@ The `mariadb.copilot.enabled` setting controls both the skills and the MCP serve
 
 ## Configure the MCP Server
 
-Before the agent can use the MCP server, you must configure the connections and directories it may access. In VS Code, you can allow a connection from the extension's **Connections** view: edit the connection and select **MCP access**. Connections with MCP access show `MCP` in the view. You can also use the same setup as for every other harness; see [Configuring the MCP Server](../configuring-the-mcp-server/README.md).
+Before the agent can use the MCP server, you must configure the connections and directories it may access. In VS Code, you can allow a connection from the extension's **Connections** view: edit the connection and select **Allow MCP access to this connection**. Connections with MCP access show `MCP` in the view. You can also use the same setup as for every other harness; see [Configuring the MCP Server](../configuring-the-mcp-server/README.md).

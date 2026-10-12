@@ -30,7 +30,7 @@ The launcher scripts, `mariadb-mcp-launcher.sh` and `mariadb-mcp-launcher.cmd`, 
 
 ## VS Code Settings
 
-In VS Code, the MariaDB extension for VS Code starts MariaDB Shell itself, so the launcher environment variables don't apply. The extension reads `MARIADB_SHELL_PREFIX` to decide where it installs MariaDB Shell and looks for it.
+In VS Code, the MariaDB extension for VS Code starts MariaDB Shell itself, so the launcher environment variables don't apply. The extension uses a MariaDB Shell on the `PATH` when it is new enough. Otherwise it reads `MARIADB_SHELL_PREFIX` to decide where it looks for an installed MariaDB Shell and where it installs one.
 
 | Setting | Default | Description |
 | --- | --- | --- |

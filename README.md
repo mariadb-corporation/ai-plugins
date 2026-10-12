@@ -109,8 +109,9 @@ if there is none. Each extension build picks up the skills of the newest
 ai-plugins release, so a release here reaches Copilot with the next extension
 release. The `mariadb.copilot.enabled` setting turns both off.
 
-The extension's **Connections** view can stand in for `mcp setup`: tick **MCP
-access** on a connection to let the agent open it. Otherwise configure the
+The extension's **Connections** view can stand in for `mcp setup`: tick **Allow
+MCP access to this connection** on a connection to let the agent open it.
+Otherwise configure the
 server as for the other harnesses — see
 [Configure the MCP server](#configure-the-mcp-server-all-harnesses) below.
 

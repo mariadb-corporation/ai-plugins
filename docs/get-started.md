@@ -23,9 +23,10 @@ do not have to understand the protocol to use any of this.
 ## Step 1 — Install the plugin
 {: #step-1-install-the-plugin}
 
-Pick your harness. Each one ships the same three plugin variants — `dev` (the
-full set), `sql` (a SQL-focused subset) and `contributor` (for working on
-MariaDB tooling itself). Unless you know you want otherwise, install `dev`.
+Pick your harness. Claude Code, Codex and OpenCode ship three plugin variants —
+`dev` (the full set), `sql` (a SQL-focused subset) and `contributor` (for
+working on MariaDB tooling itself); Pi and VS Code ship `dev` only. Unless you
+know you want otherwise, install `dev`.
 
 <div class="callout" markdown="1">
 On first start the plugin downloads and extracts the `mariadb-shell` package
@@ -128,8 +129,9 @@ agent run once first, or install the shell yourself before configuring it.
 
 <div class="callout callout--tip" markdown="1">
 **In VS Code, the Connections view does it for you.** Add or edit a connection
-in the MariaDB extension's **Connections** view and tick **MCP access** — it
-then goes into the same list `mcp setup` writes, and the view marks it `MCP`.
+in the MariaDB extension's **Connections** view and tick **Allow MCP access to
+this connection** — it then goes into the same list `mcp setup` writes, and the
+view marks it `MCP`.
 The password goes into the shell's secret store either way.
 </div>
 
@@ -254,7 +256,8 @@ shell's bundled Python as a workaround:
 **Nothing at all happened.** Check the plugin actually loaded. In Claude Code,
 `/plugin` lists what is installed; in Codex, `/plugins`. In pi, remember that a
 project-local package needs `--approve` at run time or it is configured and
-never loaded.
+never loaded. In VS Code, check that the MariaDB extension is installed and
+enabled, and that the `mariadb.copilot.enabled` setting is on.
 
 **In pi, `/mcp` doesn't list the `mariadb` server.** You need Pi 1.0 or later,
 and no `pi-mcp-adapter`: the adapter replaces Pi's built-in MCP, so the server

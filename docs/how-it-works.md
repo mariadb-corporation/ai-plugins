@@ -125,7 +125,7 @@ agent just created.
 
 ## The plugin variants
 
-Each harness ships the same three variants, all built by the same
+There are three variants, all built by the same
 [`scripts/sync-skills.sh`]({{ site.repo }}/blob/main/scripts/sync-skills.sh):
 
 <div class="table-wrap" markdown="1">
