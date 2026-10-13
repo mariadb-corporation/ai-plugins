@@ -83,10 +83,10 @@ The agent cannot invent a host. `db.connect` checks its argument against the
 configured connections, and `db.list_connections` is what an agent calls first
 to find out what exists.
 
-The matching normalizes equivalent spellings — a `mariadb://` or `mysql://`
-scheme, host case, the default port, an inline password — so all of those open
-the stored connection. What is refused is a URI asking for **more** than was
-configured:
+The matching normalizes equivalent spellings — a `mariadb://` scheme, host case,
+the default port, an inline password — so all of those open the stored
+connection. A `mysql://` scheme is not accepted. What is also refused is a URI
+asking for **more** than was configured:
 
 ```text
 root@127.0.0.1:3310/notes_app        → refused (a default schema)
