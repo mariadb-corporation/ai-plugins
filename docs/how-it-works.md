@@ -139,7 +139,7 @@ Each harness ships the same three variants, all built by the same
 </div>
 
 The folders are `<harness>/{dev,sql,contributor}-plugin/` for `claude/`,
-`codex/` and `opencode/`. `pi/` ships `dev` only.
+`codex/`, `opencode/` and `hermes/`. `pi/` ships `dev` only.
 
 ## How the harnesses differ
 
@@ -154,6 +154,13 @@ The content is identical; the packaging is not.
   whole repository installs as one package. Its extension registers the MCP
   server with Pi's built-in MCP support (Pi 1.0+), which exposes the tools
   through codemode by default.
+- **Hermes Agent** has no marketplace either. Each plugin folder is a portable
+  **Agent Plugins v1** package — a root `plugin.json`, `skills/` and, for `dev`
+  and `sql`, an `mcp.json` declaring the server — that Hermes installs straight
+  from the repository with `hermes plugins install …#hermes/dev-plugin`. The
+  tools reach the model as `mcp__mariadb__<tool>`, and the skills sit under a
+  namespace Hermes derives from the plugin. `mcp.json` cannot branch per OS, so
+  native Windows points Hermes' `config.yaml` at the `.cmd` launcher instead.
 
 ## Why the skills are vendored
 
