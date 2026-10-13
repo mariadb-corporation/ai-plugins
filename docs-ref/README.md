@@ -31,8 +31,9 @@ npm run build     # static build → build/, then: npm run serve
 From the repository root: `npm run docs-ref`, `npm run docs-ref:build`,
 `npm run docs-ref:serve`.
 
-The build fails on a broken link or a missing `content-ref` target, so a clean
-build is a useful check before porting.
+The build fails on a broken link, a missing `content-ref` target, a link to a
+heading anchor that GitBook doesn't publish, or a `description` over 200
+characters, so a clean build is a useful check before porting.
 
 ## Publishing the preview on a web server
 
@@ -102,6 +103,18 @@ fills three gaps, without patching the package:
   source instead.
 - **The `description`** is rendered as the lead paragraph, and **directory
   links** (`[x](dir/)`) are resolved to the directory's `README.md`.
+
+[`src/remark/gitbook-heading-ids.js`](src/remark/gitbook-heading-ids.js)
+makes the preview's checks match GitBook's:
+
+- **Heading ids** follow GitBook's rules, not Docusaurus's. GitBook keeps dots
+  and underscores (`## db.connect` → `#db.connect`, where Docusaurus makes
+  `#dbconnect`), numbers duplicates in one namespace with `{% tab %}` titles,
+  and gives h5 and h6 no id. With `onBrokenAnchors: 'throw'`, a link to an
+  anchor that GitBook doesn't publish fails the build. The rules are a port of
+  the fragment checker in mariadb-docs (`.claude/hooks/fragcheck.py`).
+- **A `description` over 200 characters** fails the build, because GitBook
+  cuts it there, mid-word.
 
 [`src/theme/Navbar`](src/theme/Navbar/index.js) adds the space-tab row of the
 mariadb.com/docs header, and [`src/css/mariadb-gitbook.css`](src/css/mariadb-gitbook.css)
