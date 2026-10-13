@@ -137,8 +137,9 @@ MariaDB AI RAG. The preview uses the same URL layout.
    `content/SUMMARY.md` to `tools/SUMMARY.md`.
 3. Add the `## MariaDB AI Plugins` section of `content/README.md` to
    `tools/README.md`.
-4. Rewrite links to other spaces as link aliases, e.g.
-   `https://mariadb.com/docs/server/security/cve` → `{server}/security/cve`
-   (see `dev-docs/link-aliases.md` there). The preview keeps absolute URLs
-   because it cannot resolve aliases.
+4. Copy the files unchanged. Keep links to other spaces as absolute URLs
+   (`https://mariadb.com/docs/server/security/cve`), not link aliases. In
+   mariadb-docs, a bot rewrites aliases on every PR, and the synced files must
+   stay identical to these, so that a contributor's edit to a synced page in
+   mariadb-docs can be applied here as a PR.
 5. Run `docs-check` in mariadb-docs before opening the PR.
