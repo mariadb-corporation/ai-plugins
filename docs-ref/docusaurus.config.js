@@ -130,9 +130,11 @@ const config = {
           showLastUpdateTime: false,
           beforeDefaultRemarkPlugins: [
             remarkGitBookPrepare,
+            // Before remarkGitBook: it re-parses the body of every GitBook
+            // block, so a heading inside one loses its source position.
+            remarkGitBookHeadingIds,
             remarkGitBook,
             remarkGitBookExtras,
-            remarkGitBookHeadingIds,
           ],
           rehypePlugins: [rehypeGitBook],
         },

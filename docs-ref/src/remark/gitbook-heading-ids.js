@@ -37,9 +37,15 @@
 // Docusaurus slugifies an id that a plugin sets in `hProperties`, which would
 // drop the dots again, but takes an explicit `{#id}` heading id verbatim. So
 // the id is appended as `{#id}` in the syntax tree (never in the source),
-// before Docusaurus's own heading plugin runs:
+// before Docusaurus's own heading plugin runs.
 //
-//   beforeDefaultRemarkPlugins: [..., remarkGitBookHeadingIds]
+// It runs before remarkGitBook, which re-parses the body of every GitBook
+// block (`{% hint %}`, `{% tabs %}`, `{% stepper %}`, ...) from a string, so
+// a heading inside a block would otherwise carry the line number within the
+// block, not within the file. The appended `{#id}` text survives that
+// round trip, since the heading is serialised with its children:
+//
+//   beforeDefaultRemarkPlugins: [remarkGitBookPrepare, remarkGitBookHeadingIds, remarkGitBook, ...]
 
 import { visit } from 'unist-util-visit';
 
