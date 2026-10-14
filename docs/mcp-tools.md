@@ -218,10 +218,9 @@ serves the REST services defined in a server's REST metadata. See
 
 </div>
 
-A sandbox's deployment lives in `<sandboxDir>/<port>/mariadb-restd` and listens on
-ten times the sandbox's port (33110 for 3311) when that is free; any other
-server's lives in `~/.mariadb-restd/<host>_<port>` and listens on the first free
-port from 8443 up. Both serve HTTPS with a self-signed certificate, and **the
+A sandbox's deployment lives in `<sandboxDir>/<port>/mariadb-restd`, any other
+server's in `~/.mariadb-restd/<host>_<port>`; each daemon listens on the first
+free port from 8443 up. Both serve HTTPS with a self-signed certificate, and **the
 daemon outlives the MCP server**. A sandbox's daemon follows its sandbox:
 `sandbox.start` starts it after the server, `sandbox.stop` and `sandbox.kill`
 stop it first, and `sandbox.delete` stops it before the folder goes.

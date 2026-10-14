@@ -29,7 +29,7 @@ A deployment is a folder that holds a daemon's configuration, keyring, TLS certi
 
 | Server | Deployment folder | Daemon port |
 | --- | --- | --- |
-| A sandbox instance | `<sandbox_dir>/<port>/mariadb-restd`, inside the instance's folder. | Ten times the instance's port when that port is free, for example 33110 for an instance on port 3311. Otherwise, the first free port from 8443 up. |
+| A sandbox instance | `<sandbox_dir>/<port>/mariadb-restd`, inside the instance's folder. | The first free port from 8443 up. |
 | Any other server | `~/.mariadb-restd/<host>_<port>`. On Windows, `%APPDATA%\MariaDB\mariadb-restd\<host>_<port>`. | The first free port from 8443 up. |
 
 The daemon serves HTTPS with a self-signed certificate, and logs to `log/mariadb-restd.log` in its deployment folder. It runs detached from the MCP server and keeps running after the MCP server ends.
@@ -119,7 +119,7 @@ Returns one entry for each deployment, with the following fields.
 | `host` | The host of the server that the daemon serves. |
 | `server_port` | The port of that server. |
 | `port` | The port that the daemon listens on. |
-| `url` | The daemon's URL, such as `https://localhost:33110`. |
+| `url` | The daemon's URL, such as `https://localhost:8443`. |
 | `status` | `running` or `stopped`. |
 | `pid` | The daemon's process ID. `None` when the daemon is stopped. |
 | `log_path` | The daemon's log file. |
