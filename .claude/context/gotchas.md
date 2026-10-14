@@ -69,3 +69,7 @@
   splits it itself (first word the plugin version, second the floor, a third word stops it).
   Write any future command with more than one argument the same way, and if a command body
   ever shows a literal `$N`, read the arguments off the user's own command line.
+- **The DevHub's Jekyll build fails on this Mac** (2026-10-12): `bundle exec jekyll build` dies inside `rubygems.rb` under Homebrew Ruby 4.0.6 before Jekyll runs, so `docs/` changes went out unrendered (#46). Check the fork's Pages deploy, or fix the Ruby/bundler pairing, before trusting a DevHub change visually. `npm run docs-ref:build` (Docusaurus) works fine.
+- **Code review caught docs drifting from the extension** (#46): the connection editor's checkbox is labelled "Allow MCP access to this connection", not "MCP access"; the extension never reads `MARIADB_SHELL_BIN` (PATH, then `MARIADB_SHELL_PREFIX`); only three harnesses ship all three variants. When documenting the extension, read `~/git/mariadb-shell-plugins*/code_ext/src` and `webview/src/ConnectionEditor.tsx`, not the plugins' launcher docs.
+- **The shell-plugins checkout can change under you**: mid-session `~/git/mariadb-shell-plugins` switched from `wip/mcp_dump_load` to `wip/vscode_syntax_highlighter` with a half-done merge (conflict in `mcp_plugin/.claude/PROJECT_CONTEXT.md`). Work for code_ext went into a separate worktree, **`~/git/mariadb-shell-plugins-copilot`** (branch `wip/vscode-copilot`, off `77a2f3f2`); run `git worktree list` there before assuming which checkout is which.
+

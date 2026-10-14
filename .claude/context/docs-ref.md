@@ -57,7 +57,9 @@ what is NOT in it.
 - **Facts come from source, not from the DevHub**: `~/git/mariadb-shell`
   (URI grammar, connection options, SSH code) and
   `~/git/mariadb-shell-plugins/mcp_plugin` (tools, setup). Nothing
-  `--gui`-specific (the VS Code extension's mode) goes in.
+  `--gui`-specific (the VS Code extension's mode) goes in — the VS Code
+  installation page (#46) describes the extension's Copilot server, which runs
+  *without* `--gui`, and names only what the extension source confirms.
 - **Anything the reader types goes in a code fence with a language** (reviewer
   feedback, PR #36 `0d77b1e`): `bash` for shell, `batch` for Windows cmd,
   `sql`, and `text` for agent prompts, slash commands (`/plugin`, `/reload`),
@@ -71,7 +73,7 @@ what is NOT in it.
 
 ## Current state
 
-- 41 pages: About, Installation (4 harnesses), Configuring the MCP Server group
+- 42 pages (PR #46 adds `installation/vs-code.md`, in `SUMMARY.md`): About, Installation (5 harnesses), Configuring the MCP Server group
   (Database Accounts, Adding Database Connections, Tunnel via SSH, Command Line
   Configuration), Basic Usage, Plugin Variants, Features (SQL Script Creation
   and Execution, Sandbox Instances, MSM, REST, MySQL migration), Architecture

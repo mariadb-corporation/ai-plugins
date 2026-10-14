@@ -1,11 +1,11 @@
 ---
 description: >-
-  Install MariaDB AI Plugins in Claude Code, Codex, OpenCode, or Pi.
+  Install MariaDB AI Plugins in Claude Code, Codex, OpenCode, Pi, or VS Code.
 ---
 
 # Installation
 
-If a harness has its own plugin system, you install MariaDB AI Plugins through it. The installation consists of two steps:
+If a harness has its own plugin system, you install MariaDB AI Plugins through it. In VS Code, you install the MariaDB extension for VS Code instead. The installation consists of two steps:
 
 1. Install the plugin into your harness, using the page for your harness below.
 2. Configure what the MCP server may access. This step is the same for every harness; see [Configuring the MCP Server](../configuring-the-mcp-server/README.md).
@@ -18,7 +18,7 @@ When the plugin starts for the first time, it downloads and extracts MariaDB She
 
 ## Prerequisites
 
-* A supported harness: Claude Code, Codex, OpenCode, or Pi.
+* A supported harness: Claude Code, Codex, OpenCode, Pi, or GitHub Copilot in VS Code.
 * Linux, macOS, or Windows. The optional migration tooling is available on Linux and macOS only.
 * Network access on first start, unless MariaDB Shell 26.9.5 or later is already installed.
 
@@ -40,6 +40,10 @@ You don't need a MariaDB Server installation. If you don't have a server, the MC
 
 {% content-ref url="pi.md" %}
 [pi.md](pi.md)
+{% endcontent-ref %}
+
+{% content-ref url="vs-code.md" %}
+[vs-code.md](vs-code.md)
 {% endcontent-ref %}
 
 ## Verify the Skills Are Loaded

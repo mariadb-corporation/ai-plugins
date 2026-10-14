@@ -4,9 +4,9 @@ title: Get Started
 subtitle: >-
   Install the plugin, tell the MCP server what it may touch, then build a real
   schema on a throwaway server. Fifteen minutes end to end.
-badges: ["Claude Code", "Codex", "OpenCode", "Pi"]
+badges: ["Claude Code", "Codex", "OpenCode", "Pi", "VS Code"]
 permalink: /get-started/
-description: Install the MariaDB AI Plugins into Claude Code, Codex, OpenCode or Pi, configure the mariadb-shell MCP server, and run your first working example.
+description: Install the MariaDB AI Plugins into Claude Code, Codex, OpenCode, Pi or VS Code, configure the mariadb-shell MCP server, and run your first working example.
 ---
 
 There are three steps, and only the first is mandatory. The **skills** work the
@@ -23,9 +23,10 @@ do not have to understand the protocol to use any of this.
 ## Step 1 — Install the plugin
 {: #step-1-install-the-plugin}
 
-Pick your harness. Each one ships the same three plugin variants — `dev` (the
-full set), `sql` (a SQL-focused subset) and `contributor` (for working on
-MariaDB tooling itself). Unless you know you want otherwise, install `dev`.
+Pick your harness. Claude Code, Codex and OpenCode ship three plugin variants —
+`dev` (the full set), `sql` (a SQL-focused subset) and `contributor` (for
+working on MariaDB tooling itself); Pi and VS Code ship `dev` only. Unless you
+know you want otherwise, install `dev`.
 
 <div class="callout" markdown="1">
 On first start the plugin downloads and extracts the `mariadb-shell` package
@@ -79,6 +80,24 @@ Run `/mcp` inside pi to see the `mariadb` server. If you still have
 and turn the built-in `mcp` back on in `pi config`. The adapter replaces the
 built-in MCP support.
 
+### VS Code (GitHub Copilot)
+
+In VS Code there is nothing to wire up: install the **MariaDB extension for VS
+Code** and Copilot has the `dev` skills and the MCP server.
+
+```sh
+code --install-extension MariaDB.mariadb-dev
+```
+
+The server shows up as **MariaDB** under *MCP: List Servers* in the Command
+Palette. The first time Copilot starts it, the extension installs MariaDB Shell
+if there is none. The `mariadb.copilot.enabled` setting switches the skills and
+the server off again, without touching the rest of the extension.
+
+The skills are the ones from the newest ai-plugins release at the time the
+extension was built, so a new release here reaches Copilot with the next
+extension release.
+
 ### Check that the skills arrived
 
 Ask for something only a skill knows. If the answer uses the native `UUID` type
@@ -107,6 +126,14 @@ If `mariadb-shell` is not on your `PATH`, use the copy the launcher installed �
 installer only prints a `PATH` hint; it never edits your shell profile. That
 copy appears the first time an agent starts the MCP server, so either let the
 agent run once first, or install the shell yourself before configuring it.
+
+<div class="callout callout--tip" markdown="1">
+**In VS Code, the Connections view does it for you.** Add or edit a connection
+in the MariaDB extension's **Connections** view and tick **Allow MCP access to
+this connection** — it then goes into the same list `mcp setup` writes, and the
+view marks it `MCP`.
+The password goes into the shell's secret store either way.
+</div>
 
 The walkthrough configures three things:
 
@@ -229,7 +256,8 @@ shell's bundled Python as a workaround:
 **Nothing at all happened.** Check the plugin actually loaded. In Claude Code,
 `/plugin` lists what is installed; in Codex, `/plugins`. In pi, remember that a
 project-local package needs `--approve` at run time or it is configured and
-never loaded.
+never loaded. In VS Code, check that the MariaDB extension is installed and
+enabled, and that the `mariadb.copilot.enabled` setting is on.
 
 **In pi, `/mcp` doesn't list the `mariadb` server.** You need Pi 1.0 or later,
 and no `pi-mcp-adapter`: the adapter replaces Pi's built-in MCP, so the server

@@ -17,6 +17,16 @@ Everything below is for people working **on** the plugins rather than with them.
 | [OpenCode](https://opencode.ai) | [`opencode`](opencode) | [`opencode/dev-plugin-test`](opencode/dev-plugin-test) | [opencode-test.yml](.github/workflows/opencode-test.yml) |
 | [Pi](https://pi.dev) | [`pi`](pi) | [`pi/dev-plugin-tests`](pi/dev-plugin-tests) | [pi-test.yml](.github/workflows/pi-test.yml) |
 
+**VS Code (GitHub Copilot)** has no folder in this repo. The MariaDB extension
+for VS Code (`code_ext/` in
+[mariadb-shell-plugins](https://github.com/mariadb-corporation/mariadb-shell-plugins))
+copies `claude/dev-plugin/skills` from the **newest release** of this repo when
+it is built (`npm run sync:skills`) and contributes them to Copilot; it starts
+the MCP server itself, without the launcher scripts. So `claude/dev-plugin/skills`
+is a published interface: keep it flat, with every folder named after its
+skill's `name`, as VS Code requires — and a skill change reaches Copilot only
+once it is released here *and* the extension is rebuilt.
+
 ### How the plugins are built
 
 1. **Skills** — MariaDB agent skills (`SKILL.md` docs) covering SQL statements,

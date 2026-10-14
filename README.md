@@ -22,7 +22,7 @@ Installing a plugin gives you three things:
 > **New to MCP?** The Model Context Protocol is a standardized interface for
 > AI agents to call tools — here, the tools that talk to MariaDB.
 
-Works with [Claude Code](https://claude.com/claude-code), [Codex](https://openai.com/codex), [OpenCode](https://opencode.ai) and [Pi](https://pi.dev) — see [Installation](#installation).
+Works with [Claude Code](https://claude.com/claude-code), [Codex](https://openai.com/codex), [OpenCode](https://opencode.ai), [Pi](https://pi.dev) and [GitHub Copilot in VS Code](https://code.visualstudio.com/docs/copilot/overview) — see [Installation](#installation).
 
 > **Prefer a guided start?** The **[DevHub](https://mariadb.github.io/ai-plugins/)**
 > has the same installation steps plus hands-on tutorials — building a schema and
@@ -91,6 +91,29 @@ support. Full steps in [pi/dev-plugin/README.md](pi/dev-plugin/README.md).
 That registers the server with pi; configuring what it may access is a separate
 step — see [Configure the MCP server](#configure-the-mcp-server-all-harnesses)
 below.
+
+### VS Code (GitHub Copilot)
+
+Copilot gets the plugin from the **MariaDB extension for VS Code**
+(`MariaDB.mariadb-dev`), not from this repo directly. The extension contributes
+the `dev` skills of the newest release here to Copilot, and offers Copilot the
+`mariadb-shell` MCP server as **MariaDB** in VS Code's MCP server list — no
+configuration files to edit:
+
+```sh
+code --install-extension MariaDB.mariadb-dev
+```
+
+The first time Copilot starts the server, the extension installs MariaDB Shell
+if there is none. Each extension build picks up the skills of the newest
+ai-plugins release, so a release here reaches Copilot with the next extension
+release. The `mariadb.copilot.enabled` setting turns both off.
+
+The extension's **Connections** view can stand in for `mcp setup`: tick **Allow
+MCP access to this connection** on a connection to let the agent open it.
+Otherwise configure the
+server as for the other harnesses — see
+[Configure the MCP server](#configure-the-mcp-server-all-harnesses) below.
 
 ## Configure the MCP server (all harnesses)
 
@@ -190,7 +213,9 @@ Each agent ships the plugin variants below — all built by the same
 | `contributor` | skills for **contributing to MariaDB tooling** | no | [`mariadb-shell`](https://github.com/mariadb-corporation/mariadb-shell) `.claude/skills/` |
 
 The folders are `<agent>/{dev,sql,contributor}-plugin/` for each of `claude/`,
-`codex/`, and `opencode/`; `pi/` ships `dev` only for now. Skills are baseline
+`codex/`, and `opencode/`; `pi/` ships `dev` only for now. VS Code has no folder
+here: the MariaDB extension vendors `claude/dev-plugin/skills` of the newest
+release when it is built. Skills are baseline
 **MariaDB 11.8 LTS**; the `dev` and `sql` plugins share the same auto-downloading
 `mariadb-shell` MCP server, while `contributor` is skills-only for now.
 

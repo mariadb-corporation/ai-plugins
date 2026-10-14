@@ -28,6 +28,14 @@ The launcher scripts, `mariadb-mcp-launcher.sh` and `mariadb-mcp-launcher.cmd`, 
 | --- | --- | --- |
 | `MARIADB_DEV_PLUGIN` | OpenCode | The plugin directory, referenced by the `mcp` block in `opencode.json`. |
 
+## VS Code Settings
+
+In VS Code, the MariaDB extension for VS Code starts MariaDB Shell itself, so the launcher environment variables don't apply. The extension uses a MariaDB Shell on the `PATH` when it is new enough. Otherwise it reads `MARIADB_SHELL_PREFIX` to decide where it looks for an installed MariaDB Shell and where it installs one.
+
+| Setting | Default | Description |
+| --- | --- | --- |
+| `mariadb.copilot.enabled` | `true` | Whether GitHub Copilot gets the skills and the MCP server. |
+
 ## File Locations
 
 | What | Linux and macOS | Windows |
@@ -46,6 +54,7 @@ The launcher scripts, `mariadb-mcp-launcher.sh` and `mariadb-mcp-launcher.cmd`, 
 | Codex | The plugin's `.mcp.json`, installed with the plugin. |
 | OpenCode | The `mcp` block you merge into `opencode.json`. |
 | Pi | None. The extension registers the server when it loads. A `mariadb` entry in `~/.pi/agent/mcp.json` or `.pi/mcp.json` overrides it. |
+| VS Code | None. The MariaDB extension for VS Code registers the server as **MariaDB** through the VS Code API. |
 
 ## MCP Server Configuration
 

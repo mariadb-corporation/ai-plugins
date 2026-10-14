@@ -24,6 +24,7 @@ In most cases, install the `dev` plugin.
 | Codex | Yes | Yes | Yes |
 | OpenCode | Yes | Yes | Yes |
 | Pi | Yes | No | No |
+| VS Code | Yes | No | No |
 
 ## Skill Counts
 
