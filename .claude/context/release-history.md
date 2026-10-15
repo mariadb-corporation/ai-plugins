@@ -86,7 +86,7 @@ overview + six topic skills), **#12** `ed6fd43` (**the DevHub**). So the long-op
 PR #12 is merged and the "enable GitHub Pages" step is done — the site is live
 at **https://ai-plugins.mariadb.com/**.
 
-## Release v26.10.3 (2026-10-15) — IN PROGRESS (PR about to open)
+## Release v26.10.3 (2026-10-15) — IN PROGRESS (PR #52 open, awaiting review)
 
 - `/release 26.10.3`, no floor: it stays **26.10.1**, still the newest mariadb-shell release
   (2026-10-08). Branch `wip/26.10.3` off `4747939` (#51).
@@ -103,6 +103,10 @@ at **https://ai-plugins.mariadb.com/**.
   release** — their `[Unreleased]` became `[26.10.3]`, with the vendored commits corrected from
   `8bb700f`/`43338f8` to `cc8dd40`/`37cb1d3`.
 - Static tier green: claude 682, codex 686, hermes 779, opencode 682, pi 691.
+- `dfb77b9` checkpoint. **PR #52** opened ("Release 26.10.3: plugin version, CHANGELOGs, and
+  Hermes Agent's first release"; no `[bypass-ci]`, manifests in the diff). Next: user merges →
+  tag `v26.10.3` on the squash commit, prereleases on both repos, fast-forward `fork/main`
+  (still `13685aa`), delete `wip/26.10.3`, then a checkpoint PR.
 
 ## Release v26.10.2 (2026-10-09) — SHIPPED
 
