@@ -38,7 +38,6 @@ Check that the harness loaded the plugin:
   ```
 
   To enable it, run `hermes plugins enable mariadb-dev`.
-* Hermes Agent: if the installation is blocked by the security scan, review the findings and repeat the installation with `--force`. The scan rates the `dev` and `sql` plugins as *caution*, because some skills show `sudo` package manager commands. See [Hermes Agent](installation/hermes.md#install-the-plugin).
 
 ## The MCP Server Doesn't Start
 

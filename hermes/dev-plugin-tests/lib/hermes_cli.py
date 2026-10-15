@@ -34,9 +34,9 @@ worth stating, because each one is a way the tier can silently test nothing:
 * **The plugin is installed the way users install it**: ``hermes plugins install
   <git url>#hermes/dev-plugin``. The source is a throwaway git repository holding
   a copy of the working tree's plugin, so uncommitted changes are what gets tested.
-  ``--enable`` because portable packages install disabled; ``--force`` because the
-  install-time security scan blocks a *caution* verdict from a non-catalog source
-  (see hermes/dev-plugin/README.md).
+  ``--enable`` because portable packages install disabled. No ``--force``: the
+  install-time security scan blocks a *caution* verdict from a non-catalog source,
+  and the plugin has to pass it the way users install it.
 
 * **The provider is whatever Hermes is configured for.** There is no API key for
   this suite to check, so the prerequisite gate runs a trivial prompt.
@@ -169,7 +169,7 @@ class TemporaryProfile:
         ):
             subprocess.run(["git", *git_args], cwd=staging, check=True, capture_output=True)
         return self.hermes(
-            "plugins", "install", f"{staging.as_uri()}#hermes/dev-plugin", "--enable", "--force",
+            "plugins", "install", f"{staging.as_uri()}#hermes/dev-plugin", "--enable",
             timeout=300,
         )
 

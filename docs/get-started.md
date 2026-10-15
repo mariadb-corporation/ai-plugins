@@ -86,23 +86,15 @@ is a portable Agent Plugins v1 package — a `plugin.json`, the skills and an
 `mcp.json` that declares the MCP server — so Hermes needs no code of ours:
 
 ```sh
-hermes plugins install {{ site.install_org }}/ai-plugins#hermes/dev-plugin --enable --force
+hermes plugins install {{ site.install_org }}/ai-plugins#hermes/dev-plugin --enable
 ```
 
-Then start a new Hermes session — MCP servers connect at session start. The two
-flags are there for a reason:
+Then start a new Hermes session — MCP servers connect at session start.
+`--enable` is there because Hermes installs portable packages disabled. Without
+the flag, run `hermes plugins enable mariadb-dev` afterwards.
 
-- **`--enable`** — Hermes installs portable packages disabled. Without the flag,
-  run `hermes plugins enable mariadb-dev` afterwards.
-- **`--force`** — Hermes scans a plugin at install time and rates this one
-  *caution*, because some skills show `sudo` package-manager commands for
-  installing the MariaDB connectors. It blocks a *caution* verdict from a source
-  outside its curated catalog unless you pass `--force`. Run the command without
-  it first if you want to read the findings.
-
-The `sql` plugin installs the same way from `#hermes/sql-plugin`. The
-`contributor` plugin scans *safe*, so `#hermes/contributor-plugin` needs only
-`--enable`. Later, `hermes plugins update mariadb-dev` updates the plugin and
+The `sql` and `contributor` plugins install the same way from
+`#hermes/sql-plugin` and `#hermes/contributor-plugin`. Later, `hermes plugins update mariadb-dev` updates the plugin and
 `hermes plugins remove mariadb-dev` removes it.
 
 **On native Windows**, the plugin's `mcp.json` cannot switch to the `.cmd`
@@ -277,8 +269,5 @@ and no `pi-mcp-adapter`: the adapter replaces Pi's built-in MCP, so the server
 the plugin registers never connects. Run `pi remove npm:pi-mcp-adapter`, then
 turn the built-in `mcp` back on in `pi config`.
 
-**Hermes refuses to install the plugin.** Its install-time security scan rates
-the `dev` and `sql` plugins *caution* and blocks that verdict for a source
-outside its curated catalog. Read the findings it prints, then repeat the
-install with `--force`. If the MCP tools are missing after a successful install,
-start a new Hermes session — servers connect at session start.
+**Hermes's MCP tools are missing after the install.** Start a new Hermes
+session — servers connect at session start.

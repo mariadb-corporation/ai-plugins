@@ -19,21 +19,14 @@ Hermes Agent has no MariaDB plugin marketplace, so you install each plugin direc
 Install the `dev` plugin from GitHub:
 
 ```bash
-hermes plugins install mariadb/ai-plugins#hermes/dev-plugin --enable --force
+hermes plugins install mariadb/ai-plugins#hermes/dev-plugin --enable
 ```
 
-To install the `sql` plugin, replace `#hermes/dev-plugin` with `#hermes/sql-plugin`. The `contributor` plugin doesn't need the `--force` option:
-
-```bash
-hermes plugins install mariadb/ai-plugins#hermes/contributor-plugin --enable
-```
+To install the `sql` or `contributor` plugin, replace `#hermes/dev-plugin` with `#hermes/sql-plugin` or `#hermes/contributor-plugin`.
 
 See [Plugin Variants](../plugin-variants.md) for the differences between the variants.
 
-The options have the following purpose:
-
-* `--enable` enables the plugin after installation. Hermes installs portable packages disabled. If you omit the option, enable the plugin afterwards with `hermes plugins enable mariadb-dev`.
-* `--force` accepts the result of the security scan that Hermes runs at installation time. The scan rates the `dev` and `sql` plugins as *caution*, because some skills show `sudo` package manager commands for installing MariaDB connectors. Hermes blocks a *caution* rating for a source outside its curated catalog unless you pass `--force`. To review the findings first, run the command without `--force`. The `contributor` plugin is rated *safe*.
+The `--enable` option enables the plugin after installation. Hermes installs portable packages disabled. If you omit the option, enable the plugin afterwards with `hermes plugins enable mariadb-dev`.
 
 After the installation, start a new Hermes session. Hermes connects MCP servers when a session starts.
 

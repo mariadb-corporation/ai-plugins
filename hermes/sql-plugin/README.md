@@ -20,7 +20,7 @@ without any Python code of its own.
 ## Installation
 
 ```sh
-hermes plugins install mariadb/ai-plugins#hermes/sql-plugin --enable --force
+hermes plugins install mariadb/ai-plugins#hermes/sql-plugin --enable
 ```
 
 Then start a new Hermes session; MCP servers connect at session start.
@@ -28,12 +28,6 @@ Then start a new Hermes session; MCP servers connect at session start.
 - `#hermes/sql-plugin` installs this folder of the repository, not the whole repo.
 - `--enable` is needed because Hermes installs portable packages **disabled**.
   Without it, run `hermes plugins enable mariadb-sql` afterwards.
-- `--force` accepts the verdict of Hermes' install-time security scan. The scan
-  rates this plugin *caution* because the MCP launcher installs `mariadb-shell`
-  by piping its `install.sh` from `curl` to `bash`, and one skill shows a `sudo`
-  command. Hermes blocks a *caution* verdict from a
-  source outside its curated catalog unless you pass `--force`. Run the command
-  without it first if you want to read the findings.
 
 To update later, run `hermes plugins update mariadb-sql`; to remove it,
 `hermes plugins remove mariadb-sql`.

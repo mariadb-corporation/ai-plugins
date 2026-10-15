@@ -98,15 +98,11 @@ Hermes installs a plugin straight from its folder in this repo — each one is a
 portable Agent Plugins v1 package:
 
 ```sh
-hermes plugins install mariadb/ai-plugins#hermes/dev-plugin --enable --force
+hermes plugins install mariadb/ai-plugins#hermes/dev-plugin --enable
 ```
 
 Then start a new Hermes session; MCP servers connect at session start.
-`--enable` is needed because Hermes installs portable packages disabled, and
-`--force` because its install-time security scan rates the plugin *caution*
-(some skills show `sudo` package-manager commands) and blocks that verdict for a
-source outside its curated catalog — run the command without it first to read
-the findings. On native Windows the MCP server needs an entry in Hermes'
+`--enable` is needed because Hermes installs portable packages disabled. On native Windows the MCP server needs an entry in Hermes'
 `config.yaml`. Full steps in
 [hermes/dev-plugin/README.md](hermes/dev-plugin/README.md).
 

@@ -20,9 +20,7 @@ hermes plugins install mariadb/ai-plugins#hermes/contributor-plugin --enable
 ```
 
 `--enable` is needed because Hermes installs portable packages **disabled**.
-Without it, run `hermes plugins enable mariadb-contributor` afterwards. Unlike the
-`mariadb-dev` and `mariadb-sql` plugins, this one passes Hermes' install-time
-security scan as *safe*, so it needs no `--force`.
+Without it, run `hermes plugins enable mariadb-contributor` afterwards.
 
 To update later, run `hermes plugins update mariadb-contributor`; to remove it,
 `hermes plugins remove mariadb-contributor`.

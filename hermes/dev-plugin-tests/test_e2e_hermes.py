@@ -93,7 +93,7 @@ def profile(tmp_path_factory):
 
 
 def test_step0_plugin_installed_and_enabled(profile):
-    """`hermes plugins install …#hermes/dev-plugin --enable --force` did its job."""
+    """`hermes plugins install …#hermes/dev-plugin --enable` did its job."""
     installed = profile.install_result
     assert installed.returncode == 0, (
         f"hermes plugins install failed (exit {installed.returncode}):\n"

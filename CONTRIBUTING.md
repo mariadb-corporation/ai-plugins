@@ -166,7 +166,7 @@ because what there is to drive differs:
   is present. The e2e creates a temporary Hermes profile (`hermes profile create …
   --no-skills`), copies in the user's provider setup (`config.yaml` without its
   `mcp_servers`, `.env`, `auth.json`), installs the working tree's plugin with
-  `hermes plugins install file://…#hermes/dev-plugin --enable --force` and drives
+  `hermes plugins install file://…#hermes/dev-plugin --enable` and drives
   `hermes chat -q … --format stream-json --yolo`. It checks that the model loaded
   a skill under the plugin's namespace through `skill_view`, that the generated
   schema script carries the mandated Start Block, and that a
