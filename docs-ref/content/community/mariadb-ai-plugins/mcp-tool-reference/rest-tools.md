@@ -8,7 +8,7 @@ description: >-
 The `rest.*` tools set up and manage the MariaDB REST Daemon, `mariadb-restd`, which serves the REST services that are defined in a server's REST metadata. For how the agent defines REST services and endpoints, see [REST Endpoints with MariaDB REST Service](../features/rest-endpoints-with-mariadb-rest-service.md).
 
 {% hint style="info" %}
-The `rest.*` tools are available in MariaDB Shell releases later than 26.10.1. An MCP server from MariaDB Shell 26.10.1 or earlier doesn't offer them.
+The `rest.*` tools are available in MariaDB Shell releases later than 26.10.2. An MCP server from MariaDB Shell 26.10.2 or earlier doesn't offer them.
 {% endhint %}
 
 ## Overview

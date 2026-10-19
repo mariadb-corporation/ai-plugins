@@ -74,21 +74,34 @@ what is NOT in it.
 
 ## Current state
 
-- 42 pages: About, Installation (4 harnesses), Configuring the MCP Server group
+- 43 pages: About, Installation (4 harnesses), Configuring the MCP Server group
   (Database Accounts, Adding Database Connections, Tunnel via SSH, Command Line
   Configuration), Basic Usage, Plugin Variants, Features (SQL Script Creation
   and Execution, Sandbox Instances, MSM, REST, MySQL migration), Architecture
   (with the user's `MariaDB_AI-Plugins_Architecture.svg`), Security Model,
-  Skills Reference (7 generated), MCP Tool Reference (5), Configuration
+  Skills Reference (7 generated), MCP Tool Reference (6), Configuration
   Reference, Troubleshooting, Release Notes, License, Bug Reports.
 - **`rest-tools.md` documents a group no released MariaDB Shell has yet**
   (mariadb-shell-plugins PR #50, `wip/restd_support`; checked against
   `mcp_plugin/lib/rest_functions.py`, `restd.py`, `sandbox_functions.py`).
-  Every mention says "MariaDB Shell releases later than 26.10.1" and keeps
-  `rest.*` out of the 28-tool count, like `migrator.*`. When the shell release
+  Shell 26.10.2 shipped without it (`rest_functions.py` is not on the plugins'
+  `release/candidate`), so every mention now says "later than 26.10.2" and
+  keeps `rest.*` out of the 40-tool count, like `migrator.*`. When the shell release
   that ships it becomes the floor, replace that wording with "<version> and
   later" and decide whether `rest.*` joins the count (also in
   `docs/mcp-tools.md`, `architecture.md`, `sandbox-tools.md`).
+- **`util-tools.md`** (12 tools, `mcp_plugin/lib/util_functions.py`,
+  `tasks.py`, `util_process.py`) ships in **shell 26.10.2**, the floor, so
+  `util.*` is IN the count: 28 → 40, "four groups" (DevHub `tool_count`,
+  README, both architecture pages, both tool references). It was missed for a
+  week because #55 (CLI guard) pointed agents at `util.copy_*` without touching
+  docs. **How to tell what a shell release ships**: the shell's release
+  workflow builds from the plugins' `release/candidate` branch, whose `VERSION`
+  names the release — check `git merge-base --is-ancestor <commit>
+  origin/release/candidate`.
+- **Multi-tenant mode serves only `db.*` from shell 26.10.2 on** (plugins
+  `f1b3b6e2`, #42); 26.10.0/26.10.1 also served `msm.*`. Both tool references
+  say so.
 - Verified: clean build (fails on broken links / missing content-ref targets),
   static tests pass, no horizontal overflow at 390px, Apache 2.4 serving
   `/docs/` (pages, 301 to slash, 404 page, `AllowOverride FileInfo`).
