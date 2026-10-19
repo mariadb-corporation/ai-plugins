@@ -105,9 +105,10 @@ at **https://ai-plugins.mariadb.com/**.
   `wip/26.10.4` deleted locally (head = `headRefOid`); GitHub had removed it on `origin`.
 - Tag notes state the floor move to 26.10.2, the CLI guard (incl. `mariadb-guard` for Hermes)
   and the re-vendor.
-- **`/release` still says thirteen CHANGELOGs / `skills-source.json` files**; the CHANGELOGs are
-  fourteen since `hermes/guard-plugin` (the provenance files stay thirteen — the guard vendors no
-  skills). Its file-count reference also predates the guard (+2 for the plugin version).
+- **`/release` updated for the guard plugin** (on the checkpoint PR #57): fourteen CHANGELOGs (the
+  `skills-source.json` files stay thirteen — the guard vendors no skills), the guard's section is
+  a version bump alone when nothing in it changed, and the file-count reference now names
+  26.10.4's 39 / 25.
 
 - `/release 26.10.4`, no floor given, but **mariadb-shell `v26.10.2` was published 2026-10-17**
   (built from `a4352a5`), so the command asked and the user chose **floor 26.10.1 → 26.10.2**.
