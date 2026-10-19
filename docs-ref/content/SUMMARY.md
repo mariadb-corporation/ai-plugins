@@ -39,7 +39,6 @@
       * [sandbox Tools](community/mariadb-ai-plugins/mcp-tool-reference/sandbox-tools.md)
       * [util Tools](community/mariadb-ai-plugins/mcp-tool-reference/util-tools.md)
       * [migrator Tools](community/mariadb-ai-plugins/mcp-tool-reference/migrator-tools.md)
-      * [rest Tools](community/mariadb-ai-plugins/mcp-tool-reference/rest-tools.md)
     * [Configuration Reference](community/mariadb-ai-plugins/configuration-reference.md)
     * [Troubleshooting](community/mariadb-ai-plugins/troubleshooting.md)
     * [Release Notes](community/mariadb-ai-plugins/release-notes.md)

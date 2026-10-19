@@ -1,12 +1,12 @@
 ---
 description: >-
-  Reference for the db, msm, sandbox, util, migrator, and rest tools of the
+  Reference for the db, msm, sandbox, util, and migrator tools of the
   mariadb-shell MCP server.
 ---
 
 # MCP Tool Reference
 
-The `mariadb-shell` MCP server provides 40 tools in four groups. A fifth, optional group is available when the migration tooling is installed, and a sixth group, for the MariaDB REST Daemon, in MariaDB Shell releases later than 26.10.2.
+The `mariadb-shell` MCP server provides 40 tools in four groups. A fifth, optional group is available when the migration tooling is installed.
 
 | Group | Tools | What they do |
 | --- | --- | --- |
@@ -15,9 +15,8 @@ The `mariadb-shell` MCP server provides 40 tools in four groups. A fifth, option
 | [`sandbox.*`](sandbox-tools.md) | 8 | List deployable server versions; deploy, start, stop, and delete local instances. |
 | [`util.*`](util-tools.md) | 12 | Dump, load, export, import, and copy data between servers, as background tasks. Requires MariaDB Shell 26.10.2 or later. |
 | [`migrator.*`](migrator-tools.md) | 4 | MySQL-to-MariaDB migration. Optional, and not counted in the 40. |
-| [`rest.*`](rest-tools.md) | 5 | Set up, start, stop, and delete MariaDB REST Daemons. Requires a MariaDB Shell release later than 26.10.2, and not counted in the 40. |
 
-A server in multi-tenant mode (the `--multiTenant` option of `mcp setup`, available in MariaDB Shell 26.10.0 and later) serves only the `db.*` group. In MariaDB Shell 26.10.0 and 26.10.1, it also serves the `msm.*` group. The other groups run local server instances, daemons, and long-running jobs, or read and write files, on the machine that hosts the MCP server, and aren't offered to tenants. The server that the plugins' launcher scripts start is single-tenant and serves every group.
+A server in multi-tenant mode (the `--multiTenant` option of `mcp setup`, available in MariaDB Shell 26.10.0 and later) serves only the `db.*` group. In MariaDB Shell 26.10.0 and 26.10.1, it also serves the `msm.*` group. The other groups run local server instances and long-running jobs, or read and write files, on the machine that hosts the MCP server, and aren't offered to tenants. The server that the plugins' launcher scripts start is single-tenant and serves every group.
 
 ## Conventions
 
@@ -43,8 +42,4 @@ A server in multi-tenant mode (the `--multiTenant` option of `mcp setup`, availa
 
 {% content-ref url="migrator-tools.md" %}
 [migrator-tools.md](migrator-tools.md)
-{% endcontent-ref %}
-
-{% content-ref url="rest-tools.md" %}
-[rest-tools.md](rest-tools.md)
 {% endcontent-ref %}

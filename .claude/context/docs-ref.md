@@ -74,22 +74,23 @@ what is NOT in it.
 
 ## Current state
 
-- 43 pages: About, Installation (4 harnesses), Configuring the MCP Server group
+- 42 pages: About, Installation (4 harnesses), Configuring the MCP Server group
   (Database Accounts, Adding Database Connections, Tunnel via SSH, Command Line
   Configuration), Basic Usage, Plugin Variants, Features (SQL Script Creation
   and Execution, Sandbox Instances, MSM, REST, MySQL migration), Architecture
   (with the user's `MariaDB_AI-Plugins_Architecture.svg`), Security Model,
-  Skills Reference (7 generated), MCP Tool Reference (6), Configuration
+  Skills Reference (7 generated), MCP Tool Reference (5), Configuration
   Reference, Troubleshooting, Release Notes, License, Bug Reports.
-- **`rest-tools.md` documents a group no released MariaDB Shell has yet**
-  (mariadb-shell-plugins PR #50, `wip/restd_support`; checked against
-  `mcp_plugin/lib/rest_functions.py`, `restd.py`, `sandbox_functions.py`).
-  Shell 26.10.2 shipped without it (`rest_functions.py` is not on the plugins'
-  `release/candidate`), so every mention now says "later than 26.10.2" and
-  keeps `rest.*` out of the 40-tool count, like `migrator.*`. When the shell release
-  that ships it becomes the floor, replace that wording with "<version> and
-  later" and decide whether `rest.*` joins the count (also in
-  `docs/mcp-tools.md`, `architecture.md`, `sandbox-tools.md`).
+- **No `rest.*` / `restd.*` / `mrs.*` docs, on purpose** (user, 2026-10-19).
+  `rest-tools.md` (from #49) and the DevHub's `rest.*` section were removed in
+  #58, with the REST Daemon sentences in `sandbox-tools.md`. Reason: in
+  mariadb-shell-plugins the groups are being renamed before the daemon group's
+  first release — the REST Service group `mrs` → **`rest`** (15 tools,
+  shipped as `mrs.*` in shell 26.10.2) and the REST Daemon group `rest` →
+  **`restd`** (7 tools, incl. `get_certificate_status` / `trust_certificate`,
+  never released). Document both once a shell release ships the new names;
+  #49's text in git history (`00e22c7`) is a starting point for `restd`, but
+  it predates the certificate tools and still says "self-signed".
 - **`util-tools.md`** (12 tools, `mcp_plugin/lib/util_functions.py`,
   `tasks.py`, `util_process.py`) ships in **shell 26.10.2**, the floor, so
   `util.*` is IN the count: 28 → 40, "four groups" (DevHub `tool_count`,
