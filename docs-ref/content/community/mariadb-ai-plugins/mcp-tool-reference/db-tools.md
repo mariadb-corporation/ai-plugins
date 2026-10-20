@@ -3,6 +3,13 @@ description: >-
   Reference for the db tools of the mariadb-shell MCP server, which list connections and schemas, describe database objects, and run SQL.
 ---
 
+<!--
+  SYNCED: this page is maintained in mariadb-corporation/ai-plugins, under docs-ref/content/,
+  and copied one way into mariadb-docs (tools/community/mariadb-ai-plugins/).
+  Make every change in mariadb-corporation/ai-plugins. A change made in mariadb-docs or in the
+  GitBook editor is overwritten by the next sync.
+-->
+
 # db Tools
 
 The `db.*` tools open connections to configured MariaDB servers, describe their schemas, and run SQL.
@@ -113,3 +120,5 @@ Closes a connection.
 | `connection_id` | A connection ID returned by `db.connect`. |
 
 Idle connections are closed automatically, but close a sandbox's connection before deleting the sandbox.
+
+<sub>_This page is licensed: GPLv2_</sub>

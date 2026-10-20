@@ -3,6 +3,13 @@ description: >-
   Install MariaDB AI Plugins in Claude Code, Codex, OpenCode, Pi, or Hermes Agent.
 ---
 
+<!--
+  SYNCED: this page is maintained in mariadb-corporation/ai-plugins, under docs-ref/content/,
+  and copied one way into mariadb-docs (tools/community/mariadb-ai-plugins/).
+  Make every change in mariadb-corporation/ai-plugins. A change made in mariadb-docs or in the
+  GitBook editor is overwritten by the next sync.
+-->
+
 # Installation
 
 If a harness has its own plugin system, you install MariaDB AI Plugins through it. The installation consists of two steps:
@@ -55,3 +62,5 @@ Write a CREATE TABLE for a product catalog, MariaDB style.
 ```
 
 If the answer uses the native `UUID` data type with `UUID_v7()` rather than `CHAR(36)`, the skills are loaded.
+
+<sub>_This page is licensed: GPLv2_</sub>

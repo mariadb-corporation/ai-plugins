@@ -4,6 +4,13 @@ description: >-
   marketplace.
 ---
 
+<!--
+  SYNCED: this page is maintained in mariadb-corporation/ai-plugins, under docs-ref/content/,
+  and copied one way into mariadb-docs (tools/community/mariadb-ai-plugins/).
+  Make every change in mariadb-corporation/ai-plugins. A change made in mariadb-docs or in the
+  GitBook editor is overwritten by the next sync.
+-->
+
 # Claude Code
 
 ## Install the Plugin
@@ -38,3 +45,5 @@ To check that the `mariadb` MCP server is connected, run:
 ## Update or Remove the Plugin
 
 Use `/plugin` to update or uninstall the plugin. Removing the plugin doesn't remove MariaDB Shell or its configuration in `~/.mariadb-shell`.
+
+<sub>_This page is licensed: GPLv2_</sub>

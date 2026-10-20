@@ -4,6 +4,13 @@ description: >-
   reachable through an SSH host, with a mariadb+ssh:// connection URI.
 ---
 
+<!--
+  SYNCED: this page is maintained in mariadb-corporation/ai-plugins, under docs-ref/content/,
+  and copied one way into mariadb-docs (tools/community/mariadb-ai-plugins/).
+  Make every change in mariadb-corporation/ai-plugins. A change made in mariadb-docs or in the
+  GitBook editor is overwritten by the next sync.
+-->
+
 # Tunnel Database Connections via SSH
 
 Database servers are often not reachable directly from a developer machine, but only through an SSH host, such as a bastion host in front of a private network. The MCP server can reach such a server through an SSH tunnel, which MariaDB Shell sets up when the MCP server opens a session for the connection.
@@ -169,3 +176,5 @@ The tunnel controls how the agent reaches the server, not what it can do there. 
 | *Interactive auth mode is disabled when in disabled wizards mode.* | The SSH host only offers keyboard-interactive authentication. | Configure public key authentication for the tunnel user. |
 | *The connection option '…' requires an SSH tunnel.* | An `ssh-*` option is used on a URI without `+ssh`. | Use the `mariadb+ssh://` scheme. |
 | *not a configured connection* | The agent used a URI that differs from the configured one, for example `mariadb://` instead of `mariadb+ssh://`. | Use the URI that `db.list_connections` reports. |
+
+<sub>_This page is licensed: GPLv2_</sub>

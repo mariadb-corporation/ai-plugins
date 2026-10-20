@@ -4,6 +4,13 @@ description: >-
   how to fix them.
 ---
 
+<!--
+  SYNCED: this page is maintained in mariadb-corporation/ai-plugins, under docs-ref/content/,
+  and copied one way into mariadb-docs (tools/community/mariadb-ai-plugins/).
+  Make every change in mariadb-corporation/ai-plugins. A change made in mariadb-docs or in the
+  GitBook editor is overwritten by the next sync.
+-->
+
 # Troubleshooting
 
 ## Error Messages
@@ -59,3 +66,5 @@ Check that the harness loaded the plugin:
 ## A Migration Reports Success but Migrates Nothing
 
 The run was pointed at the output directory of an earlier run. See [migrator Tools](mcp-tool-reference/migrator-tools.md#avoiding-a-false-success).
+
+<sub>_This page is licensed: GPLv2_</sub>

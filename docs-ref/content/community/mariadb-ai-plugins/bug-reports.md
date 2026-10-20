@@ -4,6 +4,13 @@ description: >-
   security vulnerabilities privately.
 ---
 
+<!--
+  SYNCED: this page is maintained in mariadb-corporation/ai-plugins, under docs-ref/content/,
+  and copied one way into mariadb-docs (tools/community/mariadb-ai-plugins/).
+  Make every change in mariadb-corporation/ai-plugins. A change made in mariadb-docs or in the
+  GitBook editor is overwritten by the next sync.
+-->
+
 # Bug Reports
 
 ## Report a Bug
@@ -29,3 +36,5 @@ Don't report security vulnerabilities in public issues.
 {% endhint %}
 
 Follow the guidelines on the [Security Vulnerabilities (CVEs)](https://mariadb.com/docs/server/security/cve) page. You can report sensitive issues on [HackerOne](https://hackerone.com/mariadb), or send them to the MariaDB security team at `security [AT] mariadb (dot) org`.
+
+<sub>_This page is licensed: GPLv2_</sub>
