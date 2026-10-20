@@ -3,14 +3,14 @@ description: >-
   Reference for the MariaDB AI Plugins skills that cover individual SQL statements and their MariaDB-specific syntax and behavior.
 ---
 
+# SQL Statement Skills
+
 <!--
   SYNCED: this page is maintained in mariadb-corporation/ai-plugins, under docs-ref/content/,
   and copied one way into mariadb-docs (tools/community/mariadb-ai-plugins/).
   Make every change in mariadb-corporation/ai-plugins. A change made in mariadb-docs or in the
   GitBook editor is overwritten by the next sync.
 -->
-
-# SQL Statement Skills
 
 Each of these skills covers one SQL statement, with the MariaDB-specific syntax and behavior that general SQL knowledge often gets wrong, for example the online DDL algorithms of `ALTER TABLE`, atomic `CREATE OR REPLACE`, and `RETURNING` in `INSERT`.
 

@@ -4,14 +4,14 @@ description: >-
   mariadb-shell MCP server.
 ---
 
+# Sandbox Instances
+
 <!--
   SYNCED: this page is maintained in mariadb-corporation/ai-plugins, under docs-ref/content/,
   and copied one way into mariadb-docs (tools/community/mariadb-ai-plugins/).
   Make every change in mariadb-corporation/ai-plugins. A change made in mariadb-docs or in the
   GitBook editor is overwritten by the next sync.
 -->
-
-# Sandbox Instances
 
 The MCP server can deploy MariaDB Server instances on your local machine for development and testing. These sandbox instances don't require Docker or another container runtime, and you don't need administrator rights to create them. A sandbox is useful when no database server is available, or when you want to test changes before you apply them to a production database.
 

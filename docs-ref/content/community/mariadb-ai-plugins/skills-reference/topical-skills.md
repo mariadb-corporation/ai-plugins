@@ -3,14 +3,14 @@ description: >-
   Reference for the MariaDB AI Plugins topical skills, which cover subjects that span many statements.
 ---
 
+# Topical Skills
+
 <!--
   SYNCED: this page is maintained in mariadb-corporation/ai-plugins, under docs-ref/content/,
   and copied one way into mariadb-docs (tools/community/mariadb-ai-plugins/).
   Make every change in mariadb-corporation/ai-plugins. A change made in mariadb-docs or in the
   GitBook editor is overwritten by the next sync.
 -->
-
-# Topical Skills
 
 These skills cover topics that span several statements, such as the migration from MySQL or vector search.
 

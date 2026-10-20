@@ -4,14 +4,14 @@ description: >-
   reachable through an SSH host, with a mariadb+ssh:// connection URI.
 ---
 
+# Tunnel Database Connections via SSH
+
 <!--
   SYNCED: this page is maintained in mariadb-corporation/ai-plugins, under docs-ref/content/,
   and copied one way into mariadb-docs (tools/community/mariadb-ai-plugins/).
   Make every change in mariadb-corporation/ai-plugins. A change made in mariadb-docs or in the
   GitBook editor is overwritten by the next sync.
 -->
-
-# Tunnel Database Connections via SSH
 
 Database servers are often not reachable directly from a developer machine, but only through an SSH host, such as a bastion host in front of a private network. The MCP server can reach such a server through an SSH tunnel, which MariaDB Shell sets up when the MCP server opens a session for the connection.
 

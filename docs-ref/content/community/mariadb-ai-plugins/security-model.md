@@ -4,14 +4,14 @@ description: >-
   an AI agent can access.
 ---
 
+# Security Model
+
 <!--
   SYNCED: this page is maintained in mariadb-corporation/ai-plugins, under docs-ref/content/,
   and copied one way into mariadb-docs (tools/community/mariadb-ai-plugins/).
   Make every change in mariadb-corporation/ai-plugins. A change made in mariadb-docs or in the
   GitBook editor is overwritten by the next sync.
 -->
-
-# Security Model
 
 The MCP server only accesses databases and directories that you have explicitly allowed. You define both in two allow-lists with `mariadb-shell -- mcp setup`. Within a database, the privileges of the MariaDB account determine what the agent can do.
 

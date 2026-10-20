@@ -3,14 +3,14 @@ description: >-
   Reference for the skills maintained in the MariaDB AI Plugins repository, including skills for the MariaDB REST Service, schema management, and the migration from MySQL.
 ---
 
+# Additional Skills
+
 <!--
   SYNCED: this page is maintained in mariadb-corporation/ai-plugins, under docs-ref/content/,
   and copied one way into mariadb-docs (tools/community/mariadb-ai-plugins/).
   Make every change in mariadb-corporation/ai-plugins. A change made in mariadb-docs or in the
   GitBook editor is overwritten by the next sync.
 -->
-
-# Additional Skills
 
 These skills are maintained in the `additional-skills/` directory of the MariaDB AI Plugins repository rather than in the MariaDB documentation. Most of them describe workflows that use the tools of the MCP server.
 

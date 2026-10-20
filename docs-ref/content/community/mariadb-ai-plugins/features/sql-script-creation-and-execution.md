@@ -5,14 +5,14 @@ description: >-
   and sandbox tools of the mariadb-shell MCP server.
 ---
 
+# SQL Script Creation and Execution
+
 <!--
   SYNCED: this page is maintained in mariadb-corporation/ai-plugins, under docs-ref/content/,
   and copied one way into mariadb-docs (tools/community/mariadb-ai-plugins/).
   Make every change in mariadb-corporation/ai-plugins. A change made in mariadb-docs or in the
   GitBook editor is overwritten by the next sync.
 -->
-
-# SQL Script Creation and Execution
 
 With MariaDB AI Plugins, you can ask a coding agent to write a SQL script that creates a database schema, and then to run the script on a MariaDB server and check the result. The agent writes the script with the help of the SQL skills, and runs and verifies it with the `db.*` and `sandbox.*` tools of the MCP server.
 

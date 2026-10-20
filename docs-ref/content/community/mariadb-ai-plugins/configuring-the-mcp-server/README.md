@@ -4,14 +4,14 @@ description: >-
   may access, and optionally install the migration tooling.
 ---
 
+# Configuring the MCP Server
+
 <!--
   SYNCED: this page is maintained in mariadb-corporation/ai-plugins, under docs-ref/content/,
   and copied one way into mariadb-docs (tools/community/mariadb-ai-plugins/).
   Make every change in mariadb-corporation/ai-plugins. A change made in mariadb-docs or in the
   GitBook editor is overwritten by the next sync.
 -->
-
-# Configuring the MCP Server
 
 After installation, the MCP server has no access to any database or directory. You define the connections and directories it may use with MariaDB Shell. The configuration applies to all harnesses on the machine, so you only need to do it once:
 

@@ -3,14 +3,14 @@ description: >-
   Reference for the db tools of the mariadb-shell MCP server, which list connections and schemas, describe database objects, and run SQL.
 ---
 
+# db Tools
+
 <!--
   SYNCED: this page is maintained in mariadb-corporation/ai-plugins, under docs-ref/content/,
   and copied one way into mariadb-docs (tools/community/mariadb-ai-plugins/).
   Make every change in mariadb-corporation/ai-plugins. A change made in mariadb-docs or in the
   GitBook editor is overwritten by the next sync.
 -->
-
-# db Tools
 
 The `db.*` tools open connections to configured MariaDB servers, describe their schemas, and run SQL.
 

@@ -5,14 +5,14 @@ description: >-
   common connection errors.
 ---
 
+# Adding Database Connections
+
 <!--
   SYNCED: this page is maintained in mariadb-corporation/ai-plugins, under docs-ref/content/,
   and copied one way into mariadb-docs (tools/community/mariadb-ai-plugins/).
   Make every change in mariadb-corporation/ai-plugins. A change made in mariadb-docs or in the
   GitBook editor is overwritten by the next sync.
 -->
-
-# Adding Database Connections
 
 The MCP server only connects to the databases that you add as connections with `mcp setup`. Each connection consists of a connection URI and a password. The URI tells MariaDB Shell how to reach the server and which account to sign in with; the password is stored separately in the MariaDB Shell secret store.
 

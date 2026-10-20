@@ -3,14 +3,14 @@ description: >-
   Reference for the MariaDB AI Plugins skills that cover MariaDB built-in function families.
 ---
 
+# Built-in Function Skills
+
 <!--
   SYNCED: this page is maintained in mariadb-corporation/ai-plugins, under docs-ref/content/,
   and copied one way into mariadb-docs (tools/community/mariadb-ai-plugins/).
   Make every change in mariadb-corporation/ai-plugins. A change made in mariadb-docs or in the
   GitBook editor is overwritten by the next sync.
 -->
-
-# Built-in Function Skills
 
 Each of these skills covers a group of built-in functions, such as the string, date and time, or JSON functions.
 

@@ -4,14 +4,14 @@ description: >-
   and linking the skills directory.
 ---
 
+# OpenCode
+
 <!--
   SYNCED: this page is maintained in mariadb-corporation/ai-plugins, under docs-ref/content/,
   and copied one way into mariadb-docs (tools/community/mariadb-ai-plugins/).
   Make every change in mariadb-corporation/ai-plugins. A change made in mariadb-docs or in the
   GitBook editor is overwritten by the next sync.
 -->
-
-# OpenCode
 
 OpenCode doesn't have a plugin marketplace. Instead, you register the MCP server in your OpenCode configuration and make the skills available to OpenCode yourself.
 

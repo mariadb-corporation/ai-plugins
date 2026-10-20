@@ -5,14 +5,14 @@ description: >-
   options.
 ---
 
+# Command Line Configuration
+
 <!--
   SYNCED: this page is maintained in mariadb-corporation/ai-plugins, under docs-ref/content/,
   and copied one way into mariadb-docs (tools/community/mariadb-ai-plugins/).
   Make every change in mariadb-corporation/ai-plugins. A change made in mariadb-docs or in the
   GitBook editor is overwritten by the next sync.
 -->
-
-# Command Line Configuration
 
 Everything you can configure in the walkthrough of `mcp setup` is also available as a command-line option. With options, you can configure the MCP server in a single command, for example in a setup script for new developer machines, and repeat the configuration exactly.
 

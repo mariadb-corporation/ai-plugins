@@ -3,14 +3,14 @@ description: >-
   Reference for the MariaDB AI Plugins skills that cover the MariaDB command-line client and utilities.
 ---
 
+# Command-Line Tool Skills
+
 <!--
   SYNCED: this page is maintained in mariadb-corporation/ai-plugins, under docs-ref/content/,
   and copied one way into mariadb-docs (tools/community/mariadb-ai-plugins/).
   Make every change in mariadb-corporation/ai-plugins. A change made in mariadb-docs or in the
   GitBook editor is overwritten by the next sync.
 -->
-
-# Command-Line Tool Skills
 
 Each of these skills covers one MariaDB command-line program, with the options and behavior that differ from the corresponding MySQL program.
 

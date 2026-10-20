@@ -5,14 +5,14 @@ description: >-
   full access to a development schema.
 ---
 
+# Database Accounts for the MCP Server
+
 <!--
   SYNCED: this page is maintained in mariadb-corporation/ai-plugins, under docs-ref/content/,
   and copied one way into mariadb-docs (tools/community/mariadb-ai-plugins/).
   Make every change in mariadb-corporation/ai-plugins. A change made in mariadb-docs or in the
   GitBook editor is overwritten by the next sync.
 -->
-
-# Database Accounts for the MCP Server
 
 The MCP server connects to MariaDB with the account of each connection that you configure with `mcp setup`. Everything the agent does on a server, it does with the privileges of this account. This page explains why the MCP server needs its own account, and shows how to create one with limited privileges.
 

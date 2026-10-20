@@ -4,14 +4,14 @@ description: >-
   the mariadb-shell MCP server.
 ---
 
+# REST Endpoints with MariaDB REST Service
+
 <!--
   SYNCED: this page is maintained in mariadb-corporation/ai-plugins, under docs-ref/content/,
   and copied one way into mariadb-docs (tools/community/mariadb-ai-plugins/).
   Make every change in mariadb-corporation/ai-plugins. A change made in mariadb-docs or in the
   GitBook editor is overwritten by the next sync.
 -->
-
-# REST Endpoints with MariaDB REST Service
 
 The MariaDB REST Service provides REST endpoints for schema objects, which return and accept JSON. You configure the REST Service with SQL statements that extend the SQL grammar with `REST` keywords. MariaDB Shell supports these statements, so the agent can create REST services and endpoints with the same MCP tools it uses to run other SQL statements.
 

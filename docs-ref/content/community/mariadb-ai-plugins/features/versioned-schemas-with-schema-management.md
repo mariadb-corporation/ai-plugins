@@ -4,14 +4,14 @@ description: >-
   Management and the msm tools of the mariadb-shell MCP server.
 ---
 
+# Versioned Schemas with Schema Management
+
 <!--
   SYNCED: this page is maintained in mariadb-corporation/ai-plugins, under docs-ref/content/,
   and copied one way into mariadb-docs (tools/community/mariadb-ai-plugins/).
   Make every change in mariadb-corporation/ai-plugins. A change made in mariadb-docs or in the
   GitBook editor is overwritten by the next sync.
 -->
-
-# Versioned Schemas with Schema Management
 
 MariaDB Schema Management (MSM) manages a database schema as a versioned project. A project contains a development script, a snapshot of each released version, an update script for each release, and generated deployment scripts. A deployment script creates the schema on a new server, or upgrades an existing schema to the version of the release.
 

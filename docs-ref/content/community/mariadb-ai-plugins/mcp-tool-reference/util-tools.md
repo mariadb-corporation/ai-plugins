@@ -3,14 +3,14 @@ description: >-
   Reference for the util tools of the mariadb-shell MCP server, which dump, load, export, import, and copy data as background tasks.
 ---
 
+# util Tools
+
 <!--
   SYNCED: this page is maintained in mariadb-corporation/ai-plugins, under docs-ref/content/,
   and copied one way into mariadb-docs (tools/community/mariadb-ai-plugins/).
   Make every change in mariadb-corporation/ai-plugins. A change made in mariadb-docs or in the
   GitBook editor is overwritten by the next sync.
 -->
-
-# util Tools
 
 The `util.*` tools run MariaDB Shell's dump, load, export, import, and copy utilities. Each utility runs as a background task, and the `util.get_task`, `util.list_tasks`, and `util.cancel_task` tools track the tasks and stop them.
 

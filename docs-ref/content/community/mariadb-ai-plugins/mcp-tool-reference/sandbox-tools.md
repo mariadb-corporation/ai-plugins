@@ -3,14 +3,14 @@ description: >-
   Reference for the sandbox tools of the mariadb-shell MCP server, which list deployable MariaDB Server versions and deploy, start, stop, and delete local instances.
 ---
 
+# sandbox Tools
+
 <!--
   SYNCED: this page is maintained in mariadb-corporation/ai-plugins, under docs-ref/content/,
   and copied one way into mariadb-docs (tools/community/mariadb-ai-plugins/).
   Make every change in mariadb-corporation/ai-plugins. A change made in mariadb-docs or in the
   GitBook editor is overwritten by the next sync.
 -->
-
-# sandbox Tools
 
 The `sandbox.*` tools deploy and manage local MariaDB Server instances for development and testing. For an introduction, see [Sandbox Instances](../features/sandbox-instances.md).
 

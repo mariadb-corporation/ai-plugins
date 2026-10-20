@@ -3,14 +3,14 @@ description: >-
   Install MariaDB AI Plugins in Claude Code, Codex, OpenCode, Pi, or Hermes Agent.
 ---
 
+# Installation
+
 <!--
   SYNCED: this page is maintained in mariadb-corporation/ai-plugins, under docs-ref/content/,
   and copied one way into mariadb-docs (tools/community/mariadb-ai-plugins/).
   Make every change in mariadb-corporation/ai-plugins. A change made in mariadb-docs or in the
   GitBook editor is overwritten by the next sync.
 -->
-
-# Installation
 
 If a harness has its own plugin system, you install MariaDB AI Plugins through it. The installation consists of two steps:
 

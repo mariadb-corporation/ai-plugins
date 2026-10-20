@@ -3,14 +3,14 @@ description: >-
   Reference for the optional migrator tools of the mariadb-shell MCP server, which migrate a MySQL database to MariaDB.
 ---
 
+# migrator Tools
+
 <!--
   SYNCED: this page is maintained in mariadb-corporation/ai-plugins, under docs-ref/content/,
   and copied one way into mariadb-docs (tools/community/mariadb-ai-plugins/).
   Make every change in mariadb-corporation/ai-plugins. A change made in mariadb-docs or in the
   GitBook editor is overwritten by the next sync.
 -->
-
-# migrator Tools
 
 The `migrator.*` tools migrate a MySQL database to MariaDB with the MySQL-to-MariaDB migration tooling. These tools are optional and aren't included in the count of 40 tools.
 

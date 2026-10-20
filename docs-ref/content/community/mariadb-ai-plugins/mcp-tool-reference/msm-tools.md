@@ -3,14 +3,14 @@ description: >-
   Reference for the msm tools of the mariadb-shell MCP server, which manage versioned schema projects, releases, and deployments with MariaDB Schema Management.
 ---
 
+# msm Tools
+
 <!--
   SYNCED: this page is maintained in mariadb-corporation/ai-plugins, under docs-ref/content/,
   and copied one way into mariadb-docs (tools/community/mariadb-ai-plugins/).
   Make every change in mariadb-corporation/ai-plugins. A change made in mariadb-docs or in the
   GitBook editor is overwritten by the next sync.
 -->
-
-# msm Tools
 
 The `msm.*` tools manage database schemas with MariaDB Schema Management (MSM). With these tools, the agent creates and edits versioned schema projects, prepares releases, and generates and deploys the scripts that create or upgrade a schema. See [Versioned Schemas with Schema Management](../features/versioned-schemas-with-schema-management.md) for the workflow.
 

@@ -4,14 +4,14 @@ description: >-
   they include, and which of them include the mariadb-shell MCP server.
 ---
 
+# Plugin Variants
+
 <!--
   SYNCED: this page is maintained in mariadb-corporation/ai-plugins, under docs-ref/content/,
   and copied one way into mariadb-docs (tools/community/mariadb-ai-plugins/).
   Make every change in mariadb-corporation/ai-plugins. A change made in mariadb-docs or in the
   GitBook editor is overwritten by the next sync.
 -->
-
-# Plugin Variants
 
 MariaDB AI Plugins are available in three variants. They differ in the skills they include and in whether they include the MCP server. All variants are built from the same sources.
 

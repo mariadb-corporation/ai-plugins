@@ -3,14 +3,14 @@ description: >-
   Reference for the MariaDB AI Plugins skills that cover installing and using the MariaDB connectors.
 ---
 
+# Connector Skills
+
 <!--
   SYNCED: this page is maintained in mariadb-corporation/ai-plugins, under docs-ref/content/,
   and copied one way into mariadb-docs (tools/community/mariadb-ai-plugins/).
   Make every change in mariadb-corporation/ai-plugins. A change made in mariadb-docs or in the
   GitBook editor is overwritten by the next sync.
 -->
-
-# Connector Skills
 
 There are two skills for each MariaDB connector. One covers installation and configuration, and the other covers using the connector in application code.
 
