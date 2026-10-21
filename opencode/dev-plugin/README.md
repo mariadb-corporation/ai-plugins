@@ -149,6 +149,42 @@ every other client. A client is caught behind a path, `env`, a pipe, `&&`,
 the agent run the clients regardless, start it with `MARIADB_PLUGIN_ALLOW_CLI=1`
 in its environment; the model cannot set that itself.
 
+## The SQL language server
+
+`mariadb-lsp`, the MariaDB SQL language server, ships in the `mariadb-shell`
+packages from 26.10.3 on. OpenCode feeds its diagnostics back to the model after
+each edit of a `.sql` file. Configured in [opencode.json](opencode.json), next to
+the MCP server:
+
+```json
+{
+  "lsp": {
+    "mariadb": {
+      "command": ["{env:MARIADB_DEV_PLUGIN}/scripts/mariadb-lsp-launcher.sh"],
+      "extensions": [".sql"],
+      "env": { "MARIADB_SHELL_VERSION": "26.10.3" }
+    }
+  }
+}
+```
+
+OpenCode leaves every language server off while `lsp` is missing from its
+config. This entry turns them on: its own built-in servers as well as this one.
+To keep them off, leave the `lsp` key out of what you merge into your config.
+
+The launcher ([scripts/mariadb-lsp-launcher.sh](scripts/mariadb-lsp-launcher.sh))
+**never installs anything**. Installing `mariadb-shell` is left to the MCP launcher
+alone, so starting both servers at once downloads the package once. It:
+
+- Finds the `mariadb-shell` the MCP launcher would run (`$MARIADB_SHELL_BIN`, one
+  on `PATH`, or `~/.local/bin/mariadb-shell`, at `MARIADB_SHELL_VERSION` or newer)
+  and starts the `mariadb-lsp` packaged with it, as `mariadb-lsp lsp`.
+- When there is no such shell yet, as on a first start, waits for the MCP
+  launcher's install (`MARIADB_LSP_WAIT` seconds, default 180), then looks again.
+- Falls back to any `mariadb-lsp` on `PATH` or in `~/.local/bin`. The native
+  `.deb` and `.rpm` packages of the shell do not include it yet.
+- Takes `MARIADB_LSP_BIN` to run a binary of your own instead.
+
 ## Skills
 
 Skills are vendored under [skills/](skills/) in a **flat** layout — one directory

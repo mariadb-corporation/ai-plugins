@@ -155,3 +155,60 @@ def test_additional_skill_matches_its_source(skill: skills.Skill):
         f"vendored {skill.rel_path} differs from {source.relative_to(skills.REPO_ROOT)} — "
         "re-run scripts/sync-skills.sh from the repo root"
     )
+
+
+# --- the SQL language server --------------------------------------------------
+# .lsp.json is not checked by `claude plugin validate`, and an unknown key makes
+# Claude Code reject the whole file, so its shape is pinned here.
+
+LSP_KEYS = {
+    "command", "args", "extensionToLanguage", "transport", "env",
+    "initializationOptions", "settings", "workspaceFolder", "startupTimeout",
+    "shutdownTimeout", "requestTimeout", "restartOnCrash", "maxRestarts",
+    "diagnostics",
+}
+
+# Every plugin that ships the LSP launcher. Codex and pi have no way to
+# register a language server, so they get none.
+LSP_PLUGINS = [
+    "claude/dev-plugin", "claude/sql-plugin",
+    "opencode/dev-plugin", "opencode/sql-plugin",
+    "hermes/dev-plugin", "hermes/sql-plugin",
+]
+
+
+@pytest.mark.parametrize("plugin", ["dev-plugin", "sql-plugin"])
+def test_lsp_json_registers_the_launcher(plugin: str):
+    import json
+    import os
+
+    root = skills.REPO_ROOT / "claude" / plugin
+    config = json.loads((root / ".lsp.json").read_text(encoding="utf-8"))
+    assert list(config) == ["mariadb"]
+    server = config["mariadb"]
+    assert set(server) <= LSP_KEYS, f"unknown keys: {set(server) - LSP_KEYS}"
+    assert server["extensionToLanguage"] == {".sql": "sql"}
+    prefix = "${CLAUDE_PLUGIN_ROOT}/"
+    assert server["command"].startswith(prefix)
+    launcher = root / server["command"][len(prefix):]
+    assert launcher.is_file() and os.access(launcher, os.X_OK), f"{launcher} is not an executable file"
+
+
+@pytest.mark.parametrize("plugin", LSP_PLUGINS)
+@pytest.mark.parametrize("script", ["mariadb-lsp-launcher.sh", "mariadb-lsp-launcher.cmd"])
+def test_lsp_launcher_is_the_shared_launcher(plugin: str, script: str):
+    """The LSP launcher is one script copied into every plugin that can use it."""
+    ours = (skills.REPO_ROOT / plugin / "scripts" / script).read_bytes()
+    claude = (skills.PLUGIN_ROOT / "scripts" / script).read_bytes()
+    assert ours == claude, f"{plugin}/scripts/{script} differs from claude/dev-plugin/scripts/{script}"
+
+
+def test_lsp_launcher_never_installs():
+    """Only the MCP launcher installs mariadb-shell, so a harness that starts
+    both servers at once downloads the package once."""
+    for script in ["mariadb-lsp-launcher.sh", "mariadb-lsp-launcher.cmd"]:
+        text = (skills.PLUGIN_ROOT / "scripts" / script).read_text(encoding="utf-8")
+        # The MCP launcher fetches its installer from raw.githubusercontent.com and
+        # runs it; the hand-install hint in the error message is fine.
+        found = [n for n in ["raw.githubusercontent.com", "Invoke-WebRequest", "run_installer", "PS_INSTALLER", "mktemp"] if n in text]
+        assert not found, f"{script} must not install, but has {found}"

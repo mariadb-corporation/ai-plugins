@@ -6,6 +6,14 @@ project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- The MariaDB SQL language server, `mariadb-lsp`, for `.sql` files, as an `lsp`
+  entry in `opencode.json`. It ships in mariadb-shell 26.10.3 and later. Its
+  launcher, `scripts/mariadb-lsp-launcher.sh` (`.cmd` on Windows), never
+  installs anything: it waits for the MCP launcher's install, so the package
+  is downloaded once.
+
 ### Changed
 
 - The `LICENSE` file is updated to include the licenses of the latest

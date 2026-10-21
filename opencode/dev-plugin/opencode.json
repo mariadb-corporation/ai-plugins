@@ -10,5 +10,14 @@
       },
       "enabled": true
     }
+  },
+  "lsp": {
+    "mariadb": {
+      "command": ["{env:MARIADB_DEV_PLUGIN}/scripts/mariadb-lsp-launcher.sh"],
+      "extensions": [".sql"],
+      "env": {
+        "MARIADB_SHELL_VERSION": "26.10.3"
+      }
+    }
   }
 }

@@ -53,9 +53,10 @@ Arguments:
               a *minimum*: each launcher accepts any install at or above it.
 
 Updates, across claude/, codex/, opencode/, pi/ and hermes/:
-  - MARIADB_SHELL_VERSION in each plugin's MCP config (.mcp.json, opencode.json,
-    mcp.json)
-  - the fallback default in the launchers (mariadb-mcp-launcher.sh / .cmd)
+  - MARIADB_SHELL_VERSION in each plugin's MCP and LSP config (.mcp.json,
+    .lsp.json, opencode.json, mcp.json)
+  - the fallback default in the launchers (mariadb-mcp-launcher.sh / .cmd and
+    mariadb-lsp-launcher.sh / .cmd)
   - the version the setup-*-mcp scripts write (codex, pi)
   - the MARIADB_SHELL_VERSION shown in each plugin README
 
@@ -98,7 +99,7 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 command -v perl >/dev/null 2>&1 || { echo "error: perl is required" >&2; exit 1; }
 
-# Collect the files that carry the version: launcher scripts (all variants) and
+# Collect the files that carry the version: launcher scripts (MCP and LSP) and
 # the MCP config files, across every *-plugin dir (excludes *-plugin-test dirs).
 files=()
 while IFS= read -r f; do files+=("$f"); done < <(
@@ -110,9 +111,12 @@ while IFS= read -r f; do files+=("$f"); done < <(
        -type f \( \
          -name 'mariadb-mcp-launcher.sh' -o \
          -name 'mariadb-mcp-launcher.cmd' -o \
+         -name 'mariadb-lsp-launcher.sh' -o \
+         -name 'mariadb-lsp-launcher.cmd' -o \
          -name 'setup-codex-mcp.sh' -o \
          -name 'setup-codex-mcp.cmd' -o \
          -name '.mcp.json' -o \
+         -name '.lsp.json' -o \
          -name 'mcp.json' -o \
          -name 'opencode.json' -o \
          -name 'README.md' \
