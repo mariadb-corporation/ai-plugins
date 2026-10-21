@@ -29,6 +29,11 @@ directory:
 export MARIADB_DEV_PLUGIN=/path/to/ai-plugins/opencode/dev-plugin
 ```
 
+On Windows, write the path with forward slashes, for example
+`setx MARIADB_DEV_PLUGIN C:/path/to/ai-plugins/opencode/dev-plugin`. OpenCode pastes the
+value into the JSON text before parsing it, and backslashes there make the
+whole config invalid (`InvalidEscapeCharacter`).
+
 **2. Make the skills discoverable.** OpenCode loads skills one directory deep from
 `.opencode/skills/`, `~/.config/opencode/skills/`, `.claude/skills/`, and
 `.agents/skills/`. Symlink (or copy) the flat `skills/` dir into one of those:
@@ -55,7 +60,7 @@ Configured in [opencode.json](opencode.json):
   "mcp": {
     "mariadb": {
       "type": "local",
-      "command": ["{env:MARIADB_DEV_PLUGIN}/scripts/mariadb-mcp-launcher.sh"],
+      "command": ["{env:MARIADB_DEV_PLUGIN}/scripts/mariadb-mcp-launcher"],
       "environment": { "MARIADB_SHELL_VERSION": "26.10.3" },
       "enabled": true
     }
@@ -84,9 +89,11 @@ The launcher ([scripts/mariadb-mcp-launcher.sh](scripts/mariadb-mcp-launcher.sh)
   MCP transport alone, so the launcher's own messages — and the installer's — go
   to stderr.
 
-**Windows:** the `.sh` launcher works on macOS/Linux and under Git-Bash; native
-Windows users should point the `command` at
-[scripts/mariadb-mcp-launcher.cmd](scripts/mariadb-mcp-launcher.cmd).
+**Windows:** `opencode.json` cannot branch per OS, so it names the extensionless
+launchers `scripts/mariadb-mcp-launcher` and `scripts/mariadb-lsp-launcher`. On
+macOS and Linux each is a shell script that hands over to its `.sh` twin; on
+native Windows, OpenCode resolves the name through `%PATHEXT%` and runs the
+`.cmd` launcher next to it, so no edit is needed.
 
 **Private repository:** while `mariadb-shell` is private, set `GH_TOKEN` (or
 `MARIADB_SHELL_TOKEN`, or simply run `gh auth login`). The token is needed twice:
@@ -160,7 +167,7 @@ the MCP server:
 {
   "lsp": {
     "mariadb": {
-      "command": ["{env:MARIADB_DEV_PLUGIN}/scripts/mariadb-lsp-launcher.sh"],
+      "command": ["{env:MARIADB_DEV_PLUGIN}/scripts/mariadb-lsp-launcher"],
       "extensions": [".sql"],
       "env": { "MARIADB_SHELL_VERSION": "26.10.3" }
     }

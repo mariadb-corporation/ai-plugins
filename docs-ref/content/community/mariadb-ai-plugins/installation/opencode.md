@@ -32,6 +32,8 @@ git clone https://github.com/mariadb/ai-plugins.git
    export MARIADB_DEV_PLUGIN=/path/to/ai-plugins/opencode/dev-plugin
    ```
 
+   On Windows, write the path with forward slashes, for example `C:/path/to/ai-plugins/opencode/dev-plugin`. OpenCode inserts the value into the JSON text of the configuration before it parses it, so backslashes make the configuration invalid.
+
 ## Make the Skills Discoverable
 
 OpenCode loads skills one directory deep from `.opencode/skills/`, `~/.config/opencode/skills/`, `.claude/skills/`, and `.agents/skills/`. Link the plugin's `skills/` directory into one of them:

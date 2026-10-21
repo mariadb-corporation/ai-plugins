@@ -57,7 +57,9 @@ import pytest
 pytestmark = pytest.mark.e2e
 
 PLUGIN_DIR = (Path(__file__).resolve().parent.parent / "dev-plugin").resolve()
-MCP_LAUNCHER = PLUGIN_DIR / "scripts" / "mariadb-mcp-launcher.sh"
+# Windows runs the .cmd launcher (and installs .cmd shims); elsewhere the .sh.
+MCP_LAUNCHER = PLUGIN_DIR / "scripts" / ("mariadb-mcp-launcher.cmd" if os.name == "nt" else "mariadb-mcp-launcher.sh")
+SUFFIXES = (".cmd", ".exe", "") if os.name == "nt" else ("",)
 TIMEOUT = int(os.environ.get("E2E_TIMEOUT", "900"))
 MODEL = os.environ.get("E2E_OPENCODE_MODEL", "")
 
@@ -75,15 +77,18 @@ def _clean_path() -> str:
     """PATH without any directory that would hand the launchers a binary."""
     keep = [
         d for d in os.environ.get("PATH", "").split(os.pathsep)
-        if d and not any((Path(d) / n).exists() for n in ("mariadb-shell", "mariadb-lsp"))
+        if d and not any((Path(d) / (n + x)).exists()
+                         for n in ("mariadb-shell", "mariadb-lsp") for x in SUFFIXES)
     ]
     return os.pathsep.join(keep)
 
 
 def _clean_setup(root: Path) -> dict:
     """Empty install dirs, a git project with the broken file, and the env."""
-    bindir, prefix, project = root / "bin", root / "share", root / "project"
-    for d in (bindir, prefix, project):
+    # The bin dir inside the prefix: install.ps1's shims need that layout.
+    prefix, project = root / "ms", root / "project"
+    bindir = prefix / "bin"
+    for d in (prefix, bindir, project):
         d.mkdir()
     subprocess.run(["git", "init", "-q"], cwd=project, check=True)
 
@@ -98,7 +103,9 @@ def _clean_setup(root: Path) -> dict:
         "PATH": _clean_path(),
         "MARIADB_SHELL_BINDIR": str(bindir),
         "MARIADB_SHELL_PREFIX": str(prefix),
-        "MARIADB_DEV_PLUGIN": str(PLUGIN_DIR),
+        # OpenCode pastes {env:...} into the JSON text before parsing it, so a
+        # Windows path needs forward slashes to stay valid JSON.
+        "MARIADB_DEV_PLUGIN": PLUGIN_DIR.as_posix(),
         "OPENCODE_CONFIG": str(config_path),
     })
     for key in ("MARIADB_SHELL_BIN", "MARIADB_LSP_BIN"):
@@ -107,7 +114,7 @@ def _clean_setup(root: Path) -> dict:
 
 
 def _packages(prefix: Path) -> list:
-    return sorted(p.name for p in prefix.iterdir() if p.is_dir())
+    return sorted(p.name for p in prefix.iterdir() if p.is_dir() and p.name != "bin")
 
 
 @pytest.fixture(scope="module")
@@ -123,7 +130,8 @@ def installed(tmp_path_factory, opencode):
     """A clean install made by the MCP launcher, as OpenCode would start it."""
     setup = _clean_setup(tmp_path_factory.mktemp("opencode_lsp_clean"))
     # stdin at EOF: once installed, the shell's MCP server starts and ends.
-    run = subprocess.run([str(MCP_LAUNCHER)], env=setup["env"], stdin=subprocess.DEVNULL,
+    command = ["cmd", "/c", str(MCP_LAUNCHER)] if os.name == "nt" else [str(MCP_LAUNCHER)]
+    run = subprocess.run(command, env=setup["env"], stdin=subprocess.DEVNULL,
                          capture_output=True, text=True, timeout=TIMEOUT)
     setup["launcher"] = run
     return setup
@@ -134,7 +142,7 @@ def test_step1_mcp_launcher_installs_once(installed):
     assert len(packages) == 1, (
         f"expected one installed package, got {packages}:\n{installed['launcher'].stderr[-2000:]}"
     )
-    assert (installed["bindir"] / "mariadb-lsp").exists(), (
+    assert any((installed["bindir"] / ("mariadb-lsp" + x)).exists() for x in SUFFIXES), (
         f"the package linked no mariadb-lsp into {installed['bindir']}"
     )
 
@@ -171,9 +179,11 @@ def model_run(tmp_path_factory, opencode):
                     f"`opencode auth login`): {(errors or [probe.stderr])[-1][:300]}")
 
     setup = _clean_setup(tmp_path_factory.mktemp("opencode_lsp_model"))
+    # One line: on Windows, `opencode` is an npm .cmd wrapper, and a batch file
+    # cuts an argument at its first line break.
     prompt = (
         f"Use your write tool to create the file {BROKEN_SQL} in the current directory "
-        f"with exactly this content:\n{BROKEN}\n"
+        f"whose content is exactly this one line: {BROKEN.strip()} "
         "Do not fix it and write it only once. Then reply with any diagnostics the "
         "write reported, verbatim, or say that there were none."
     )

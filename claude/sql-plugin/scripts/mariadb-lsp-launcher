@@ -21,11 +21,11 @@
 #
 #   * On macOS and Linux the kernel runs THIS file through the shebang above,
 #     and it hands over to mariadb-lsp-launcher.sh.
-#   * On Windows, Claude Code resolves the command through %PATHEXT% and lands
-#     on mariadb-lsp-launcher.cmd next to it; this file, having no extension,
-#     is not a program there. (A .sh command is run through bash instead, which
-#     a native Windows machine usually doesn't have on its PATH.)
+#   * On Windows, Claude Code and OpenCode resolve the command through
+#     %PATHEXT% and land on mariadb-lsp-launcher.cmd next to it; this file,
+#     having no extension, is not a program there. (Given a .sh command, they
+#     run it through bash, which native Windows usually doesn't have on PATH.)
 #
-# The same device as Codex's mariadb-mcp-launcher. Verified with Claude Code
-# 2.1.306 on Windows 11 ARM64.
+# The same device as Codex's mariadb-mcp-launcher. Verified on Windows 11
+# ARM64 with Claude Code 2.1.306 and OpenCode 1.19.3.
 exec "$(dirname "$0")/mariadb-lsp-launcher.sh" "$@"

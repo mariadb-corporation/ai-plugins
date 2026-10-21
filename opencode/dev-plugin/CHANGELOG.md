@@ -23,6 +23,16 @@ project adheres to [Semantic Versioning](https://semver.org/).
 - The `LICENSE` file is updated to include the licenses of the latest
   third-party components.
 
+### Fixed
+
+- The plugin now works on native Windows without editing `opencode.json`: its
+  `mcp` and `lsp` commands name the extensionless `scripts/mariadb-mcp-launcher`
+  and `scripts/mariadb-lsp-launcher`, which OpenCode resolves to the `.cmd`
+  launchers on Windows and which hand over to the `.sh` launchers elsewhere.
+  The README also says to give `MARIADB_DEV_PLUGIN` forward slashes on Windows: OpenCode
+  pastes it into the JSON before parsing, and backslashes made the config
+  invalid.
+
 ## [26.10.4] - 2026-10-19
 
 ### Added

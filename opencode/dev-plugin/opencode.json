@@ -4,7 +4,7 @@
   "mcp": {
     "mariadb": {
       "type": "local",
-      "command": ["{env:MARIADB_DEV_PLUGIN}/scripts/mariadb-mcp-launcher.sh"],
+      "command": ["{env:MARIADB_DEV_PLUGIN}/scripts/mariadb-mcp-launcher"],
       "environment": {
         "MARIADB_SHELL_VERSION": "26.10.3"
       },
@@ -13,7 +13,7 @@
   },
   "lsp": {
     "mariadb": {
-      "command": ["{env:MARIADB_DEV_PLUGIN}/scripts/mariadb-lsp-launcher.sh"],
+      "command": ["{env:MARIADB_DEV_PLUGIN}/scripts/mariadb-lsp-launcher"],
       "extensions": [".sql"],
       "env": {
         "MARIADB_SHELL_VERSION": "26.10.3"

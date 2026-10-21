@@ -97,7 +97,8 @@ def _prompt() -> str:
         f"{SCHEMA}\n"
         f"Then use the LSP tool with the documentSymbol operation on {SCHEMA_SQL}. "
         "The language server may still be starting: if the call says so, call it "
-        "again (up to five times). Reply with the symbol names it returned, or quote "
+        "again (up to ten times: on a first start it waits for the shell download). "
+        "Reply with the symbol names it returned, or quote "
         "the last error if it never succeeded."
     )
 
