@@ -134,12 +134,23 @@ while IFS= read -r f; do files+=("$f"); done < <(
 DOCS_CONFIG="$REPO_ROOT/docs/_config.yml"
 [ -f "$DOCS_CONFIG" ] && files+=("$DOCS_CONFIG")
 
+# The reference docs (docs-ref/) quote the floor in two places: the default in
+# the Configuration Reference's variable table, and the installation
+# requirements. Release notes and worked examples name past versions on purpose
+# and are left alone.
+DOCS_REF="$REPO_ROOT/docs-ref/content/community/mariadb-ai-plugins"
+for f in "$DOCS_REF/configuration-reference.md" "$DOCS_REF/installation/README.md"; do
+  [ -f "$f" ] && files+=("$f")
+done
+
 # Shapes the version appears in:
 #   JSON MCP config / README example:  "MARIADB_SHELL_VERSION": "<v>"
 #   bash launcher:                     VERSION="${MARIADB_SHELL_VERSION:-<v>}"
 #   cmd launcher:                      set "MARIADB_SHELL_VERSION=<v>"
 #   README prose:                      `MARIADB_SHELL_VERSION` (default `<v>`)
 #   docs/_config.yml:                  shell_floor: "<v>"
+#   docs-ref variable table:           | `MARIADB_SHELL_VERSION` | `<v>` |
+#   docs-ref installation requirement: unless MariaDB Shell <v> or later is
 V="$VERSION" perl -i -pe '
   my $v = $ENV{V};
   s/("MARIADB_SHELL_VERSION"\s*:\s*")[^"]*(")/${1}${v}${2}/g;
@@ -148,9 +159,11 @@ V="$VERSION" perl -i -pe '
   s/^(SHELL_VERSION=")[^"]*(")/${1}${v}${2}/g;
   s/(MARIADB_SHELL_VERSION` \(default `)[^`]*(`\))/${1}${v}${2}/g;
   s/^(shell_floor:\s*")[^"]*(")/${1}${v}${2}/g;
+  s/^(\| `MARIADB_SHELL_VERSION` \| `)[^`]*(` \|)/${1}${v}${2}/g;
+  s/(unless MariaDB Shell )[0-9][0-9.]*( or later is)/${1}${v}${2}/g;
 ' "${files[@]}"
 
 echo "Set MARIADB_SHELL_VERSION -> $VERSION in ${#files[@]} file(s):"
-grep -rn 'SHELL_VERSION\|shell_floor' "${files[@]}" \
-  | grep -E "\-${VERSION}\}|=\"?${VERSION}\"|: \"${VERSION}\"" \
+grep -rn 'SHELL_VERSION\|shell_floor\|MariaDB Shell [0-9]' "${files[@]}" \
+  | grep -E "\-${VERSION}\}|=\"?${VERSION}\"|: \"${VERSION}\"|\`${VERSION}\`|Shell ${VERSION} or later" \
   | sed 's/^/  /'

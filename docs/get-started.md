@@ -31,6 +31,12 @@ MariaDB tooling itself). Unless you know you want otherwise, install `dev`.
 On first start the plugin downloads and extracts the `mariadb-shell` package
 unless a suitable one is already installed. Depending on your connection this
 can take a minute. It only happens once.
+
+Claude Code waits 30 seconds for an MCP server to connect. If the download takes
+longer, `/mcp` shows the `mariadb` server as failed, but the install keeps going
+— reconnect the server from `/mcp` when it is done. To give it more time, set
+`MCP_TIMEOUT` (milliseconds) in `~/.claude/settings.json`:
+`{ "env": { "MCP_TIMEOUT": "120000" } }`.
 </div>
 
 ### Claude Code

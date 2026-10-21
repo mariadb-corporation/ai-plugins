@@ -25,6 +25,18 @@ run — `$MARIADB_SHELL_BIN`, one on `PATH`, or an existing install in
 otherwise installs the newest release there with the shell's own installer. Then
 it starts that binary as the MCP server. Later runs reuse the install.
 
+On a slow connection that first install can take longer than the 30 seconds Claude
+Code waits for an MCP server to connect, and `/mcp` then lists the `mariadb`
+server as failed. The install still finishes in the background: reconnect the
+server from `/mcp` once it is done, or start a new session. To give the first
+start more time, raise the timeout (in milliseconds) in `~/.claude/settings.json`:
+
+```json
+{ "env": { "MCP_TIMEOUT": "120000" } }
+```
+
+A plugin cannot set this for you; Claude Code reads it from the environment only.
+
 ## The MCP server
 
 Configured in [.mcp.json](.mcp.json):
