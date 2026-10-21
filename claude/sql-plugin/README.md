@@ -45,7 +45,7 @@ Configured in [.mcp.json](.mcp.json):
 {
   "mcpServers": {
     "mariadb": {
-      "command": "${CLAUDE_PLUGIN_ROOT}/scripts/mariadb-mcp-launcher.sh",
+      "command": "${CLAUDE_PLUGIN_ROOT}/scripts/mariadb-mcp-launcher",
       "args": [],
       "env": { "MARIADB_SHELL_VERSION": "26.10.3" }
     }
@@ -70,9 +70,11 @@ The launcher ([scripts/mariadb-mcp-launcher.sh](scripts/mariadb-mcp-launcher.sh)
   MCP transport alone, so the launcher's own messages — and the installer's — go
   to stderr.
 
-**Windows:** `.mcp.json` cannot branch per OS. The `.sh` launcher works on
-macOS/Linux and under Git-Bash; native Windows users should point the `command`
-at [scripts/mariadb-mcp-launcher.cmd](scripts/mariadb-mcp-launcher.cmd).
+**Windows:** `.mcp.json` and `.lsp.json` cannot branch per OS, so both name an
+extensionless launcher, `scripts/mariadb-mcp-launcher` and
+`scripts/mariadb-lsp-launcher`. On macOS and Linux each is a shell script that
+hands over to its `.sh` twin; on native Windows, Claude Code resolves the name
+through `%PATHEXT%` and runs the `.cmd` launcher next to it, so no edit is needed.
 
 **Private repository:** while `mariadb-shell` is private, set `GH_TOKEN` (or
 `MARIADB_SHELL_TOKEN`, or simply run `gh auth login`). The token is needed twice:
@@ -143,7 +145,7 @@ Configured in [.lsp.json](.lsp.json):
 ```json
 {
   "mariadb": {
-    "command": "${CLAUDE_PLUGIN_ROOT}/scripts/mariadb-lsp-launcher.sh",
+    "command": "${CLAUDE_PLUGIN_ROOT}/scripts/mariadb-lsp-launcher",
     "args": [],
     "extensionToLanguage": { ".sql": "sql" },
     "env": { "MARIADB_SHELL_VERSION": "26.10.3" },

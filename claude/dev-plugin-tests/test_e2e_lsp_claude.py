@@ -77,11 +77,16 @@ def _claude_bin() -> str:
     return os.environ.get("CLAUDE_BIN") or shutil.which("claude") or ""
 
 
+# Windows installs .cmd shims (install.ps1), elsewhere the names are links.
+SUFFIXES = (".cmd", ".exe", "") if os.name == "nt" else ("",)
+
+
 def _clean_path() -> str:
     """PATH without any directory that would hand the launchers a binary."""
     keep = [
         d for d in os.environ.get("PATH", "").split(os.pathsep)
-        if d and not any((Path(d) / n).exists() for n in ("mariadb-shell", "mariadb-lsp"))
+        if d and not any((Path(d) / (n + x)).exists()
+                         for n in ("mariadb-shell", "mariadb-lsp") for x in SUFFIXES)
     ]
     return os.pathsep.join(keep)
 
@@ -105,8 +110,10 @@ def run(tmp_path_factory):
     claude = str(Path(claude).resolve())  # PATH is narrowed below
 
     root = tmp_path_factory.mktemp("lsp_clean")
-    bindir, prefix, project = root / "bin", root / "share", root / "project"
-    for d in (bindir, prefix, project):
+    # The bin dir inside the prefix: install.ps1's shims need that layout.
+    prefix, project = root / "ms", root / "project"
+    bindir = prefix / "bin"
+    for d in (prefix, bindir, project):
         d.mkdir()
     subprocess.run(["git", "init", "-q"], cwd=project, check=True)
     debug_log = root / "claude-debug.log"
@@ -197,9 +204,9 @@ def test_step1_run_finished_and_wrote_the_file(run):
 
 
 def test_step2_one_install_by_the_mcp_launcher(run):
-    packages = sorted(p.name for p in run["prefix"].iterdir() if p.is_dir())
+    packages = sorted(p.name for p in run["prefix"].iterdir() if p.is_dir() and p.name != "bin")
     assert len(packages) == 1, f"expected one installed package in the clean prefix, got {packages}"
-    assert (run["bindir"] / "mariadb-lsp").exists(), (
+    assert any((run["bindir"] / ("mariadb-lsp" + x)).exists() for x in SUFFIXES), (
         f"the installed package linked no mariadb-lsp into {run['bindir']}: "
         f"{sorted(p.name for p in run['bindir'].iterdir())}"
     )

@@ -23,6 +23,15 @@ project adheres to [Semantic Versioning](https://semver.org/).
 - The `LICENSE` file is updated to include the licenses of the latest
   third-party components.
 
+### Fixed
+
+- The plugin now works on native Windows without editing its config:
+  `.mcp.json` and `.lsp.json` name the extensionless `scripts/mariadb-mcp-launcher`
+  and `scripts/mariadb-lsp-launcher`, which Claude Code resolves to the `.cmd`
+  launchers on Windows and which hand over to the `.sh` launchers elsewhere.
+  Before, Claude Code ran the `.sh` launchers through `bash`, which native
+  Windows usually lacks, so neither server started.
+
 ## [26.10.4] - 2026-10-19
 
 ### Added

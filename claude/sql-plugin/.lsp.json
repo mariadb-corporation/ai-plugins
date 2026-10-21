@@ -1,6 +1,6 @@
 {
   "mariadb": {
-    "command": "${CLAUDE_PLUGIN_ROOT}/scripts/mariadb-lsp-launcher.sh",
+    "command": "${CLAUDE_PLUGIN_ROOT}/scripts/mariadb-lsp-launcher",
     "args": [],
     "extensionToLanguage": {
       ".sql": "sql"
