@@ -60,8 +60,13 @@ set /a WAITED=0
 
 rem --- 1. Escape hatch: explicit binary ---------------------------------------
 if not defined MARIADB_LSP_BIN goto find_shell
+if not exist "%MARIADB_LSP_BIN%" goto no_lsp_bin
 call "%MARIADB_LSP_BIN%" lsp %*
 exit /b %errorlevel%
+
+:no_lsp_bin
+echo mariadb-lsp-launcher: error: MARIADB_LSP_BIN does not exist: %MARIADB_LSP_BIN% 1>&2
+exit /b 1
 
 rem --- 2. The shell the MCP launcher runs --------------------------------------
 :find_shell
@@ -103,6 +108,16 @@ if not defined SHELL_BIN goto any_lsp
 for %%D in ("%SHELL_BIN%") do set "SHELL_DIR=%%~dpD"
 for %%N in (mariadb-lsp.cmd mariadb-lsp.exe) do if not defined LSP_BIN if exist "%SHELL_DIR%%%N" set "LSP_BIN=%SHELL_DIR%%%N"
 if defined LSP_BIN goto start
+rem A shell that turned up while we waited comes from an install still under
+rem way: install.ps1 writes mariadb-lsp.cmd a moment after mariadb-shell.cmd.
+rem Give it one more tick before deciding there is none.
+if %WAITED%==0 goto no_lsp_beside
+if defined LSP_RECHECKED goto no_lsp_beside
+set "LSP_RECHECKED=1"
+ping -n 3 127.0.0.1 >nul 2>&1
+goto have_shell
+
+:no_lsp_beside
 echo mariadb-lsp-launcher: the mariadb-shell at %SHELL_BIN% has no mariadb-lsp beside it 1>&2
 
 rem --- 4. Any mariadb-lsp at all ------------------------------------------------

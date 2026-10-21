@@ -1,1 +1,0 @@
-CREATE TABLE note (id INT PRIMARY KEY,, title VARCHAR(200));

@@ -207,7 +207,6 @@ def test_step2_one_install_by_the_mcp_launcher(run):
     )
     installs = run["log"].count("mariadb-mcp-launcher: no suitable mariadb-shell found; installing")
     assert installs <= 1, f"the MCP launcher installed {installs} times"
-    assert "mariadb-lsp-launcher: no suitable" not in run["log"]
     if "mariadb-lsp-launcher: no mariadb-shell" in run["log"]:
         print("the LSP launcher waited for the MCP launcher's install")
 

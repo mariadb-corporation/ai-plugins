@@ -59,6 +59,9 @@ set -euo pipefail
 VERSION="${MARIADB_SHELL_VERSION:-26.10.3}"
 BINDIR="${MARIADB_SHELL_BINDIR:-$HOME/.local/bin}"
 WAIT="${MARIADB_LSP_WAIT:-180}"
+case "$WAIT" in
+  ''|*[!0-9]*) echo "mariadb-lsp-launcher: MARIADB_LSP_WAIT is not a number of seconds: $WAIT; using 180" >&2; WAIT=180 ;;
+esac
 
 # Arguments that start the language server over stdio, followed by any given
 # to this script (--log FILE, --threads N, ...).
@@ -152,8 +155,10 @@ if [ -n "${MARIADB_LSP_BIN:-}" ]; then
 fi
 
 # --- 2./3. The shell the MCP launcher runs, waiting for its install ----------
+# With $MARIADB_SHELL_BIN set the MCP launcher never installs, so there is
+# nothing to wait for.
 SHELL_BIN="$(find_shell)"
-if [ -z "$SHELL_BIN" ] && [ "$WAIT" -gt 0 ]; then
+if [ -z "$SHELL_BIN" ] && [ -z "${MARIADB_SHELL_BIN:-}" ] && [ "$WAIT" -gt 0 ]; then
   log "no mariadb-shell >= $VERSION yet; waiting up to ${WAIT}s for the MCP server's launcher to install it"
   deadline=$((SECONDS + WAIT))
   while [ -z "$SHELL_BIN" ] && [ "$SECONDS" -lt "$deadline" ]; do

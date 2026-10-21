@@ -82,8 +82,11 @@ def _add_lsp_server(profile: hermes_cli.TemporaryProfile, clean_env: dict) -> No
     lsp["enabled"] = True
     lsp["warmup_timeout"] = WARMUP_TIMEOUT
     launcher = profile.installed_plugin_dir() / "scripts" / "mariadb-lsp-launcher.sh"
+    # Written as the README writes it, from ~: Hermes expands the tilde itself.
+    home = Path.home()
+    command = f"~/{launcher.relative_to(home).as_posix()}" if launcher.is_relative_to(home) else str(launcher)
     lsp.setdefault("servers", {})["mariadb"] = {
-        "command": [str(launcher)],
+        "command": [command],
         "extensions": [".sql"],
         "language_id": "sql",
         "env": {"MARIADB_SHELL_VERSION": _shell_version(), **clean_env},
