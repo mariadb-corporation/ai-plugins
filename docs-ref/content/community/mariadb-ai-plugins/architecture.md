@@ -65,7 +65,7 @@ At run time, the plugin works with the following components:
 | Part | What it is | Needs |
 | --- | --- | --- |
 | Skills | Markdown documents vendored into the plugin. The agent reads the ones whose description matches the request. | Nothing; they work offline on a fresh install. |
-| MCP server | 40 tools that talk to MariaDB Server, in four groups: `db.*`, `msm.*`, `sandbox.*`, and `util.*`, plus the optional `migrator.*` group. | A one-time `mcp setup`, and a server to talk to. |
+| MCP server | 43 tools in five groups: `db.*`, `msm.*`, `sandbox.*`, and `util.*` work with MariaDB Server, and `sql.*` checks SQL text without one. The optional `migrator.*` group comes on top. | A one-time `mcp setup`, and a server to talk to. |
 | MariaDB Shell | MariaDB's command-line shell. The MCP server runs inside it as a plugin. | Installed automatically on first use. |
 
 ## Why the MCP Server Runs Inside MariaDB Shell

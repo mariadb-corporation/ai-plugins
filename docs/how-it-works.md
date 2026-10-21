@@ -18,7 +18,7 @@ which is which explains most of what happens when something does not work.
 | Part | What it is | Needs |
 | --- | --- | --- |
 | **Skills** | {{ site.skill_count }} Markdown documents vendored into the plugin. The agent reads the ones whose `description` matches what you asked. | Nothing. They work on a fresh install, offline. |
-| **MCP server** | {{ site.tool_count }} tools that talk to a real MariaDB server, in four groups: `db.*`, `msm.*`, `sandbox.*`, `util.*`. | A one-time `mcp setup`, and a server to talk to. |
+| **MCP server** | {{ site.tool_count }} tools that talk to a real MariaDB server, in five groups: `db.*`, `msm.*`, `sandbox.*`, `util.*`, `sql.*`. | A one-time `mcp setup`, and a server to talk to. |
 | **`mariadb-shell`** | MariaDB's command-line shell (a port of MySQL Shell). The MCP server runs **inside** it as a plugin. | Installed automatically on first use. |
 
 </div>
@@ -86,7 +86,7 @@ writes a SQL file — before it runs anything:
 | Claude Code | Automatically, by the plugin's `.lsp.json`. Set `ENABLE_LSP_TOOL=1` to also give the agent the `LSP` tool (symbols, hover, definitions, references). |
 | OpenCode | The `lsp` block of the plugin's `opencode.json`, merged into yours. |
 | Hermes Agent | An `lsp.servers` entry you add to `config.yaml` — plugins cannot register one. |
-| Codex, Pi | Not available: neither runs language servers. |
+| Codex, Pi | No language server — neither runs one. The agent gets the same checks through the MCP server's [`sql.*` tools](../mcp-tools/#sql--check-outline-and-format-sql) instead. |
 
 </div>
 

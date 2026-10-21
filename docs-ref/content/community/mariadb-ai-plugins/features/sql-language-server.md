@@ -27,11 +27,15 @@ The MariaDB SQL language server, `mariadb-lsp`, reads `.sql` files with the pars
 | Claude Code | Automatic, from the plugin's `.lsp.json`. | Diagnostics after each edit of a `.sql` file. With `ENABLE_LSP_TOOL=1` in the environment, also the `LSP` tool: document symbols, hover, definitions, and references. |
 | OpenCode | The `lsp` block of the plugin's `opencode.json`, which you merge into your configuration. See [OpenCode](../installation/opencode.md#register-the-language-server). | Diagnostics after each edit of a `.sql` file. |
 | Hermes Agent | An entry under `lsp.servers` that you add to `config.yaml`. See [Hermes Agent](../installation/hermes.md#register-the-language-server). | Diagnostics in the result of each `write_file` or `patch` of a `.sql` file, in git repositories that Hermes trusts. |
-| Codex, Pi | Not supported. Neither harness runs language servers. | — |
+| Codex, Pi | Not supported. Neither harness runs language servers. | The same checks through the `sql.*` tools of the MCP server. See [Without a Language Server](#without-a-language-server). |
 
 ## What the Language Server Checks
 
 The diagnostics come from the same grammar as the MariaDB server, so they cover MariaDB-specific syntax that a generic SQL checker rejects or misses. The language server follows `SET sql_mode` and `DELIMITER` statements through the file, and expands the `SOURCE` directives of MariaDB Schema Management scripts. A syntax error is reported with the tokens the parser expected at that position.
+
+## Without a Language Server
+
+The MCP server offers the core functions of the language server as tools, so an agent can use them in every harness, including Codex and Pi. [`sql.check`](../mcp-tool-reference/sql-tools.md#sql.check) reports syntax errors, [`sql.outline`](../mcp-tool-reference/sql-tools.md#sql.outline) lists the schema objects that a script defines, and [`sql.format`](../mcp-tool-reference/sql-tools.md#sql.format) lays SQL out. They run the same `mariadb-lsp` binary on SQL that the agent passes inline or names by file, and need no database connection. In a harness with language server support, the agent gets diagnostics automatically and can still call the tools, for example to check a script before it runs it with `db.execute_sql_script`.
 
 ## How the Language Server Starts
 
