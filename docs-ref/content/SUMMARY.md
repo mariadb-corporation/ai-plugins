@@ -23,6 +23,7 @@
       * [Versioned Schemas with Schema Management](community/mariadb-ai-plugins/features/versioned-schemas-with-schema-management.md)
       * [REST Endpoints with MariaDB REST Service](community/mariadb-ai-plugins/features/rest-endpoints-with-mariadb-rest-service.md)
       * [Migrating from MySQL](community/mariadb-ai-plugins/features/migrating-from-mysql.md)
+      * [SQL Language Server](community/mariadb-ai-plugins/features/sql-language-server.md)
     * [Architecture](community/mariadb-ai-plugins/architecture.md)
     * [Security Model](community/mariadb-ai-plugins/security-model.md)
     * [Skills Reference](community/mariadb-ai-plugins/skills-reference/README.md)

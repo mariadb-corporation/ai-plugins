@@ -93,6 +93,10 @@ The launcher then starts the binary as `mariadb-shell -- mcp start-server --tran
 
 The launcher writes all of its messages to standard error, because standard output carries the MCP protocol.
 
+### The Language Server Launcher
+
+The `dev` and `sql` plugins for Claude Code, OpenCode, and Hermes Agent also ship `mariadb-lsp-launcher.sh` and `mariadb-lsp-launcher.cmd`, which start the [SQL language server](features/sql-language-server.md). This launcher never installs anything. It resolves MariaDB Shell in the same order as the MCP server's launcher and starts the `mariadb-lsp` binary installed next to it. When no suitable MariaDB Shell is installed yet, it waits until the MCP server's launcher has installed one, so a harness that starts both servers at the same time downloads MariaDB Shell only once.
+
 See [Configuration Reference](configuration-reference.md) for all launcher environment variables.
 
 ## How the Harnesses Differ

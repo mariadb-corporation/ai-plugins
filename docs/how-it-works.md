@@ -71,6 +71,31 @@ The launcher writes every message it produces to **stderr**, because stdout *is*
 the MCP JSON-RPC transport. A single stray byte on stdout breaks the protocol,
 which is why the installer's output is redirected too.
 
+## The SQL language server
+
+From `mariadb-shell` 26.10.3 on, the shell's package also carries `mariadb-lsp`,
+a language server that parses `.sql` files with the MariaDB server's own
+grammar. Where the harness supports language servers, the `dev` and `sql`
+plugins wire it up, and the agent sees MariaDB's syntax errors right after it
+writes a SQL file — before it runs anything:
+
+<div class="table-wrap" markdown="1">
+
+| Harness | How it is registered |
+| --- | --- |
+| Claude Code | Automatically, by the plugin's `.lsp.json`. Set `ENABLE_LSP_TOOL=1` to also give the agent the `LSP` tool (symbols, hover, definitions, references). |
+| OpenCode | The `lsp` block of the plugin's `opencode.json`, merged into yours. |
+| Hermes Agent | An `lsp.servers` entry you add to `config.yaml` — plugins cannot register one. |
+| Codex, Pi | Not available: neither runs language servers. |
+
+</div>
+
+It has a launcher of its own, `mariadb-lsp-launcher.sh`, with one rule: it
+**never installs anything**. It finds the shell the MCP launcher would use and
+runs the `mariadb-lsp` next to it. On a first start it simply waits for the MCP
+launcher's download to finish, so starting both servers at once still fetches
+the package exactly once.
+
 ## The security model
 
 The MCP server refuses everything it has not been told about. There are two

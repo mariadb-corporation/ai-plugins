@@ -50,6 +50,12 @@ ln -s "$MARIADB_DEV_PLUGIN/skills" .opencode/skills/mariadb
 {% endtab %}
 {% endtabs %}
 
+## Register the Language Server
+
+The `lsp` block of `opencode/dev-plugin/opencode.json` registers the MariaDB SQL language server for `.sql` files. Merge it into your `opencode.json` next to the `mcp` block. The language server requires MariaDB Shell 26.10.3 or later. See [SQL Language Server](../features/sql-language-server.md).
+
+OpenCode turns off all language servers while its configuration has no `lsp` key. Adding the block also turns on the built-in language servers of OpenCode. To keep them off, don't merge the block.
+
 ## Configure the MCP Server
 
 Before the agent can use the MCP server, you must configure the connections and directories it may access. See [Configuring the MCP Server](../configuring-the-mcp-server/README.md).
