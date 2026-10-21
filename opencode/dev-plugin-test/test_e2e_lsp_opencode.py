@@ -56,9 +56,11 @@ import pytest
 
 pytestmark = pytest.mark.e2e
 
-PLUGIN_DIR = (Path(__file__).resolve().parent.parent / "dev-plugin").resolve()
-# Windows runs the .cmd launcher (and installs .cmd shims); elsewhere the .sh.
-MCP_LAUNCHER = PLUGIN_DIR / "scripts" / ("mariadb-mcp-launcher.cmd" if os.name == "nt" else "mariadb-mcp-launcher.sh")
+PLUGIN_DIR = Path(__file__).resolve().parent.parent / "dev-plugin"
+# Resolved as OpenCode resolves the plugin's command: the extensionless
+# wrapper on macOS and Linux, through %PATHEXT% to the .cmd on Windows.
+MCP_LAUNCHER = shutil.which("mariadb-mcp-launcher", path=str(PLUGIN_DIR / "scripts"))
+# Windows installs .cmd shims (install.ps1), elsewhere the names are links.
 SUFFIXES = (".cmd", ".exe", "") if os.name == "nt" else ("",)
 TIMEOUT = int(os.environ.get("E2E_TIMEOUT", "900"))
 MODEL = os.environ.get("E2E_OPENCODE_MODEL", "")
@@ -85,10 +87,8 @@ def _clean_path() -> str:
 
 def _clean_setup(root: Path) -> dict:
     """Empty install dirs, a git project with the broken file, and the env."""
-    # The bin dir inside the prefix: install.ps1's shims need that layout.
-    prefix, project = root / "ms", root / "project"
-    bindir = prefix / "bin"
-    for d in (prefix, bindir, project):
+    bindir, prefix, project = root / "bin", root / "share", root / "project"
+    for d in (bindir, prefix, project):
         d.mkdir()
     subprocess.run(["git", "init", "-q"], cwd=project, check=True)
 
@@ -114,7 +114,7 @@ def _clean_setup(root: Path) -> dict:
 
 
 def _packages(prefix: Path) -> list:
-    return sorted(p.name for p in prefix.iterdir() if p.is_dir() and p.name != "bin")
+    return sorted(p.name for p in prefix.iterdir() if p.is_dir())
 
 
 @pytest.fixture(scope="module")
@@ -129,9 +129,9 @@ def opencode():
 def installed(tmp_path_factory, opencode):
     """A clean install made by the MCP launcher, as OpenCode would start it."""
     setup = _clean_setup(tmp_path_factory.mktemp("opencode_lsp_clean"))
+    assert MCP_LAUNCHER, f"no mariadb-mcp-launcher in {PLUGIN_DIR / 'scripts'}"
     # stdin at EOF: once installed, the shell's MCP server starts and ends.
-    command = ["cmd", "/c", str(MCP_LAUNCHER)] if os.name == "nt" else [str(MCP_LAUNCHER)]
-    run = subprocess.run(command, env=setup["env"], stdin=subprocess.DEVNULL,
+    run = subprocess.run([MCP_LAUNCHER], env=setup["env"], stdin=subprocess.DEVNULL,
                          capture_output=True, text=True, timeout=TIMEOUT)
     setup["launcher"] = run
     return setup
@@ -165,14 +165,26 @@ def test_step2_opencode_reports_mariadb_diagnostics(installed, opencode):
     assert mariadb[0]["range"]["start"] == {"line": 0, "character": 38}
 
 
+def _opencode_run(opencode: str, prompt: str, cwd: Path, env=None, timeout=300):
+    """One `opencode run --format json`; returns the process and its JSON events."""
+    model = ["-m", MODEL] if MODEL else []
+    run = subprocess.run([opencode, "run", *model, "--format", "json", prompt],
+                         cwd=cwd, env=env, stdin=subprocess.DEVNULL,
+                         capture_output=True, text=True, timeout=timeout)
+    events = []
+    for line in run.stdout.splitlines():
+        if line.startswith("{"):
+            try:
+                events.append(json.loads(line))
+            except json.JSONDecodeError:
+                pass
+    return run, events
+
+
 @pytest.fixture(scope="module")
 def model_run(tmp_path_factory, opencode):
     """One model-driven run from a clean install; skips without a model."""
-    model = ["-m", MODEL] if MODEL else []
-    probe_dir = tmp_path_factory.mktemp("opencode_probe")
-    probe = subprocess.run([opencode, "run", *model, "--format", "json", "Reply with exactly: READY"],
-                           cwd=probe_dir, stdin=subprocess.DEVNULL, capture_output=True,
-                           text=True, timeout=300)
+    probe, _ = _opencode_run(opencode, "Reply with exactly: READY", tmp_path_factory.mktemp("opencode_probe"))
     if "READY" not in probe.stdout:
         errors = [ln for ln in probe.stdout.splitlines() if '"type":"error"' in ln.replace(" ", "")]
         pytest.skip(f"OpenCode cannot reach a model (set E2E_OPENCODE_MODEL, or log in with "
@@ -187,16 +199,7 @@ def model_run(tmp_path_factory, opencode):
         "Do not fix it and write it only once. Then reply with any diagnostics the "
         "write reported, verbatim, or say that there were none."
     )
-    run = subprocess.run([opencode, "run", *model, "--format", "json", prompt],
-                         cwd=setup["project"], env=setup["env"], stdin=subprocess.DEVNULL,
-                         capture_output=True, text=True, timeout=TIMEOUT)
-    events = []
-    for line in run.stdout.splitlines():
-        if line.startswith("{"):
-            try:
-                events.append(json.loads(line))
-            except json.JSONDecodeError:
-                pass
+    run, events = _opencode_run(opencode, prompt, setup["project"], setup["env"], TIMEOUT)
     setup.update(run=run, events=events)
     return setup
 

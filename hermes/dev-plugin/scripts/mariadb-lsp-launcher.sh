@@ -122,13 +122,16 @@ lsp_beside() {
 
 # find_shell — print the mariadb-shell the MCP launcher would run, or nothing.
 find_shell() {
-  local bin ver
+  local bin ver prev=
   if [ -n "${MARIADB_SHELL_BIN:-}" ]; then
     [ -x "$MARIADB_SHELL_BIN" ] && printf '%s' "$MARIADB_SHELL_BIN"
     return 0
   fi
+  # With $BINDIR on PATH (the usual setup) both candidates are one file: ask it
+  # for its version once.
   for bin in "$(command -v mariadb-shell 2>/dev/null || true)" "$BINDIR/mariadb-shell"; do
-    [ -n "$bin" ] && [ -x "$bin" ] || continue
+    [ -n "$bin" ] && [ -x "$bin" ] && [ "$bin" != "$prev" ] || continue
+    prev="$bin"
     ver="$(shell_version "$bin")"
     if [ -n "$ver" ] && version_ge "$ver" "$VERSION"; then
       printf '%s' "$bin"

@@ -300,10 +300,9 @@ def test_shipped_scripts_are_present(script: str):
         assert os.access(path, os.X_OK), f"{script} is not executable"
 
 
-@pytest.mark.parametrize(
-    "script",
-    ["mariadb-mcp-launcher.sh", "mariadb-mcp-launcher.cmd", "mariadb-lsp-launcher.sh", "mariadb-lsp-launcher.cmd"],
-)
+# The LSP launchers' copies are compared in the claude suite, with every
+# plugin that ships them.
+@pytest.mark.parametrize("script", ["mariadb-mcp-launcher.sh", "mariadb-mcp-launcher.cmd"])
 def test_launcher_is_the_shared_launcher(script: str):
     """The launchers are one script copied into every plugin; keep this copy current."""
     ours = (skills.PLUGIN_ROOT / "scripts" / script).read_bytes()

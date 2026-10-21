@@ -116,6 +116,9 @@ def run(tmp_path_factory):
             f"hermes plugins install failed (exit {installed.returncode}):\n"
             f"{installed.stdout[-3000:]}\n{installed.stderr[-2000:]}"
         )
+        reason = hermes_cli.provider_ready(profile, tmp_path_factory.mktemp("hermes_lsp_ready"))
+        if reason:
+            pytest.skip(reason)
         _add_lsp_server(profile, clean_env)
 
         env = dict(os.environ)
@@ -152,10 +155,7 @@ def test_step2_one_install_by_the_mcp_launcher(run):
 
 def test_step3_write_file_reported_mariadb_diagnostics(run):
     result = run["run"]
-    writes = [
-        e for e in result.tool_results("write_file")
-        if BROKEN_SQL in json.dumps(e)
-    ] or result.tool_results("write_file")
+    writes = result.tool_results("write_file")
     assert writes, f"the model never called write_file.{result.diagnostics}"
     raw = "\n".join(json.dumps(e) for e in writes)
     assert "lsp_diagnostics" in raw, (

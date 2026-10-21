@@ -109,10 +109,8 @@ while IFS= read -r f; do files+=("$f"); done < <(
        "$REPO_ROOT"/pi/*-plugin \
        "$REPO_ROOT"/hermes/*-plugin \
        -type f \( \
-         -name 'mariadb-mcp-launcher.sh' -o \
-         -name 'mariadb-mcp-launcher.cmd' -o \
-         -name 'mariadb-lsp-launcher.sh' -o \
-         -name 'mariadb-lsp-launcher.cmd' -o \
+         -name 'mariadb-*-launcher.sh' -o \
+         -name 'mariadb-*-launcher.cmd' -o \
          -name 'setup-codex-mcp.sh' -o \
          -name 'setup-codex-mcp.cmd' -o \
          -name '.mcp.json' -o \

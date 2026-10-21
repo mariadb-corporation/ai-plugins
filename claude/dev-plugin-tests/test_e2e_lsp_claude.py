@@ -57,7 +57,7 @@ import pytest
 
 pytestmark = pytest.mark.e2e
 
-PLUGIN_DIR = (Path(__file__).resolve().parent.parent / "dev-plugin").resolve()
+PLUGIN_DIR = Path(__file__).resolve().parent.parent / "dev-plugin"
 PLUGIN_NAME = json.loads((PLUGIN_DIR / ".claude-plugin" / "plugin.json").read_text())["name"]
 LSP_SERVER = f"plugin:{PLUGIN_NAME}:mariadb"
 
@@ -91,16 +91,15 @@ def _clean_path() -> str:
     return os.pathsep.join(keep)
 
 
-def _prompt() -> str:
-    return (
-        f"Write the file {SCHEMA_SQL} in the current directory containing exactly:\n"
-        f"{SCHEMA}\n"
-        f"Then use the LSP tool with the documentSymbol operation on {SCHEMA_SQL}. "
-        "The language server may still be starting: if the call says so, call it "
-        "again (up to ten times: on a first start it waits for the shell download). "
-        "Reply with the symbol names it returned, or quote "
-        "the last error if it never succeeded."
-    )
+PROMPT = (
+    f"Write the file {SCHEMA_SQL} in the current directory containing exactly:\n"
+    f"{SCHEMA}\n"
+    f"Then use the LSP tool with the documentSymbol operation on {SCHEMA_SQL}. "
+    "The language server may still be starting: if the call says so, call it "
+    "again (up to ten times: on a first start it waits for the shell download). "
+    "Reply with the symbol names it returned, or quote "
+    "the last error if it never succeeded."
+)
 
 
 @pytest.fixture(scope="module")
@@ -111,10 +110,8 @@ def run(tmp_path_factory):
     claude = str(Path(claude).resolve())  # PATH is narrowed below
 
     root = tmp_path_factory.mktemp("lsp_clean")
-    # The bin dir inside the prefix: install.ps1's shims need that layout.
-    prefix, project = root / "ms", root / "project"
-    bindir = prefix / "bin"
-    for d in (prefix, bindir, project):
+    bindir, prefix, project = root / "bin", root / "share", root / "project"
+    for d in (bindir, prefix, project):
         d.mkdir()
     subprocess.run(["git", "init", "-q"], cwd=project, check=True)
     debug_log = root / "claude-debug.log"
@@ -130,7 +127,7 @@ def run(tmp_path_factory):
         env.pop(key, None)
 
     cmd = [
-        claude, "-p", _prompt(),
+        claude, "-p", PROMPT,
         "--model", MODEL,
         "--plugin-dir", str(PLUGIN_DIR),
         "--allowedTools", "Write,LSP",
@@ -163,14 +160,11 @@ def run(tmp_path_factory):
     }
 
 
-def _lsp_log(run: dict) -> str:
-    return "\n".join(ln for ln in run["log"].splitlines() if "LSP" in ln)[-4000:]
-
-
 def _diagnostics(run: dict) -> str:
     result = next((e.get("result") for e in reversed(run["events"]) if e.get("type") == "result"), "")
+    lsp_log = "\n".join(ln for ln in run["log"].splitlines() if "LSP" in ln)[-4000:]
     return (
-        f"\n--- LSP lines of the debug log ---\n{_lsp_log(run)}"
+        f"\n--- LSP lines of the debug log ---\n{lsp_log}"
         f"\n--- claude stderr ---\n{run['stderr'][-1500:]}"
         f"\n--- final reply ---\n{str(result)[-1500:]}"
     )
@@ -205,7 +199,7 @@ def test_step1_run_finished_and_wrote_the_file(run):
 
 
 def test_step2_one_install_by_the_mcp_launcher(run):
-    packages = sorted(p.name for p in run["prefix"].iterdir() if p.is_dir() and p.name != "bin")
+    packages = sorted(p.name for p in run["prefix"].iterdir() if p.is_dir())
     assert len(packages) == 1, f"expected one installed package in the clean prefix, got {packages}"
     assert any((run["bindir"] / ("mariadb-lsp" + x)).exists() for x in SUFFIXES), (
         f"the installed package linked no mariadb-lsp into {run['bindir']}: "

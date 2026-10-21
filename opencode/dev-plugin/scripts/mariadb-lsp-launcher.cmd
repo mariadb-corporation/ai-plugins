@@ -80,6 +80,8 @@ goto have_shell
 
 :try_local
 if not exist "%LOCAL_BIN%" goto no_shell
+rem With the bin dir on PATH (the usual setup), PATH already offered this file.
+if /i "%PATH_BIN%"=="%LOCAL_BIN%" goto no_shell
 call :check_version "%LOCAL_BIN%"
 if errorlevel 1 goto no_shell
 set "SHELL_BIN=%LOCAL_BIN%"
@@ -87,11 +89,12 @@ goto have_shell
 
 rem --- 3. Wait for the MCP launcher's install ---------------------------------
 rem `timeout` refuses to run with redirected stdin, which a language server
-rem always has, so PowerShell does the sleeping.
+rem always has; ping sleeps without stdin, and without the PowerShell start-up
+rem that would add up to a second to every 2 s tick.
 :no_shell
 if %WAITED% GEQ %MARIADB_LSP_WAIT% goto any_lsp
 if %WAITED%==0 echo mariadb-lsp-launcher: no mariadb-shell ^>= %MARIADB_SHELL_VERSION% yet; waiting up to %MARIADB_LSP_WAIT%s for the MCP server's launcher to install it 1>&2
-powershell -NoProfile -Command "Start-Sleep -Seconds 2" >nul 2>&1
+ping -n 3 127.0.0.1 >nul 2>&1
 set /a WAITED+=2
 goto find_shell
 
