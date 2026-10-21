@@ -100,7 +100,8 @@ Then start a new Hermes session — MCP servers connect at session start.
 the flag, run `hermes plugins enable mariadb-dev` afterwards.
 
 The `sql` and `contributor` plugins install the same way from
-`#hermes/sql-plugin` and `#hermes/contributor-plugin`. Later, `hermes plugins update mariadb-dev` updates the plugin and
+`#hermes/sql-plugin` and `#hermes/contributor-plugin`. Later,
+`hermes plugins update mariadb-dev` updates the plugin and
 `hermes plugins remove mariadb-dev` removes it.
 
 **On native Windows**, the plugin's `mcp.json` cannot switch to the `.cmd`
@@ -210,7 +211,8 @@ That is the whole tutorial in one paragraph — but the tutorial walks through
 what the agent does at each step, what to check, and what to do when something
 refuses.
 
-<a class="btn btn--primary" href="{{ '/tutorials/notes-app-sandbox/' | relative_url }}">Start Tutorial 1 &rarr;</a>
+<a class="btn btn--primary"
+   href="{{ '/tutorials/notes-app-sandbox/' | relative_url }}">Start Tutorial 1 &rarr;</a>
 
 ## What to ask for
 
