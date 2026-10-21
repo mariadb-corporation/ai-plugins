@@ -56,6 +56,8 @@ The `lsp` block of `opencode/dev-plugin/opencode.json` registers the MariaDB SQL
 
 OpenCode turns off all language servers while its configuration has no `lsp` key. Adding the block also turns on the built-in language servers of OpenCode. To keep them off, don't merge the block.
 
+OpenCode gives a language server 45 seconds to start, and skips a server that doesn't start in time for the rest of the session. The limit can't be configured. On the first start, the language server waits for the MCP server's launcher to download MariaDB Shell. If the download takes longer than 45 seconds, restart OpenCode when it's complete.
+
 ## Configure the MCP Server
 
 Before the agent can use the MCP server, you must configure the connections and directories it may access. See [Configuring the MCP Server](../configuring-the-mcp-server/README.md).

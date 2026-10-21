@@ -172,6 +172,11 @@ OpenCode leaves every language server off while `lsp` is missing from its
 config. This entry turns them on: its own built-in servers as well as this one.
 To keep them off, leave the `lsp` key out of what you merge into your config.
 
+OpenCode gives a language server 45 seconds to start, a limit it has no setting
+for, and skips a server that misses it for the rest of the session. On a first
+start the language server waits for the MCP launcher to download mariadb-shell;
+if that takes longer, restart OpenCode once the download is done.
+
 The launcher ([scripts/mariadb-lsp-launcher.sh](scripts/mariadb-lsp-launcher.sh))
 **never installs anything**. Installing `mariadb-shell` is left to the MCP launcher
 alone, so starting both servers at once downloads the package once. It:
