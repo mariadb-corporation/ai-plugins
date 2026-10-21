@@ -159,6 +159,7 @@ in the installed plugin:
 
 ```yaml
 lsp:
+  warmup_timeout: 240   # room for the first start, see below (default 0)
   servers:
     mariadb:
       command: ["~/.hermes/plugins/mariadb-sql/scripts/mariadb-lsp-launcher.sh"]
@@ -170,6 +171,11 @@ lsp:
 Hermes runs language servers only in git repositories, and custom ones only in
 trusted workspaces: the worktree you started Hermes in, or one listed under
 `lsp.trusted_workspaces`.
+
+On a first start, the language server waits for the MCP launcher to download
+mariadb-shell. Without `warmup_timeout`, Hermes gives it 5 seconds
+(`wait_timeout`), and a server that misses that budget is skipped for the rest of
+the session.
 
 The launcher ([scripts/mariadb-lsp-launcher.sh](scripts/mariadb-lsp-launcher.sh))
 **never installs anything**. Installing `mariadb-shell` is left to the MCP launcher
