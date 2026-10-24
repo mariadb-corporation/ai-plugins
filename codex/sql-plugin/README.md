@@ -1,6 +1,6 @@
 # MariaDB SQL plugin for Codex
 
-Version **26.10.5**
+Version **26.10.6**
 
 This plugin gives [OpenAI Codex](https://developers.openai.com/codex/) first-class
 MariaDB SQL support through two parts:
