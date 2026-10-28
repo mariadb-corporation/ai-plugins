@@ -1,5 +1,5 @@
 ---
-description: Cut an ai-plugins release, suggesting its next YY.MM.x version and raising the mariadb-shell floor to the latest shell release where there is a newer one, PR it, then sync the fork. Usage: /release [version|-] [shell-version|-]
+description: Cut an ai-plugins release, suggesting its next YY.MM.x version and raising the mariadb-shell floor to the latest shell release where there is a newer one, PR it, sync the fork, then PR the new pin to the Hermes plugin catalog. Usage: /release [version|-] [shell-version|-]
 ---
 
 # Release Command
@@ -309,7 +309,94 @@ refused if the fork moved meanwhile — then fetch and merge again, don't force)
 Return to `main` and delete the local `wip/<version>` and `sync/fork-<version>` branches, and
 delete `wip/<version>` on `origin` once its remote head matches the PR's `headRefOid`.
 
-## 12. Report
+## 12. Bump the Hermes plugin catalog
+
+Hermes users install `mariadb-dev`, `mariadb-sql` and `mariadb-guard` by name
+from the Hermes plugin catalog: one file each, `plugin-catalog/mariadb-<name>.yaml`
+in `NousResearch/hermes-agent` (added by NousResearch/hermes-agent#145982). Each
+entry pins an exact commit of the **public** repo `mariadb/ai-plugins` (`subdir:
+hermes/<dev|sql|guard>-plugin`), and the catalog never follows `main`: a release
+reaches Hermes users only through a PR that moves `sha` and `version` in all three
+entries. The catalog's rules are in
+[`plugin-catalog/README.md`](https://github.com/NousResearch/hermes-agent/blob/main/plugin-catalog/README.md);
+read them again when anything below is refused.
+
+Work in the scratchpad, never in this repo. Let `<pin>` be the squash commit of
+step 9 (`fork/main` after step 11, so the same commit).
+
+**The pin must be public.** `git ls-remote https://github.com/mariadb/ai-plugins
+refs/heads/main` must print `<pin>`. If it does not, step 11 did not land — stop.
+
+**Find the open entry PR first.** `gh pr list --repo NousResearch/hermes-agent
+--author @me --state open --search "mariadb in:title"`. If a previous bump (or
+the original #145982) is still open, do not open a second PR: push the new pin to
+that PR's branch, retitle it to this version, and say in a comment which
+release it now pins. Otherwise open a new one as below.
+
+**Validate at the pin**, exactly as the catalog CI does. Clone
+`https://github.com/mariadb/ai-plugins` into the scratchpad, check out `<pin>`,
+and run, with `HERMES_HOME` pointing into the scratchpad so `~/.hermes` is left
+alone:
+
+```bash
+HERMES_HOME=<scratch>/hh hermes plugins validate --install-deps <scratch>/ai-plugins/hermes/<dev|sql|guard>-plugin </dev/null
+```
+
+Every one must end in `Validation passed`, with `security scan — safe`. Read every
+warning: a `caution` finding goes to the reviewer, so name it in the PR body.
+If no `hermes` is installed, install upstream `main` into a scratch venv (Python
+3.11–3.14; `pip install -e <scratch>/hermes-agent`). On 3.14 its `Pillow` pin
+clashed with `browser-harness` in October 2026; installing the `pyproject.toml`
+dependencies without `browser-harness`, then Hermes with `--no-deps`, was enough
+for `validate`. Never submit without a passing local run.
+
+**Edit the three entries.** In a scratch clone of `NousResearch/hermes-agent`
+(`--depth 1` is enough), on a branch `catalog-mariadb-<version>`, change in each of
+`plugin-catalog/mariadb-dev.yaml`, `mariadb-sql.yaml` and `mariadb-guard.yaml`:
+
+- `sha:` → `<pin>` (all 40 hex characters);
+- `version:` → `"<version>"` (quoted);
+- the skill counts in the `dev` and `sql` descriptions (`85 skills`, `47 skills`
+  as of 26.10.6) → this release's counts from step 4;
+- anything else this release made untrue: the disclosure text (how the launcher
+  installs mariadb-shell, what it downloads), `capabilities.provides_hooks` of
+  `mariadb-guard` against `provides_hooks` in `hermes/guard-plugin/plugin.yaml`,
+  and `requires_hermes` when a package now needs a newer Hermes.
+
+Then run the catalog's own schema check, which must end in `OK`:
+
+```bash
+python3 scripts/validate_plugin_catalog.py plugin-catalog/
+```
+
+**Commit and open the PR.** The catalog CI fails commits whose author email is not
+mapped to a GitHub login, and a GitHub noreply address needs no mapping. Commit as
+the `gh` user's noreply address (`gh api user --jq '"\(.id)+\(.login)@users.noreply.github.com"'`)
+rather than adding a file under `contributors/emails/`. A catalog PR may touch
+only `plugin-catalog/**` (and `contributors/emails/**`); CI refuses anything else.
+
+```bash
+gh repo fork NousResearch/hermes-agent --clone=false   # once per account; a no-op afterwards
+git push -u https://github.com/<gh-login>/hermes-agent.git catalog-mariadb-<version>
+gh pr create --repo NousResearch/hermes-agent --base main --head <gh-login>:catalog-mariadb-<version> \
+  --title "catalog: bump mariadb-dev, mariadb-sql and mariadb-guard to <version>" --body-file <file>
+```
+
+The PR must come from a maintainer of `mariadb/ai-plugins` (catalog rule 5): check
+`gh api repos/mariadb/ai-plugins --jq .permissions.maintain` is `true` for the `gh`
+user. Reviewers read the commit range being adopted (rule 4), so the body names
+the old → new pin with its compare link
+(`https://github.com/mariadb/ai-plugins/compare/<old-sha>...<pin>`), summarises
+what changed in the three Hermes packages (from the CHANGELOGs of step 6), states
+the local `validate` result, and repeats any change to the disclosures. It ends
+with the PR attribution line.
+
+Do not wait for the merge — a maintainer reviews catalog PRs in batches, usually
+within one to three days. Report the PR URL in step 13. If the reviewers ask for
+changes to the plugins themselves, that is a new ai-plugins release, not an edit
+to the entry.
+
+## 13. Report
 
 Tell the user the release is published, with:
 
@@ -317,6 +404,7 @@ Tell the user the release is published, with:
 - the tag `v<version>` and its tag object
 - both release URLs
 - that the fork is synced and its tree matches `origin/main`
+- the Hermes catalog PR (step 12), its pin and the local `validate` result
 - anything that did not go as expected
 
 Then record the finished release with `/checkpoint .` and open a small PR for it,
