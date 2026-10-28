@@ -19,18 +19,28 @@ without any Python code of its own.
 
 ## Installation
 
+The plugin is in the
+[Hermes plugin catalog](https://hermes-agent.nousresearch.com/docs/plugins/mariadb-sql),
+so Hermes installs it by name (in Hermes Desktop: **Capabilities → Plugins →
+Browse**):
+
 ```sh
-hermes plugins install mariadb/ai-plugins#hermes/sql-plugin --enable
+hermes plugins install mariadb-sql --enable
 ```
 
 Then start a new Hermes session; MCP servers connect at session start.
 
-- `#hermes/sql-plugin` installs this folder of the repository, not the whole repo.
 - `--enable` is needed because Hermes installs portable packages **disabled**.
   Without it, run `hermes plugins enable mariadb-sql` afterwards.
+- The catalog pins the commit of an ai-plugins release.
+  `hermes plugins update mariadb-sql` moves to the release it pins next;
+  `hermes plugins remove mariadb-sql` removes the plugin.
 
-To update later, run `hermes plugins update mariadb-sql`; to remove it,
-`hermes plugins remove mariadb-sql`.
+To install the `main` branch instead, give this folder of the repository:
+
+```sh
+hermes plugins install mariadb/ai-plugins#hermes/sql-plugin --enable
+```
 
 On first use of a MariaDB tool, the launcher looks for a `mariadb-shell` it can
 run — `$MARIADB_SHELL_BIN`, one on `PATH`, or an existing install in
@@ -130,7 +140,7 @@ its own, [`mariadb-guard`](../guard-plugin/README.md). Install it next to this
 one:
 
 ```sh
-hermes plugins install mariadb/ai-plugins#hermes/guard-plugin --enable
+hermes plugins install mariadb-guard --enable
 ```
 
 The guard looks at only five clients, and each only where an MCP tool does the job:

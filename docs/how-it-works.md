@@ -182,10 +182,13 @@ The content is identical; the packaging is not.
   whole repository installs as one package. Its extension registers the MCP
   server with Pi's built-in MCP support (Pi 1.0+), which exposes the tools
   through codemode by default.
-- **Hermes Agent** has no marketplace either. Each plugin folder is a portable
-  **Agent Plugins v1** package — a root `plugin.json`, `skills/` and, for `dev`
-  and `sql`, an `mcp.json` declaring the server — that Hermes installs straight
-  from the repository with `hermes plugins install …#hermes/dev-plugin`. The
+- **Hermes Agent** installs from its own **plugin catalog**: a reviewed entry in
+  the hermes-agent repository per plugin, pinned to the exact commit of an
+  ai-plugins release (`hermes plugins install mariadb-dev`). Each entry points at
+  a plugin folder that is a portable **Agent Plugins v1** package — a root
+  `plugin.json`, `skills/` and, for `dev` and `sql`, an `mcp.json` declaring the
+  server — which Hermes can also install straight from the repository with
+  `hermes plugins install …#hermes/dev-plugin`. The
   tools reach the model as `mcp__mariadb__<tool>`, and the skills sit under a
   namespace Hermes derives from the plugin. `mcp.json` cannot branch per OS, so
   native Windows points Hermes' `config.yaml` at the `.cmd` launcher instead.

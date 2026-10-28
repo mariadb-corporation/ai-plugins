@@ -89,22 +89,39 @@ built-in MCP support.
 
 ### Hermes Agent
 
-Hermes installs a plugin straight from its folder in this repository. Each one
-is a portable Agent Plugins v1 package — a `plugin.json`, the skills and an
-`mcp.json` that declares the MCP server — so Hermes needs no code of ours:
+The plugins are in the
+[Hermes plugin catalog](https://hermes-agent.nousresearch.com/docs/plugins/mariadb-dev),
+so Hermes installs them by name — in Hermes Desktop too, under **Capabilities →
+Plugins → Browse**:
 
 ```sh
-hermes plugins install {{ site.install_org }}/ai-plugins#hermes/dev-plugin --enable
+hermes plugins install mariadb-dev --enable
+hermes plugins install mariadb-guard --enable
 ```
 
 Then start a new Hermes session — MCP servers connect at session start.
 `--enable` is there because Hermes installs portable packages disabled. Without
 the flag, run `hermes plugins enable mariadb-dev` afterwards.
 
-The `sql` and `contributor` plugins install the same way from
-`#hermes/sql-plugin` and `#hermes/contributor-plugin`. Later,
-`hermes plugins update mariadb-dev` updates the plugin and
-`hermes plugins remove mariadb-dev` removes it.
+`mariadb-sql` installs the same way, in place of `mariadb-dev`.
+`mariadb-guard` keeps the agent from running the MariaDB command-line clients for
+what the MCP tools do, so no password reaches a command line; it is a package of
+its own because Hermes runs hooks only from a Python plugin. Later,
+`hermes plugins update mariadb-dev` updates the plugin to the release the catalog
+pins next, and `hermes plugins remove mariadb-dev` removes it.
+
+**Straight from the repository.** Each plugin folder is a portable Agent Plugins
+v1 package — a `plugin.json`, the skills and an `mcp.json` that declares the MCP
+server — so Hermes can also install one from its folder. That gets the `main`
+branch rather than the catalog's release, and is the way to the `contributor`
+plugin, which is not in the catalog:
+
+```sh
+hermes plugins install {{ site.install_org }}/ai-plugins#hermes/dev-plugin --enable
+```
+
+`#hermes/sql-plugin`, `#hermes/contributor-plugin` and `#hermes/guard-plugin`
+install the others.
 
 **On native Windows**, the plugin's `mcp.json` cannot switch to the `.cmd`
 launcher — it names the `.sh` one, which needs a POSIX shell. Add a server of
