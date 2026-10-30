@@ -41,9 +41,13 @@ intact. Put each kind of object in the section that matches how MSM deploys it:
   deployment script, so write plain `;`-terminated statements with **no
   `DELIMITER`**.
 
+  Unless told otherwise, use the MariaDB native UUID datatype for primary key columns for tables that will most likely be exposed directly to client applications. This is done in order to prevent enumeration attacks, hide business intelligence and prevent information leakage about record creation order.
+
+  > **Important**: For UUIDs always use the native MariaDB UUID datatype, usage: `UUID NOT NULL DEFAULT UUID_v7()`. Never use `CHAR(36)`.
+
   ```sql
   CREATE TABLE `notes-app`.`note`(
-      `id` INT AUTO_INCREMENT PRIMARY KEY,
+      `id` UUID NOT NULL DEFAULT UUID_v7() PRIMARY KEY,
       `title` VARCHAR(255) NOT NULL,
       `body` MEDIUMTEXT
   );
@@ -77,12 +81,10 @@ intact. Put each kind of object in the section that matches how MSM deploys it:
   must be re-runnable; create every role before granting to it — a `GRANT` to a
   missing role fails the deployment (error 1133).
 - **Section 180 — optional REST endpoints** (see `mariadb-rest-service-create`).
-  Runs in full on every deployment: use `CREATE OR REPLACE REST ...`. The server
-  needs the REST metadata schema, and only MariaDB Shell (`msm.deploy_schema`)
-  can run these statements.
+  Runs in full on every deployment: use `CREATE OR REPLACE REST ...`. The server needs the REST metadata schema, and only MariaDB Shell
+  (`msm.deploy_schema`) can run these statements.
 - **Sections 130 / 190 — creation helpers.** Optional routines whose names must
-  start `msm_`, defined in 130 and dropped in 190; use them for logic needed only
-  while building the schema.
+  start `msm_`, defined in 130 and dropped in 190; use them for logic needed only while building the schema.
 
 ## 3. Set the initial version
 
@@ -92,8 +94,7 @@ The version lives in section 910 (the `msm_schema_version` view). Set it with:
 msm.set_development_version(version="0.1.0")
 ```
 
-Use whatever development version you intend to release first; MSM starts a fresh
-project at `0.0.1`.
+Use whatever development version you intend to release first; MSM starts a fresh project at `0.0.1`.
 
 ## Guidelines
 
