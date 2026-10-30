@@ -13,12 +13,12 @@ description: >-
   GitBook editor is overwritten by the next sync.
 -->
 
-The `dev` and `sql` plugins are listed in the [Hermes plugin catalog](https://hermes-agent.nousresearch.com/docs/plugins/mariadb-dev), together with `mariadb-guard`, a companion plugin that keeps database passwords off the command line. Every plugin folder in the repository is a portable Agent Plugins v1 package with a root `plugin.json` and a `skills/` directory. The `dev` and `sql` plugins also contain a root `mcp.json` that declares the `mariadb-shell` MCP server. Hermes loads these packages without any additional code.
+The `dev` plugin is listed in the [Hermes plugin catalog](https://hermes-agent.nousresearch.com/docs/plugins/mariadb-dev), together with `mariadb-guard`, a companion plugin that keeps database passwords off the command line. Every plugin folder in the repository is a portable Agent Plugins v1 package with a root `plugin.json` and a `skills/` directory. The `dev` and `sql` plugins also contain a root `mcp.json` that declares the `mariadb-shell` MCP server. Hermes loads these packages without any additional code.
 
 | Variant | Folder | Hermes plugin name | In the catalog |
 | ------- | ------ | ------------------ | -------------- |
 | `dev` | `hermes/dev-plugin` | `mariadb-dev` | Yes |
-| `sql` | `hermes/sql-plugin` | `mariadb-sql` | Yes |
+| `sql` | `hermes/sql-plugin` | `mariadb-sql` | No |
 | `contributor` | `hermes/contributor-plugin` | `mariadb-contributor` | No |
 | Guard | `hermes/guard-plugin` | `mariadb-guard` | Yes |
 
@@ -33,7 +33,7 @@ hermes plugins install mariadb-dev --enable
 hermes plugins install mariadb-guard --enable
 ```
 
-To install the `sql` plugin, replace `mariadb-dev` with `mariadb-sql`. In Hermes Desktop, the plugins are also available under **Capabilities** → **Plugins** → **Browse**; search for `mariadb`.
+The catalog lists one package per product, so the `sql` plugin, a subset of `dev`, isn't in it. Install it from the repository, as described in [Install from the Repository](#install-from-the-repository). In Hermes Desktop, the plugins are also available under **Capabilities** → **Plugins** → **Browse**; search for `mariadb`.
 
 The `--enable` option enables the plugin after installation. Hermes installs portable packages disabled. If you omit the option, enable the plugin afterwards with `hermes plugins enable mariadb-dev`.
 
@@ -43,7 +43,7 @@ After the installation, start a new Hermes session. Hermes connects MCP servers 
 
 ### Install from the Repository
 
-A catalog install checks out the release that the catalog pins. To install the latest state of the `main` branch instead, or the `contributor` plugin, which isn't in the catalog, install the plugin from its folder in the repository:
+A catalog install checks out the release that the catalog pins. To install the latest state of the `main` branch instead, or the `sql` or `contributor` plugin, which aren't in the catalog, install the plugin from its folder in the repository:
 
 ```bash
 hermes plugins install mariadb/ai-plugins#hermes/dev-plugin --enable

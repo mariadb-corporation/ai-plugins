@@ -19,28 +19,20 @@ without any Python code of its own.
 
 ## Installation
 
-The plugin is in the
-[Hermes plugin catalog](https://hermes-agent.nousresearch.com/docs/plugins/mariadb-sql),
-so Hermes installs it by name (in Hermes Desktop: **Capabilities → Plugins →
-Browse**):
-
 ```sh
-hermes plugins install mariadb-sql --enable
+hermes plugins install mariadb/ai-plugins#hermes/sql-plugin --enable
 ```
 
 Then start a new Hermes session; MCP servers connect at session start.
 
+- `#hermes/sql-plugin` installs this folder of the repository, not the whole repo.
+  `mariadb-sql` is not in the Hermes plugin catalog, which lists one package per
+  product: [`mariadb-dev`](../dev-plugin/README.md), a superset of this one.
 - `--enable` is needed because Hermes installs portable packages **disabled**.
   Without it, run `hermes plugins enable mariadb-sql` afterwards.
-- The catalog pins the commit of an ai-plugins release.
-  `hermes plugins update mariadb-sql` moves to the release it pins next;
-  `hermes plugins remove mariadb-sql` removes the plugin.
 
-To install the `main` branch instead, give this folder of the repository:
-
-```sh
-hermes plugins install mariadb/ai-plugins#hermes/sql-plugin --enable
-```
+To update later, run `hermes plugins update mariadb-sql`; to remove it,
+`hermes plugins remove mariadb-sql`.
 
 On first use of a MariaDB tool, the launcher looks for a `mariadb-shell` it can
 run — `$MARIADB_SHELL_BIN`, one on `PATH`, or an existing install in

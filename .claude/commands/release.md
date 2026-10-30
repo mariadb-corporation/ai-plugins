@@ -316,13 +316,14 @@ delete `wip/<version>` on `origin` once its remote head matches the PR's `headRe
 
 ## 12. Bump the Hermes plugin catalog
 
-Hermes users install `mariadb-dev`, `mariadb-sql` and `mariadb-guard` by name
-from the Hermes plugin catalog: one file each, `plugin-catalog/mariadb-<name>.yaml`
-in `NousResearch/hermes-agent` (added by NousResearch/hermes-agent#145982). Each
+Hermes users install `mariadb-dev` and `mariadb-guard` by name from the Hermes
+plugin catalog: one file each, `plugin-catalog/mariadb-<name>.yaml` in
+`NousResearch/hermes-agent` (added by NousResearch/hermes-agent#145982). Each
 entry pins an exact commit of the **public** repo `mariadb/ai-plugins` (`subdir:
-hermes/<dev|sql|guard>-plugin`), and the catalog never follows `main`: a release
-reaches Hermes users only through a PR that moves `sha` and `version` in all three
-entries. The catalog's rules are in
+hermes/<dev|guard>-plugin`), and the catalog never follows `main`: a release
+reaches Hermes users only through a PR that moves `sha` and `version` in both
+entries. `mariadb-sql` is **not** in the catalog: the reviewers list one package
+per product, and it is a subset of `mariadb-dev`. Do not add it back. The catalog's rules are in
 [`plugin-catalog/README.md`](https://github.com/NousResearch/hermes-agent/blob/main/plugin-catalog/README.md);
 read them again when anything below is refused.
 
@@ -336,7 +337,10 @@ refs/heads/main` must print `<pin>`. If it does not, step 11 did not land — st
 --author @me --state open --search "mariadb in:title"`. If a previous bump (or
 the original #145982) is still open, do not open a second PR: push the new pin to
 that PR's branch, retitle it to this version, and say in a comment which
-release it now pins. Otherwise open a new one as below.
+release it now pins. Otherwise open a new one as below. A new pin on a PR still
+under its first review restarts that review, so while #145982 is open, re-pin it
+only when the reviewers asked for the change or the release fixes something they
+would want listed.
 
 **Validate at the pin**, exactly as the catalog CI does. Clone
 `https://github.com/mariadb/ai-plugins` into the scratchpad, check out `<pin>`,
@@ -344,7 +348,7 @@ and run, with `HERMES_HOME` pointing into the scratchpad so `~/.hermes` is left
 alone:
 
 ```bash
-HERMES_HOME=<scratch>/hh hermes plugins validate --install-deps <scratch>/ai-plugins/hermes/<dev|sql|guard>-plugin </dev/null
+HERMES_HOME=<scratch>/hh hermes plugins validate --install-deps <scratch>/ai-plugins/hermes/<dev|guard>-plugin </dev/null
 ```
 
 Every one must end in `Validation passed`, with `security scan — safe`. Read every
@@ -355,18 +359,27 @@ clashed with `browser-harness` in October 2026; installing the `pyproject.toml`
 dependencies without `browser-harness`, then Hermes with `--no-deps`, was enough
 for `validate`. Never submit without a passing local run.
 
-**Edit the three entries.** In a scratch clone of `NousResearch/hermes-agent`
+**Edit the two entries.** In a scratch clone of `NousResearch/hermes-agent`
 (`--depth 1` is enough), on a branch `catalog-mariadb-<version>`, change in each of
-`plugin-catalog/mariadb-dev.yaml`, `mariadb-sql.yaml` and `mariadb-guard.yaml`:
+`plugin-catalog/mariadb-dev.yaml` and `mariadb-guard.yaml`:
 
 - `sha:` → `<pin>` (all 40 hex characters);
 - `version:` → `"<version>"` (quoted);
-- the skill counts in the `dev` and `sql` descriptions (`85 skills`, `47 skills`
-  as of 26.10.6) → this release's counts from step 4;
-- anything else this release made untrue: the disclosure text (how the launcher
-  installs mariadb-shell, what it downloads), `capabilities.provides_hooks` of
-  `mariadb-guard` against `provides_hooks` in `hermes/guard-plugin/plugin.yaml`,
-  and `requires_hermes` when a package now needs a newer Hermes.
+- the skill count in the `dev` description (`85 skills` as of 26.10.6) → this
+  release's count from step 4;
+- when the shell floor moved (step 2): the `dev` disclosure names the pinned
+  mariadb-shell release and its committed checksum file (`v26.10.4` and
+  `scripts/mariadb-shell-v26.10.4.SHA256SUMS` as of 26.10.6, both twice: the
+  required version and the release installed) → `v<floor>`; check
+  `hermes/dev-plugin/scripts/` at `<pin>` holds exactly
+  `mariadb-shell-v<floor>.SHA256SUMS`. When `INSTALLER_COMMIT` in the Hermes
+  launchers moved, the disclosure's "fixed commit" still holds, but say so in the
+  PR body;
+- anything else this release made untrue: the rest of the disclosure text (how
+  the launcher installs mariadb-shell, what it downloads, that it reads no
+  credentials), `capabilities.provides_hooks` of `mariadb-guard` against
+  `provides_hooks` in `hermes/guard-plugin/plugin.yaml`, and `requires_hermes`
+  when a package now needs a newer Hermes.
 
 Then run the catalog's own schema check, which must end in `OK`:
 
@@ -384,7 +397,7 @@ only `plugin-catalog/**` (and `contributors/emails/**`); CI refuses anything els
 gh repo fork NousResearch/hermes-agent --clone=false   # once per account; a no-op afterwards
 git push -u https://github.com/<gh-login>/hermes-agent.git catalog-mariadb-<version>
 gh pr create --repo NousResearch/hermes-agent --base main --head <gh-login>:catalog-mariadb-<version> \
-  --title "catalog: bump mariadb-dev, mariadb-sql and mariadb-guard to <version>" --body-file <file>
+  --title "catalog: bump mariadb-dev and mariadb-guard to <version>" --body-file <file>
 ```
 
 The PR must come from a maintainer of `mariadb/ai-plugins` (catalog rule 5): check
@@ -392,7 +405,7 @@ The PR must come from a maintainer of `mariadb/ai-plugins` (catalog rule 5): che
 user. Reviewers read the commit range being adopted (rule 4), so the body names
 the old → new pin with its compare link
 (`https://github.com/mariadb/ai-plugins/compare/<old-sha>...<pin>`), summarises
-what changed in the three Hermes packages (from the CHANGELOGs of step 6), states
+what changed in the two Hermes packages (from the CHANGELOGs of step 6), states
 the local `validate` result, and repeats any change to the disclosures. It ends
 with the PR attribution line.
 

@@ -89,7 +89,7 @@ built-in MCP support.
 
 ### Hermes Agent
 
-The plugins are in the
+`mariadb-dev` and its companion `mariadb-guard` are in the
 [Hermes plugin catalog](https://hermes-agent.nousresearch.com/docs/plugins/mariadb-dev),
 so Hermes installs them by name — in Hermes Desktop too, under **Capabilities →
 Plugins → Browse**:
@@ -103,7 +103,6 @@ Then start a new Hermes session — MCP servers connect at session start.
 `--enable` is there because Hermes installs portable packages disabled. Without
 the flag, run `hermes plugins enable mariadb-dev` afterwards.
 
-`mariadb-sql` installs the same way, in place of `mariadb-dev`.
 `mariadb-guard` keeps the agent from running the MariaDB command-line clients for
 what the MCP tools do, so no password reaches a command line; it is a package of
 its own because Hermes runs hooks only from a Python plugin. Later,
@@ -113,8 +112,8 @@ pins next, and `hermes plugins remove mariadb-dev` removes it.
 **Straight from the repository.** Each plugin folder is a portable Agent Plugins
 v1 package — a `plugin.json`, the skills and an `mcp.json` that declares the MCP
 server — so Hermes can also install one from its folder. That gets the `main`
-branch rather than the catalog's release, and is the way to the `contributor`
-plugin, which is not in the catalog:
+branch rather than the catalog's release, and is the way to the `sql` and
+`contributor` plugins, which are not in the catalog:
 
 ```sh
 hermes plugins install {{ site.install_org }}/ai-plugins#hermes/dev-plugin --enable
