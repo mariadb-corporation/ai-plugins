@@ -26,6 +26,8 @@ hermes plugins install mariadb/ai-plugins#hermes/sql-plugin --enable
 Then start a new Hermes session; MCP servers connect at session start.
 
 - `#hermes/sql-plugin` installs this folder of the repository, not the whole repo.
+  `mariadb-sql` is not in the Hermes plugin catalog, which lists one package per
+  product: [`mariadb-dev`](../dev-plugin/README.md), a superset of this one.
 - `--enable` is needed because Hermes installs portable packages **disabled**.
   Without it, run `hermes plugins enable mariadb-sql` afterwards.
 
@@ -137,7 +139,7 @@ its own, [`mariadb-guard`](../guard-plugin/README.md). Install it next to this
 one:
 
 ```sh
-hermes plugins install mariadb/ai-plugins#hermes/guard-plugin --enable
+hermes plugins install mariadb-guard --enable
 ```
 
 The guard looks at only five clients, and each only where an MCP tool does the job:

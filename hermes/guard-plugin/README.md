@@ -48,10 +48,13 @@ carry skills and an MCP server. So the guard is a package of its own, installed
 next to `mariadb-dev` (or `mariadb-sql`):
 
 ```sh
-hermes plugins install mariadb/ai-plugins#hermes/guard-plugin --enable
+hermes plugins install mariadb-guard --enable
 ```
 
-Then start a new Hermes session.
+Then start a new Hermes session. That installs the release the
+[Hermes plugin catalog](https://hermes-agent.nousresearch.com/docs/plugins/mariadb-guard)
+pins; to install the `main` branch instead, give this folder of the repository:
+`hermes plugins install mariadb/ai-plugins#hermes/guard-plugin --enable`.
 
 ## Turning it off
 
