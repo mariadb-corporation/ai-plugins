@@ -334,13 +334,10 @@ step 9 (`fork/main` after step 11, so the same commit).
 refs/heads/main` must print `<pin>`. If it does not, step 11 did not land — stop.
 
 **Find the open entry PR first.** `gh pr list --repo NousResearch/hermes-agent
---author @me --state open --search "mariadb in:title"`. If a previous bump (or
-the original #145982) is still open, do not open a second PR: push the new pin to
-that PR's branch, retitle it to this version, and say in a comment which
-release it now pins. Otherwise open a new one as below. A new pin on a PR still
-under its first review restarts that review, so while #145982 is open, re-pin it
-only when the reviewers asked for the change or the release fixes something they
-would want listed.
+--author @me --state open --search "mariadb in:title"`. If a previous bump is
+still open, do not open a second PR: push the new pin to that PR's branch,
+retitle it to this version, and say in a comment which release it now pins.
+Otherwise open a new one as below.
 
 **Validate at the pin**, exactly as the catalog CI does. Clone
 `https://github.com/mariadb/ai-plugins` into the scratchpad, check out `<pin>`,
@@ -361,7 +358,10 @@ for `validate`. Never submit without a passing local run.
 
 **Edit the two entries.** In a scratch clone of `NousResearch/hermes-agent`
 (`--depth 1` is enough), on a branch `catalog-mariadb-<version>`, change in each of
-`plugin-catalog/mariadb-dev.yaml` and `mariadb-guard.yaml`:
+`plugin-catalog/mariadb-dev.yaml` and `mariadb-guard.yaml`. Edit the files as
+they stand on `main` there, never paste in a copy from here or an earlier PR:
+the reviewers edit entries when they merge them (#145982's `Disclosure:` became
+`Disclosure —`), and their wording stays. Change:
 
 - `sha:` → `<pin>` (all 40 hex characters);
 - `version:` → `"<version>"` (quoted);
@@ -390,7 +390,9 @@ python3 scripts/validate_plugin_catalog.py plugin-catalog/
 **Commit and open the PR.** The catalog CI fails commits whose author email is not
 mapped to a GitHub login, and a GitHub noreply address needs no mapping. Commit as
 the `gh` user's noreply address (`gh api user --jq '"\(.id)+\(.login)@users.noreply.github.com"'`)
-rather than adding a file under `contributors/emails/`. A catalog PR may touch
+rather than adding a file under `contributors/emails/` (the reviewers mapped
+`mike.zinner@mariadb.com` to `mariadb-MikeZinner` when merging #145982, so that
+address works too). A catalog PR may touch
 only `plugin-catalog/**` (and `contributors/emails/**`); CI refuses anything else.
 
 ```bash
