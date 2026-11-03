@@ -8,6 +8,11 @@ project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- The `LICENSE` file follows legal's review: MariaDB plc, for its
+  modifications and additions, also grants the additional permission to
+  link with separately licensed software, and the third-party list adds
+  the packages the VS Code extension's notebooks bundle (sucrase and its
+  dependencies, acorn).
 - When no suitable `mariadb-shell` is installed, the MCP launcher installs the
   release this plugin was tested with, `v` followed by `MARIADB_SHELL_VERSION`
   (now `v26.10.4`), instead of the newest release. A newer `mariadb-shell` you
