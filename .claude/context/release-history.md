@@ -12,8 +12,30 @@ ported from the vscode-extension's `/release`): no version → the next `YY.MM.x
 and the month's tags; no floor → the latest published shell when it is newer than the floor.
 Anything suggested is confirmed in one summary before anything changes.
 
-## Landed on `main` (through PR #74)
+## Landed on `main` (through PR #79)
 
+**#79** `7edd3bb` (2026-11-03): **Hermes plugin catalog** — README, DevHub, docs-ref and the Hermes
+READMEs lead with `hermes plugins install mariadb-dev --enable` / `mariadb-guard --enable`
+(repo-folder installs still documented; `mariadb-sql` and contributor stay folder-only); `/release`
+gains **step 12**, a PR to `NousResearch/hermes-agent` moving `sha`/`version` of both catalog
+entries to the release commit (validated with `hermes plugins validate` at the pin). Held as a
+draft until NousResearch/hermes-agent#145982 merged (2026-11-02). Docs only + `/release`; no
+CHANGELOG line yet.
+**#78** `5a22db8` (2026-10-30): `mariadb-schema-management-create` — client-facing tables get a
+native `UUID NOT NULL DEFAULT UUID_v7()` primary key, never `CHAR(36)` (all five dev plugins); a
+re-vendor (mariadb-docs `62ef6fe` → `f8b8767`): `mariadb-create-table`/`-drop-table` say
+`CREATE OR REPLACE TABLE` is atomic by default from 13.2. Counts unchanged (dev 85).
+**#77** `fde0a1f` (2026-10-30): **Hermes dev/sql get their own MCP launcher**, answering the
+catalog review: installs exactly `v$MARIADB_SHELL_VERSION` (26.10.4) via mariadb-shell's
+installer at a pinned commit (`INSTALLER_COMMIT=664993c`, same in `.sh`/`.cmd`), verified against
+the committed `scripts/mariadb-shell-v<floor>.SHA256SUMS` (installers' `MARIADB_SHELL_SHA256SUMS`,
+mariadb-shell #110); no prerelease retry; reads/sends no GitHub credentials. Other harnesses'
+launchers unchanged. `set-mariadb-shell-version.sh` fetches the new SHA256SUMS into both Hermes
+plugins; `.gitattributes` keeps `*.SHA256SUMS` LF. This commit is what the catalog pins.
+**#76** `df76236` (2026-10-28): **Cursor** docs (README + DevHub) — Cursor installs Claude Code
+plugins from this repo's marketplace (Customize → + Add Marketplace →
+`https://github.com/mariadb/ai-plugins` → Add `dev`); no plugin changed.
+**#75** `c188e64`: checkpoint after 26.10.6.
 **#74** `029f13f` (2026-10-24) was release 26.10.6 (below).
 **#73** `10f3095` (2026-10-22): **`videos/`** — a generated SE enablement video (2:11, MariaDB plc
 style from `docs-ref/`), built from source: HTML animation captured in headless Chrome, local

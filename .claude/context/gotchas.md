@@ -69,6 +69,7 @@
   splits it itself (first word the plugin version, second the floor, a third word stops it).
   Write any future command with more than one argument the same way, and if a command body
   ever shows a literal `$N`, read the arguments off the user's own command line.
+- **Hermes catalog reviewers edit entries when they merge them** (#145982: `Disclosure:` → `Disclosure —`, plus an email mapping file). Always edit the catalog YAML as it stands on hermes-agent `main`; pasting in our own earlier copy silently reverts them. Catalog CI rejects commit emails not mapped under `contributors/emails/` — commit as the GitHub noreply address (or `mike.zinner@mariadb.com`, now mapped); a catalog PR may touch only `plugin-catalog/**` and `contributors/emails/**`.
 - **Hermes' install scan, not `--force`'s help text, decides whether `--force` is needed.**
   Hermes v0.21.7 documents `plugins install --force` only as "reinstall over an existing
   plugin", yet it is also what overrides a BLOCKED verdict (community source + *caution*). The
