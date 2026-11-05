@@ -26,6 +26,11 @@ Make changes in the same sections you authored initially, using
   it also runs on every deployment. Revoking a privilege additionally needs a
   `REVOKE` in the update script's section 270.
 
+- **Diagrams** → section 160 is written by msm only. After changing CREATE
+  statements, run `msm.update_schema_definition` so the schema snapshot and the
+  diagrams follow (figures of dropped tables are removed); never edit the
+  `msm_schema_diagrams` VIEW or `sections/160_schema_diagrams.sql` by hand.
+
 The development file always describes the **full, current** schema (not a diff) —
 it is the source for the next version snapshot. The per-release *migration* from
 the previous version is written separately when you prepare the release (see
@@ -91,11 +96,32 @@ SOURCE './sections/150-20_procedures_functions.sql'[53:];
 SOURCE './sections/150-30_triggers.sql'[53:];
 ```
 
+### When to break out
+
+Keep a section inline while its body is small; once it grows past the project's
+`maxInlineSectionSize` (default 16 KB, optional key in `msm.project.json`) move
+it into breakout files. msm does this itself for section 160 (the diagrams VIEW
+nearly always exceeds it). A project that wants a single `_next.sql` file sets a
+large `maxInlineSectionSize`.
+
 ### File naming convention
 
 Name breakout files `<section-id>-<NN>_<topic>.sql` so they sort in load order
 and map back to their section, e.g. `140-10_tables.sql`,
 `140-30_inserts.sql`, `150-20_procedures_functions.sql`, `170_roles.sql`.
+Split by object kind:
+
+| File | Holds |
+| --- | --- |
+| `140-10_tables.sql` | `CREATE TABLE` |
+| `140-20_table_additions.sql` | `ALTER TABLE` that 140 needs after the tables (e.g. FKs between them) |
+| `140-30_inserts.sql` | base-data `INSERT`s |
+| `150-10_views.sql` | `CREATE OR REPLACE VIEW` |
+| `150-20_procedures_functions.sql` | routines |
+| `150-30_triggers.sql` | triggers |
+| `150-40_events.sql` | events |
+| `160_schema_diagrams.sql` | the diagrams VIEW — written by msm |
+| `170_roles.sql` | roles and grants |
 
 ### Rules
 

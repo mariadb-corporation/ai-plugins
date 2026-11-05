@@ -78,6 +78,7 @@ determines how the deployment script treats it.** Always edit sections with
 | 130 | Helper routines used during creation — names must start `msm_` |
 | **140** | **Non-idempotent: `CREATE TABLE` + base-data `INSERT`s** |
 | **150** | **Idempotent: VIEWs / PROCEDUREs / FUNCTIONs / TRIGGERs / EVENTs** — run in full on every deployment |
+| 160 | Schema diagrams: the `msm_schema_diagrams` VIEW — **written by msm, never by hand** (see below) |
 | 170 | Authorization: `CREATE ROLE IF NOT EXISTS` / `GRANT` — run in full on every deployment |
 | 180 | Optional MariaDB REST Service endpoints (`CREATE OR REPLACE REST ...`) — run in full on every deployment |
 | 190 | Removal of the `msm_` helpers |
@@ -115,6 +116,19 @@ determines how the deployment script treats it.** Always edit sections with
   on an upgrade it runs before 170 creates a new role, and the deployment fails
   (error 1133, because the scripts set `NO_AUTO_CREATE_USER`).
 
+**Schema diagrams (section 160).** The `msm_schema_diagrams` VIEW (`name`,
+`format`, `document`) holds one row `schema_definition` (format `msm-schema/1`):
+a snapshot of the schema objects the CREATE statements define, as the MariaDB SQL
+language server (`mariadb-lsp`) outlines them; and one row per EER diagram
+(format `msm-diagram/1`: layers, figures, connections). **The CREATE statements
+are the source of truth** — never edit the snapshot; change the SQL and run
+`msm.update_schema_definition`. `msm.prepare_release` makes the snapshot again
+itself and **fails without `mariadb-lsp`, or when a statement of the
+development script cannot be parsed** (the snapshot would miss its objects). Once
+the VIEW is larger than the project's `maxInlineSectionSize` (default 16 KB, in
+`msm.project.json`) msm keeps it in `development/sections/160_schema_diagrams.sql`,
+included with SOURCE.
+
 **Delimiter/placement rule** (why the split exists): in the generated deployment
 script, sections **140, 240, 170, 270** become the *body of a stored procedure*
 — write them as plain `;`-terminated statements, **no `DELIMITER`**, no `USE`
@@ -129,6 +143,9 @@ script, sections **140, 240, 170, 270** become the *body of a stored procedure*
 - **Versions:** `msm.set_development_version`, `msm.get_released_versions`,
   `msm.get_last_released_version`, `msm.get_last_deployment_version`,
   `msm.get_deployment_script_versions`.
+- **Diagrams:** `msm.list_schema_diagrams`, `msm.get_schema_diagrams`,
+  `msm.update_schema_definition` (after changing CREATE statements),
+  `msm.set_schema_diagram`, `msm.remove_schema_diagram`.
 - **Release / deploy:** `msm.prepare_release`, `msm.generate_deployment_script`,
   `msm.deploy_schema` (the last needs an open `db.connect` connection).
 
