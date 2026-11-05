@@ -29,6 +29,12 @@
 #      ~/.local/share/mariadb-shell/<version>, linked into ~/.local/bin; then
 #      launch what it installed.
 #
+# Step 4 is serialized: launchers started together (several sessions, or the
+# MCP and another harness at once) take turns through a lock folder in the
+# install prefix, and wait for an install.sh that is already running there. The
+# one that waited looks again before installing, since the install it waited
+# for has usually put a good enough shell in place.
+#
 # Installing is delegated to install.sh rather than reimplemented here: it picks
 # the package matching the local OS, CPU and glibc version and verifies its
 # checksum. The checksums come from mariadb-shell-<tag>.SHA256SUMS next to this
@@ -54,7 +60,11 @@
 #   MARIADB_SHELL_BIN         Path to a pre-installed binary; skips all other logic.
 #   MARIADB_SHELL_BINDIR      Where install.sh links the binary (default ~/.local/bin);
 #                             this is also where step 3 looks.
-#   MARIADB_SHELL_PREFIX      Passed through: where install.sh unpacks releases.
+#   MARIADB_SHELL_PREFIX      Passed through: where install.sh unpacks releases
+#                             (default ~/.local/share/mariadb-shell). The
+#                             launchers' lock folder, .mcp-launcher.lock, is there.
+#   MARIADB_SHELL_LOCK_WAIT   Seconds to wait for another install to finish
+#                             (default 180) before giving up on installing.
 #   MARIADB_SHELL_TAG         Release tag to install (default v$MARIADB_SHELL_VERSION).
 #                             A tag with no committed SHA256SUMS next to this
 #                             script is checked against the release's own.
@@ -65,6 +75,12 @@ set -euo pipefail
 VERSION="${MARIADB_SHELL_VERSION:-26.10.4}"
 REPO="${MARIADB_SHELL_REPO:-mariadb-corporation/mariadb-shell}"
 BINDIR="${MARIADB_SHELL_BINDIR:-$HOME/.local/bin}"
+# install.sh's own default, so the lock sits beside the installs it guards.
+PREFIX="${MARIADB_SHELL_PREFIX:-$HOME/.local/share/mariadb-shell}"
+LOCK_WAIT="${MARIADB_SHELL_LOCK_WAIT:-180}"
+case "$LOCK_WAIT" in
+  ''|*[!0-9]*) echo "mariadb-mcp-launcher: MARIADB_SHELL_LOCK_WAIT is not a number of seconds: $LOCK_WAIT; using 180" >&2; LOCK_WAIT=180 ;;
+esac
 TAG="${MARIADB_SHELL_TAG:-v$VERSION}"
 # The mariadb-shell commit the installer is taken from: fixed, so the script
 # that runs is the one this launcher was tested with, not whatever main holds.
@@ -99,15 +115,16 @@ version_ge() {
 
 # shell_version BIN — print the version BIN reports, or nothing.
 #
-# The version line looks like "mariadb-shell   Ver 26.8.0 for macos ...", so the
-# number after "Ver" is read first; a bare numeric match is only the fallback,
-# since the leading path may itself carry digits.
+# The version line looks like "mariadb-shell   Ver 26.8.0 for macos ...", but a
+# build can print other messages (plugin registration errors) before it, so the
+# whole output is searched for "Ver <number>". A bare number on the first line
+# is only the fallback, since the leading path may itself carry digits.
 shell_version() {
   local out ver
-  out="$("$1" --version 2>/dev/null | head -n1 || true)"
+  out="$("$1" --version 2>/dev/null || true)"
   [ -n "$out" ] || return 0
-  ver="$(printf '%s\n' "$out" | grep -oiE 'ver[[:space:]]+[0-9]+(\.[0-9]+)+' | head -n1 | grep -oE '[0-9]+(\.[0-9]+)+' || true)"
-  [ -n "$ver" ] || ver="$(printf '%s\n' "$out" | grep -oE '[0-9]+(\.[0-9]+)+' | head -n1 || true)"
+  ver="$(printf '%s\n' "$out" | grep -oiE '(^|[^[:alnum:]])ver[[:space:]]+[0-9]+(\.[0-9]+)+' | head -n1 | grep -oE '[0-9]+(\.[0-9]+)+' || true)"
+  [ -n "$ver" ] || ver="$(printf '%s\n' "$out" | head -n1 | grep -oE '[0-9]+(\.[0-9]+)+' | head -n1 || true)"
   printf '%s' "$ver"
 }
 
@@ -172,9 +189,6 @@ else
   die "neither curl nor wget is available; cannot fetch the mariadb-shell installer"
 fi
 
-TMP="$(mktemp -d)"
-trap 'rm -rf "$TMP"' EXIT
-
 # A tag the plugin carries no SHA256SUMS for was chosen by whoever set
 # MARIADB_SHELL_TAG or MARIADB_SHELL_VERSION; that release's own is used then.
 if [ -f "$SUMS_FILE" ]; then
@@ -184,48 +198,185 @@ else
   log "no committed checksums for $TAG; checking against the release's own SHA256SUMS"
 fi
 
+# --- Taking turns ------------------------------------------------------------
+# Installers running at once into one prefix all unpack the same tarball into
+# the same folder, and all of them fail. So the launchers queue on a lock
+# folder (mkdir is atomic everywhere; macOS has no flock) holding the PIDs of
+# the launcher and of the installer it runs. The lock is stale once none of
+# them is alive. A launcher the harness stops waiting for leaves the lock to
+# its installer, which carries on, so the next launcher waits for that install
+# instead of starting a second one.
+#
+# INSTALL_LOCK is install.sh's own lock (in versions that have one): an install
+# someone else started, a VS Code extension for instance, is waited for too.
+LOCK="$PREFIX/.mcp-launcher.lock"
+INSTALL_LOCK="$PREFIX/.install.lock"
+HAVE_LOCK=0
+INSTALLER_PID=""
+TMP=""
+
+# cleanup — remove the temp folder and give the lock back. Runs on exit, and
+# before exec: an exec'd server keeps this PID, which would hold the lock forever.
+cleanup() {
+  [ -z "$TMP" ] || rm -rf "$TMP"
+  TMP=""
+  if [ "$HAVE_LOCK" = 1 ]; then
+    if [ -z "$INSTALLER_PID" ] || ! kill -0 "$INSTALLER_PID" 2>/dev/null; then
+      rm -rf "$LOCK"
+    fi
+    HAVE_LOCK=0
+  fi
+}
+trap cleanup EXIT
+# A trapped signal also interrupts `wait`, so the EXIT trap above runs at once.
+trap 'exit 129' HUP
+trap 'exit 130' INT
+trap 'exit 143' TERM
+
+# launch BIN — start BIN as the MCP server, releasing the lock first.
+launch() {
+  cleanup
+  trap - EXIT HUP INT TERM
+  exec "$1" "${MCP_ARGS[@]}"
+}
+
+# good_shell — print a mariadb-shell >= VERSION from step 2 or 3, or nothing.
+good_shell() {
+  local bin ver prev=''
+  for bin in "$(command -v mariadb-shell 2>/dev/null || true)" "$LOCAL_BIN"; do
+    [ -n "$bin" ] && [ -x "$bin" ] && [ "$bin" != "$prev" ] || continue
+    prev="$bin"
+    ver="$(shell_version "$bin")"
+    if [ -n "$ver" ] && version_ge "$ver" "$VERSION"; then
+      printf '%s' "$bin"
+      return 0
+    fi
+  done
+}
+
+# lock_busy DIR — succeed while the lock folder DIR belongs to a live install:
+# one of the PIDs in its files runs, or it has no PID yet and is under a minute
+# old (its owner is between mkdir and writing the PID).
+lock_busy() {
+  local pid pids
+  [ -d "$1" ] || return 1
+  pids="$(cat "$1"/* 2>/dev/null | tr -cs '0-9' ' ' || true)"
+  for pid in $pids; do
+    kill -0 "$pid" 2>/dev/null && return 0
+  done
+  [ -z "${pids// /}" ] && [ -z "$(find "$1" -maxdepth 0 -mmin +1 2>/dev/null)" ]
+}
+
+# take_turn — wait until no other install runs, then hold LOCK. Returns 1 when
+# LOCK_WAIT runs out first. Without a usable prefix it goes ahead unlocked.
+take_turn() {
+  local start=$SECONDS next_note=0 who='' waited
+  mkdir -p "$PREFIX" 2>/dev/null || true
+  while :; do
+    if lock_busy "$INSTALL_LOCK"; then
+      who="an install already running ($INSTALL_LOCK)"
+    elif mkdir "$LOCK" 2>/dev/null; then
+      echo "$$" >"$LOCK/pid"
+      HAVE_LOCK=1
+      return 0
+    elif [ ! -d "$LOCK" ]; then
+      log "cannot create the lock $LOCK; installing without it"
+      return 0
+    elif lock_busy "$LOCK"; then
+      who="another MCP launcher's install (lock $LOCK)"
+    else
+      # Renamed, not removed, so only one waiter clears it.
+      log "clearing a lock left by an install that is gone: $LOCK"
+      mv "$LOCK" "$LOCK.stale.$$" 2>/dev/null && rm -rf "$LOCK.stale.$$"
+      continue
+    fi
+    waited=$((SECONDS - start))
+    if [ "$waited" -ge "$LOCK_WAIT" ]; then
+      log "gave up after ${waited}s waiting for $who"
+      return 1
+    fi
+    if [ "$waited" -ge "$next_note" ]; then
+      if [ "$next_note" = 0 ]; then
+        log "waiting for $who to finish (up to ${LOCK_WAIT}s, MARIADB_SHELL_LOCK_WAIT)"
+      else
+        log "still waiting for $who (${waited}s)"
+      fi
+      next_note=$((waited + 10))
+    fi
+    sleep 1
+  done
+}
+
 install_failed=0
 # run_installer — install, with output kept off stdout.
 #
 # BINDIR is exported so the installer links where step 3 looks. A pinned tag
 # needs no prerelease handling: the installer takes a named release whether or
 # not it is a prerelease. Its own progress output would corrupt the MCP stream,
-# hence the redirect to stderr.
+# hence the redirect to stderr. It runs in the background only so that its PID
+# can go into the lock.
 run_installer() {
+  local rc=0
   MARIADB_SHELL_BINDIR="$BINDIR" \
   MARIADB_SHELL_TAG="$TAG" \
   MARIADB_SHELL_SHA256SUMS="$SUMS" \
-  sh "$TMP/install.sh" >&2
+  sh "$TMP/install.sh" >&2 &
+  INSTALLER_PID=$!
+  [ "$HAVE_LOCK" = 0 ] || echo "$INSTALLER_PID" >>"$LOCK/pid"
+  wait "$INSTALLER_PID" || rc=$?
+  INSTALLER_PID=""
+  return "$rc"
 }
 
-log "no suitable mariadb-shell found; installing $TAG from $REPO ..."
 # A harness that stops waiting for the server (Claude Code gives up after 30 s
 # unless MCP_TIMEOUT is raised) signals this script, but the installer it runs
 # finishes regardless — so say how to pick the install up afterwards.
 log "a first install can take a minute. If the harness gives up on this server meanwhile (Claude Code waits 30 s unless MCP_TIMEOUT is raised), the install still finishes: reconnect the server then (/mcp in Claude Code), or start a new session."
-if fetch "$INSTALLER_URL" "$TMP/install.sh"; then
-  run_installer || { install_failed=1; log "the mariadb-shell installer failed"; }
-else
+if ! take_turn; then
   install_failed=1
-  log "could not download the installer from $INSTALLER_URL"
+else
+  # Whoever held the lock before may have installed a good enough shell.
+  BIN="$(good_shell)"
+  if [ -n "$BIN" ]; then
+    log "using mariadb-shell $(shell_version "$BIN") installed meanwhile: $BIN (>= required $VERSION)"
+    launch "$BIN"
+  fi
+
+  log "no suitable mariadb-shell found; installing $TAG from $REPO ..."
+  TMP="$(mktemp -d)"
+  if fetch "$INSTALLER_URL" "$TMP/install.sh"; then
+    run_installer || { install_failed=1; log "the mariadb-shell installer failed"; }
+  else
+    install_failed=1
+    log "could not download the installer from $INSTALLER_URL"
+  fi
 fi
 
-# A concurrent launcher may have completed the install that this one lost the
-# race for, so the binary — not the installer's exit status — is the last word.
+# The version decides, not the installer's exit status: another install may
+# have finished meanwhile, and an old shell at LOCAL_BIN is no sign that one did.
+BIN="$(good_shell)"
+if [ -n "$BIN" ]; then
+  [ "$install_failed" = 0 ] || log "using mariadb-shell $(shell_version "$BIN") that another install put in place: $BIN"
+  log "starting mariadb-shell $(shell_version "$BIN") MCP server: $BIN"
+  launch "$BIN"
+fi
+
 if [ ! -x "$LOCAL_BIN" ]; then
   die "no mariadb-shell at $LOCAL_BIN after installing.
   Install it by hand and retry, or point MARIADB_SHELL_BIN at an existing binary:
       curl -fsSLo install.sh https://github.com/$REPO/raw/$INSTALLER_COMMIT/install.sh
       MARIADB_SHELL_TAG=$TAG bash install.sh"
 fi
-[ "$install_failed" = 0 ] || log "using the mariadb-shell already present at $LOCAL_BIN"
 
 # Below the required version is worth saying, but not worth refusing to start
-# over: a MARIADB_SHELL_TAG older than the floor was asked for by name.
+# over: a MARIADB_SHELL_TAG older than the floor was asked for by name — or,
+# after a failed install, it is the only shell there is.
 NEW_VER="$(shell_version "$LOCAL_BIN")"
-if [ -n "$NEW_VER" ] && ! version_ge "$NEW_VER" "$VERSION"; then
+if [ "$install_failed" = 1 ]; then
+  log "warning: no mariadb-shell >= $VERSION could be installed; starting the ${NEW_VER:-unknown} version at $LOCAL_BIN anyway"
+elif [ -n "$NEW_VER" ]; then
   log "warning: installed mariadb-shell $NEW_VER is below the required $VERSION; starting it anyway"
 fi
 
 log "starting mariadb-shell ${NEW_VER:-} MCP server: $LOCAL_BIN"
-exec "$LOCAL_BIN" "${MCP_ARGS[@]}"
+launch "$LOCAL_BIN"

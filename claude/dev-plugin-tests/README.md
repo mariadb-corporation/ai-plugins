@@ -109,12 +109,37 @@ claude/dev-plugin-tests/
 ├── lib/mcp_stdio.py         # minimal MCP-over-stdio client (Tier 4 teardown)
 ├── conftest.py              # path setup + MariaDB fixtures
 ├── test_structure.py        # Tier 1
+├── test_mcp_launcher.py     # Tier 1: the POSIX MCP launchers' install step, against stubs
 ├── test_statements_sql.py   # Tier 2 runner
 ├── test_e2e_claude.py       # Tier 4 (real `claude` CLI + plugin + MCP server)
 ├── test_e2e_lsp_claude.py   # Tier 4 (the SQL language server from a clean mariadb-shell install)
 ├── fixtures/<skill>.yaml     # Tier 2 golden cases (create-database & create-table filled; rest stubbed)
-└── evals/                   # Tier 3 (test_behavioral.py + cases/)
+├── evals/                   # Tier 3 (test_behavioral.py + cases/)
+└── manual/                  # run by hand, not by pytest or CI (see below)
 ```
+
+### Windows launchers (manual)
+
+`manual/test_cmd_launchers_concurrent.ps1` starts the Windows launchers
+(`mariadb-mcp-launcher.cmd`, `mariadb-lsp-launcher.cmd`) together on a Windows
+machine, as a harness does, and checks that every one reaches a working server
+with nothing but protocol on stdout. The scenarios are: 2 launchers, then 3
+launchers plus the LSP launcher, then one more while those servers run, a
+launcher killed with its tree during the install, and one whose installer
+outlives it. It installs real releases into a new temp folder and deletes each
+scenario's folders as it goes; it never touches
+`%LOCALAPPDATA%\Programs\mariadb-shell`. The launchers inherit the caller's
+environment, so run it from both Windows PowerShell 5.1 and PowerShell 7:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File manual\test_cmd_launchers_concurrent.ps1
+pwsh       -NoProfile -ExecutionPolicy Bypass -File manual\test_cmd_launchers_concurrent.ps1
+```
+
+`-Src` points at another plugin's `scripts` folder (a Hermes one, for its own
+launcher), and `-InstallerRef refs/heads/<branch>` runs a mariadb-shell
+branch's `install.ps1` instead of `main`'s. Over SSH, copy the files over
+rather than passing PowerShell inline: the remote shell is `cmd`.
 
 ## Adding coverage
 

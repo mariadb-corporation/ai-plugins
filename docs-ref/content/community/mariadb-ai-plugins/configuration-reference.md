@@ -26,6 +26,7 @@ The Hermes Agent plugins' launchers install a fixed release rather than the newe
 | `MARIADB_SHELL_BIN` | — | The path of a MariaDB Shell binary to use. Skips all other resolution. |
 | `MARIADB_SHELL_BINDIR` | `~/.local/bin` | Where the installer links the binary, and where the launcher looks for a local install. On Windows: `%LOCALAPPDATA%\Programs\mariadb-shell\bin`. |
 | `MARIADB_SHELL_PREFIX` | — | Passed to the installer: where it unpacks releases. |
+| `MARIADB_SHELL_LOCK_WAIT` | `180` | `mariadb-mcp-launcher.sh` only: how many seconds to wait while another launcher or installer installs MariaDB Shell into the same place. When the time is up, the launcher starts the newest MariaDB Shell present instead of installing. |
 | `MARIADB_SHELL_TAG` | — | Passed to the installer: install this release tag rather than the newest. |
 | `MARIADB_SHELL_PRERELEASE` | — | Unset: prefer a stable release, and install a prerelease only when no stable release exists. `1`: install a prerelease. `0`: never install a prerelease. |
 | `MARIADB_SHELL_REPO` | `mariadb-corporation/mariadb-shell` | Passed to the installer: the GitHub repository to install from. |
