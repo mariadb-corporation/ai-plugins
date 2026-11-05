@@ -24,6 +24,10 @@ msm.prepare_release(version="1.1.0", next_version="1.2.0")
 ```
 
 This:
+- Makes the schema snapshot of the diagrams (section 160) again from the CREATE
+  statements, with the MariaDB SQL language server's binary `mariadb-lsp`. **The
+  release fails without the binary, or when a statement of the development
+  script cannot be parsed** — fix the statement it names and try again.
 - Inlines any `SOURCE` breakout files and writes the full snapshot
   `releases/versions/<schema>_1.1.0.sql`.
 - If a previous release exists, creates an **empty** update script

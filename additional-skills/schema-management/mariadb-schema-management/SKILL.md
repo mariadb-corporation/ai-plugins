@@ -133,7 +133,7 @@ included with SOURCE.
 script, sections **140, 240, 170, 270** become the *body of a stored procedure*
 — write them as plain `;`-terminated statements, **no `DELIMITER`**, no `USE`
 (qualify names with the schema), use dynamic SQL for conditional DDL. Sections
-**130, 150, 180, 230, 190, 290** are emitted at top level and use
+**130, 150, 160, 180, 230, 190, 290** are emitted at top level and use
 `DELIMITER %%` for routine bodies.
 
 ## The `msm.*` MCP tools
