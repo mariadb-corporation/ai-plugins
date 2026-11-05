@@ -49,6 +49,12 @@ rem   MARIADB_LSP_WAIT       Seconds to wait for the MCP launcher's install
 rem                          (default 180; 0 does not wait).
 rem ============================================================================
 
+rem A harness or terminal running PowerShell 7 passes on its PSModulePath, and
+rem Windows PowerShell 5.1, which this script runs, then loads PowerShell 7's
+rem modules and loses cmdlets such as Get-FileHash. Without the variable, 5.1
+rem builds its own default. setlocal keeps this to the launcher and its children.
+set "PSModulePath="
+
 if not defined MARIADB_SHELL_VERSION set "MARIADB_SHELL_VERSION=26.10.4"
 if not defined MARIADB_SHELL_BINDIR set "MARIADB_SHELL_BINDIR=%LOCALAPPDATA%\Programs\mariadb-shell\bin"
 if not defined MARIADB_LSP_WAIT set "MARIADB_LSP_WAIT=180"
@@ -142,20 +148,25 @@ echo   To use a binary of your own, set MARIADB_LSP_BIN. 1>&2
 exit /b 1
 
 rem ============================================================================
-rem check_version %1 -- is that mariadb-shell at least MARIADB_SHELL_VERSION?
-rem Exits 0 when acceptable, 1 when too old, 2 when no version could be read.
-rem Same parsing as mariadb-mcp-launcher.cmd.
+rem check_version %1 -- is that binary usable and at least MARIADB_SHELL_VERSION?
+rem Sets CAND_VER to the version it reported. Exits 0 when acceptable, 1 when
+rem too old, 2 when no version could be read.
+rem
+rem All of the --version output is read, not only its first line: a build can
+rem print plugin registration errors before "mariadb-shell   Ver 26.8.0 for
+rem windows ...". Reading it to the end also lets the shell restore the console
+rem code page it switches to. [version] compares field by field, so 26.10 is
+rem above 26.9.
 rem ============================================================================
 :check_version
 set "CAND=%~1"
 set "CAND_VER="
+set "CAND_STATE="
 if not exist "%CAND%" exit /b 2
-for /f "usebackq delims=" %%V in (`"%CAND%" --version 2^>nul`) do if not defined CAND_VER set "CAND_VER=%%V"
-if not defined CAND_VER exit /b 2
-powershell -NoProfile -Command ^
-  "$t=$env:CAND_VER;" ^
-  "$m=[regex]::Match($t,'(?i)ver\s+(\d+(\.\d+)+)');" ^
-  "$v = if($m.Success){ $m.Groups[1].Value } else { $b=[regex]::Match($t,'\d+(\.\d+)+'); if($b.Success){ $b.Value } else { '' } };" ^
-  "if(-not $v){ exit 2 };" ^
-  "try{ if([version]$v -ge [version]$env:MARIADB_SHELL_VERSION){ exit 0 } else { exit 1 } }catch{ exit 2 }"
-exit /b %errorlevel%
+for /f "usebackq tokens=1,2" %%A in (`powershell -NoProfile -ExecutionPolicy Bypass -Command "$o = @(& $env:CAND --version 2>$null) -join ' '; $m = [regex]::Match($o, '(?i)\bver\s+(\d+(\.\d+)+)'); if (-not $m.Success) { 'none'; exit }; $v = $m.Groups[1].Value; try { if ([version]$v -ge [version]$env:MARIADB_SHELL_VERSION) { 'ok ' + $v } else { 'old ' + $v } } catch { 'none ' + $v }"`) do (
+  set "CAND_STATE=%%A"
+  set "CAND_VER=%%B"
+)
+if "%CAND_STATE%"=="ok" exit /b 0
+if "%CAND_STATE%"=="old" exit /b 1
+exit /b 2

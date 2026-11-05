@@ -36,6 +36,12 @@ rem copy of that release's SHA256SUMS committed with the plugin, so a package
 rem replaced on the release after the fact is refused. Nothing in this launcher
 rem needs to know how release assets are named.
 rem
+rem Several launchers can install at once (one per agent session, besides the
+rem VS Code extension). Serializing the part they share is install.ps1's job (a
+rem named mutex, added by mariadb-shell PR #123), so this launcher adds no lock
+rem of its own: it keeps its temp files apart, and after installing it starts
+rem whatever shell meets the version, whoever installed it.
+rem
 rem This copy is Hermes' own: the other harnesses' launchers install the newest
 rem release from the installer on main.
 rem
@@ -57,6 +63,12 @@ rem                             SHA256SUMS next to this script is checked agains
 rem                             the release's own.
 rem   MARIADB_SHELL_REPO        Passed through: owner/repo to install from.
 rem ============================================================================
+
+rem A harness or terminal running PowerShell 7 passes on its PSModulePath, and
+rem Windows PowerShell 5.1, which this script runs, then loads PowerShell 7's
+rem modules and loses cmdlets such as Get-FileHash. Without the variable, 5.1
+rem builds its own default. setlocal keeps this to the launcher and its children.
+set "PSModulePath="
 
 if not defined MARIADB_SHELL_VERSION set "MARIADB_SHELL_VERSION=26.10.4"
 if not defined MARIADB_SHELL_REPO set "MARIADB_SHELL_REPO=mariadb-corporation/mariadb-shell"
@@ -119,13 +131,30 @@ if exist "%SUMS_FILE%" set "MARIADB_SHELL_SHA256SUMS=%SUMS_FILE%"
 if not defined MARIADB_SHELL_SHA256SUMS echo mariadb-mcp-launcher: no committed checksums for %MARIADB_SHELL_TAG%; checking against the release's own SHA256SUMS 1>&2
 
 set "INSTALL_FAILED=0"
-set "PS_INSTALLER=%TEMP%\mariadb-shell-install-%RANDOM%.ps1"
+
+rem A temp folder of this launcher's own for the installer script. cmd seeds
+rem %RANDOM% from the clock, so launchers started in the same second draw the
+rem same numbers: mkdir, which fails when the folder exists, decides who gets a
+rem name, and the others draw again. A killed launcher leaves its folder behind;
+rem the download below removes those once they are a day old.
+set /a TMP_TRIES=0
+:make_tmp
+set /a TMP_TRIES+=1
+set "PS_TMP=%TEMP%\mariadb-mcp-launcher-%RANDOM%%RANDOM%"
+mkdir "%PS_TMP%" 2>nul && goto have_tmp
+if %TMP_TRIES% LSS 50 goto make_tmp
+echo mariadb-mcp-launcher: error: could not create a temporary folder in %TEMP% 1>&2
+set "INSTALL_FAILED=1"
+goto after_install
+:have_tmp
+set "PS_INSTALLER=%PS_TMP%\install.ps1"
 
 echo mariadb-mcp-launcher: no suitable mariadb-shell found; installing %MARIADB_SHELL_TAG% from %MARIADB_SHELL_REPO% ... 1>&2
 echo mariadb-mcp-launcher: a first install can take a minute. If the harness gives up on this server meanwhile (Claude Code waits 30 s unless MCP_TIMEOUT is raised), the install still finishes: reconnect the server then (/mcp in Claude Code), or start a new session. 1>&2
 powershell -NoProfile -ExecutionPolicy Bypass -Command ^
   "$ErrorActionPreference='Stop'; $ProgressPreference='SilentlyContinue';" ^
   "try{ [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12 }catch{};" ^
+  "try{ Get-ChildItem $env:TEMP -Directory -Filter 'mariadb-mcp-launcher-*' -ErrorAction SilentlyContinue | Where-Object { $_.LastWriteTime -lt (Get-Date).AddDays(-1) } | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue }catch{};" ^
   "Invoke-WebRequest -UseBasicParsing -Uri $env:INSTALLER_URL -OutFile $env:PS_INSTALLER" 1>&2
 if errorlevel 1 goto download_failed
 
@@ -136,30 +165,53 @@ rem prerelease handling: the installer takes a named release whether or not it
 rem is a prerelease.
 powershell -NoProfile -ExecutionPolicy Bypass -File "%PS_INSTALLER%" 1>&2
 if errorlevel 1 goto installer_failed
-del /q "%PS_INSTALLER%" >nul 2>&1
+rmdir /s /q "%PS_TMP%" >nul 2>&1
 goto after_install
 
 :installer_failed
 set "INSTALL_FAILED=1"
 echo mariadb-mcp-launcher: the mariadb-shell installer failed 1>&2
-del /q "%PS_INSTALLER%" >nul 2>&1
+rmdir /s /q "%PS_TMP%" >nul 2>&1
 goto after_install
 
 :download_failed
 set "INSTALL_FAILED=1"
+rmdir /s /q "%PS_TMP%" >nul 2>&1
 echo mariadb-mcp-launcher: error: could not download the installer from %INSTALLER_URL% 1>&2
 
-rem A concurrent launcher may have completed the install that this one lost the
-rem race for, so the binary -- not the installer's exit status -- is the last word.
+rem The version decides, not the installer's exit status: another install may
+rem have finished meanwhile, and an old shell at LOCAL_BIN is no sign that one
+rem did. PATH first, as in step 2.
 :after_install
+set "PATH_BIN="
+for /f "delims=" %%P in ('where mariadb-shell 2^>nul') do if not defined PATH_BIN set "PATH_BIN=%%P"
+if not defined PATH_BIN goto recheck_local
+call :check_version "%PATH_BIN%"
+if errorlevel 1 goto recheck_local
+set "RUN_BIN=%PATH_BIN%"
+goto run_good
+
+:recheck_local
 if not exist "%LOCAL_BIN%" goto no_binary
-if "%INSTALL_FAILED%"=="1" echo mariadb-mcp-launcher: using the mariadb-shell already present at %LOCAL_BIN% 1>&2
+call :check_version "%LOCAL_BIN%"
+if errorlevel 1 goto run_old
+set "RUN_BIN=%LOCAL_BIN%"
+
+:run_good
+if "%INSTALL_FAILED%"=="1" echo mariadb-mcp-launcher: using mariadb-shell %CAND_VER% that another install put in place: %RUN_BIN% 1>&2
+echo mariadb-mcp-launcher: starting mariadb-shell %CAND_VER% MCP server: %RUN_BIN% 1>&2
+call "%RUN_BIN%" %MCP_ARGS%
+exit /b %errorlevel%
 
 rem Below the required version is worth saying, but not worth refusing to start
 rem over: a MARIADB_SHELL_TAG older than the floor was asked for by name.
-call :check_version "%LOCAL_BIN%"
-if errorlevel 1 echo mariadb-mcp-launcher: warning: installed mariadb-shell [%CAND_VER%] is below the required %MARIADB_SHELL_VERSION%; starting it anyway 1>&2
-
+:run_old
+if "%INSTALL_FAILED%"=="1" goto run_old_failed
+echo mariadb-mcp-launcher: warning: installed mariadb-shell [%CAND_VER%] is below the required %MARIADB_SHELL_VERSION%; starting it anyway 1>&2
+goto run_local
+:run_old_failed
+echo mariadb-mcp-launcher: warning: no mariadb-shell ^>= %MARIADB_SHELL_VERSION% could be installed; starting the one at %LOCAL_BIN% [%CAND_VER%] anyway 1>&2
+:run_local
 echo mariadb-mcp-launcher: starting mariadb-shell MCP server: %LOCAL_BIN% 1>&2
 call "%LOCAL_BIN%" %MCP_ARGS%
 exit /b %errorlevel%
@@ -173,23 +225,24 @@ exit /b 1
 
 rem ============================================================================
 rem check_version %1 -- is that binary usable and at least MARIADB_SHELL_VERSION?
-rem Sets CAND_VER to the version line it reported. Exits 0 when acceptable, 1
-rem when too old, 2 when no version could be read.
+rem Sets CAND_VER to the version it reported. Exits 0 when acceptable, 1 when
+rem too old, 2 when no version could be read.
 rem
-rem The version line looks like "mariadb-shell   Ver 26.8.0 for windows ...", so
-rem the number after "Ver" is read first; a bare numeric match is only the
-rem fallback, since the leading path may itself carry digits.
+rem All of the --version output is read, not only its first line: a build can
+rem print plugin registration errors before "mariadb-shell   Ver 26.8.0 for
+rem windows ...". Reading it to the end also lets the shell restore the console
+rem code page it switches to. [version] compares field by field, so 26.10 is
+rem above 26.9.
 rem ============================================================================
 :check_version
 set "CAND=%~1"
 set "CAND_VER="
+set "CAND_STATE="
 if not exist "%CAND%" exit /b 2
-for /f "usebackq delims=" %%V in (`"%CAND%" --version 2^>nul`) do if not defined CAND_VER set "CAND_VER=%%V"
-if not defined CAND_VER exit /b 2
-powershell -NoProfile -Command ^
-  "$t=$env:CAND_VER;" ^
-  "$m=[regex]::Match($t,'(?i)ver\s+(\d+(\.\d+)+)');" ^
-  "$v = if($m.Success){ $m.Groups[1].Value } else { $b=[regex]::Match($t,'\d+(\.\d+)+'); if($b.Success){ $b.Value } else { '' } };" ^
-  "if(-not $v){ exit 2 };" ^
-  "try{ if([version]$v -ge [version]$env:MARIADB_SHELL_VERSION){ exit 0 } else { exit 1 } }catch{ exit 2 }"
-exit /b %errorlevel%
+for /f "usebackq tokens=1,2" %%A in (`powershell -NoProfile -ExecutionPolicy Bypass -Command "$o = @(& $env:CAND --version 2>$null) -join ' '; $m = [regex]::Match($o, '(?i)\bver\s+(\d+(\.\d+)+)'); if (-not $m.Success) { 'none'; exit }; $v = $m.Groups[1].Value; try { if ([version]$v -ge [version]$env:MARIADB_SHELL_VERSION) { 'ok ' + $v } else { 'old ' + $v } } catch { 'none ' + $v }"`) do (
+  set "CAND_STATE=%%A"
+  set "CAND_VER=%%B"
+)
+if "%CAND_STATE%"=="ok" exit /b 0
+if "%CAND_STATE%"=="old" exit /b 1
+exit /b 2

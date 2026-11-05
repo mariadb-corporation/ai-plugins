@@ -231,7 +231,7 @@ def _block(text: str, start: str, end: str) -> str:
 @pytest.mark.parametrize("ext, start, end", [
     ("sh", "version_ge()", "}"),
     ("sh", "shell_version()", "}"),
-    ("cmd", ":check_version", "exit /b %errorlevel%"),
+    ("cmd", ":check_version", "exit /b 2"),
 ])
 def test_lsp_launcher_judges_versions_as_the_mcp_launcher(ext: str, start: str, end: str):
     """The LSP launcher must accept exactly the shells the MCP launcher accepts,
@@ -268,6 +268,21 @@ def test_lsp_launcher_sh_never_installs(tmp_path):
     assert "no mariadb-lsp found" in run.stderr
     assert not list(tmp_path.glob("*-ran")), "the LSP launcher tried to download something"
     assert not list(bindir.iterdir()), "the LSP launcher put something into the bin dir"
+
+
+@pytest.mark.parametrize("script", [
+    "claude/dev-plugin/scripts/mariadb-mcp-launcher.cmd",
+    "claude/dev-plugin/scripts/mariadb-lsp-launcher.cmd",
+    "hermes/dev-plugin/scripts/mariadb-mcp-launcher.cmd",
+])
+def test_cmd_launcher_clears_psmodulepath_before_powershell(script: str):
+    """Started from PowerShell 7, the launcher would hand pwsh's PSModulePath to
+    the Windows PowerShell 5.1 it runs, which then loads 7's modules and loses
+    Get-FileHash: install.ps1 fails at its checksum."""
+    lines = (skills.REPO_ROOT / script).read_text(encoding="utf-8").splitlines()
+    clear = next((i for i, line in enumerate(lines) if line == 'set "PSModulePath="'), None)
+    first_ps = next(i for i, line in enumerate(lines) if "powershell " in line and not line.startswith("rem"))
+    assert clear is not None and clear < first_ps, f"{script} must clear PSModulePath before running powershell"
 
 
 def test_lsp_launcher_cmd_never_installs():

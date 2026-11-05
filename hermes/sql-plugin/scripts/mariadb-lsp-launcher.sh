@@ -87,13 +87,14 @@ version_ge() {
 }
 
 # shell_version BIN — print the version BIN reports, or nothing. Same parsing
-# as the MCP launcher: the number after "Ver" first, a bare number otherwise.
+# as the MCP launcher: "Ver <number>" anywhere in the output first, a bare
+# number on the first line otherwise.
 shell_version() {
   local out ver
-  out="$("$1" --version 2>/dev/null | head -n1 || true)"
+  out="$("$1" --version 2>/dev/null || true)"
   [ -n "$out" ] || return 0
-  ver="$(printf '%s\n' "$out" | grep -oiE 'ver[[:space:]]+[0-9]+(\.[0-9]+)+' | head -n1 | grep -oE '[0-9]+(\.[0-9]+)+' || true)"
-  [ -n "$ver" ] || ver="$(printf '%s\n' "$out" | grep -oE '[0-9]+(\.[0-9]+)+' | head -n1 || true)"
+  ver="$(printf '%s\n' "$out" | grep -oiE '(^|[^[:alnum:]])ver[[:space:]]+[0-9]+(\.[0-9]+)+' | head -n1 | grep -oE '[0-9]+(\.[0-9]+)+' || true)"
+  [ -n "$ver" ] || ver="$(printf '%s\n' "$out" | head -n1 | grep -oE '[0-9]+(\.[0-9]+)+' | head -n1 || true)"
   printf '%s' "$ver"
 }
 

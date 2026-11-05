@@ -32,6 +32,30 @@ project adheres to [Semantic Versioning](https://semver.org/).
 - The launcher no longer reads `MARIADB_SHELL_TOKEN`, `GH_TOKEN`, `GITHUB_TOKEN`
   or `gh auth token`, and sends no credentials. `mariadb-shell` is public.
 
+### Fixed
+
+- On macOS and Linux, launchers started at the same time no longer all fail
+  to install `mariadb-shell`. Before, two sessions starting together, or a session and
+  another tool installing `mariadb-shell`, each ran the installer into the same
+  folder, and every one of them failed. Now they take turns through a lock folder
+  in the install prefix, and the ones that waited start the shell the first one
+  installed. After a failed install, the launcher starts a shell that meets
+  `MARIADB_SHELL_VERSION` if one appeared meanwhile, and starts an older one,
+  with a warning, only when there is none. `MARIADB_SHELL_LOCK_WAIT` (default
+  180 s) limits the wait.
+- On Windows, launchers started at the same time no longer fail over the
+  installer script: each downloads it into a temporary folder of its own, where
+  before they could share one file name and all but one failed. After
+  installing, the launcher starts any shell that meets
+  `MARIADB_SHELL_VERSION`, whoever installed it, and an older one, with a
+  warning, only when there is none.
+- On Windows, a first install started from PowerShell 7 (a `pwsh` terminal, for
+  instance) no longer fails with "The term 'Get-FileHash' is not recognized":
+  the launcher clears `PSModulePath`, so the Windows PowerShell it runs loads its
+  own modules rather than PowerShell 7's.
+- The launchers read all of `mariadb-shell --version` for the version, not
+  only its first line, which a build can fill with other messages.
+
 ## [26.10.6] - 2026-10-24
 
 ### Changed
