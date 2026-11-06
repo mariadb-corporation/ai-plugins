@@ -93,10 +93,10 @@ determines how the deployment script treats it.** Always edit sections with
 | --- | --- |
 | 010 / 220 | Server vars + update indicator `0,0,0` (provided) |
 | 230 | Update helper routines (`msm_`) |
-| **240** | **Non-idempotent changes + ALL drops: `ALTER TABLE`, new tables, data backfill, and `DROP ... IF EXISTS` of every object the new version no longer has** |
+| **240** | **Non-idempotent changes + ALL drops: `ALTER TABLE`, new tables, data backfill, and `DROP ... IF EXISTS` of every table, view, trigger or event the new version no longer has** |
 | 250 | **Not deployed — leave it empty.** New/changed VIEWs / routines / triggers / events go in the dev script's section 150 |
 | 270 | `REVOKE` / `DROP ROLE` only. New roles and grants go in the dev script's section 170 |
-| 290 | Removal of update helpers |
+| 290 | Removal of update helpers, and `DROP PROCEDURE` / `DROP FUNCTION IF EXISTS` of routines the new version no longer has (error 1357 in 240) |
 | 910 / 920 | New version + server-variable restore (provided) |
 
 **Idempotent vs. non-idempotent** — the core distinction:
@@ -110,7 +110,8 @@ determines how the deployment script treats it.** Always edit sections with
   deployment, after the table changes**, so the objects always end in the target
   state whatever version the server started from. They therefore never need
   per-version update statements — which is why the update script's section 250
-  is not deployed. Only a *removed* object needs a `DROP ... IF EXISTS` in 240.
+  is not deployed. Only a *removed* object needs a `DROP ... IF EXISTS`: in
+  240, or in 290 for a routine.
 - **Authorization and REST work the same way:** the target's sections 170 and
   180 also run on every deployment (170 after the 270 steps), so new roles,
   grants and endpoints reach upgraded schemas through them. Section 270 is only

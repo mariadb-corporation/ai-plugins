@@ -22,7 +22,7 @@ Make changes in the same sections you authored initially, using
   `CREATE OR REPLACE` / `DROP IF EXISTS`). This is the ONLY place for them: the
   target's section 150 runs in full on every deployment, so upgraded schemas
   get them too. Removing an object additionally needs a `DROP ... IF EXISTS` in
-  the update script's section 240.
+  the update script's section 240 (section 290 for a procedure or function).
 - **Grants/roles** → section 170 (`CREATE ROLE IF NOT EXISTS`, then `GRANT`);
   it also runs on every deployment. Revoking a privilege additionally needs a
   `REVOKE` in the update script's section 270.
@@ -101,11 +101,12 @@ so send a column's whole definition to `modify_column`.
   foreign key (or an `AUTO_INCREMENT` column) still needs (`referenced`: drop
   the foreign key first), a name already taken, an unknown object.
 - It needs a `mariadb-lsp` with the `edit` command (an older one does fewer ops,
-  and the call names those it cannot do). Without one, make the change by hand,
-  run `msm.update_schema_definition`, and add renamed objects back to the
-  diagrams with `msm.layout_schema_diagram`.
-- `base_hash` is the stored snapshot's `source_hash`; the result's first row is
-  the new snapshot, with the `source_hash` for the next call. A call against a
+  and the call names those it cannot do). With a binary that lacks the op, make
+  the change by hand, run `msm.update_schema_definition`, and add renamed objects
+  back to the diagrams with `msm.layout_schema_diagram`; without any
+  `mariadb-lsp`, those tools fail too.
+- `base_hash` is the stored snapshot's `source_hash`; the first of the result's
+  `rows` is the new snapshot, with the `source_hash` for the next call. A call against a
   snapshot made again since is refused: read it again and redo the edits. Without
   a snapshot, or after editing the SQL by hand, run
   `msm.update_schema_definition` first.
@@ -113,7 +114,11 @@ so send a column's whole definition to `modify_column`.
   `still-referenced`, `no-migration`).
 - **After the first release**, each edit's migration statements are kept in
   `development/<schema>_update_next.sql` for the next update script (see
-  `mariadb-schema-management-release`). Changes you make by hand are not kept:
+  `mariadb-schema-management-release`). They take the schema along, not its
+  data: a `NOT NULL` column added to a table with rows gets the type's default
+  (`0` for a number), not a valid reference, so a backfill has to run before a
+  foreign key on it.
+  Changes you make by hand are not kept:
   their migration is still yours to write at release time.
 
 ## Schema diagrams

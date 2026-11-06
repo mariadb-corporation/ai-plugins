@@ -48,8 +48,10 @@ script.
 migrate data/structure. You must write the migration from the previous release
 to this one into its sections, using `msm.set_section_sql_content(file_path,
 section_id, sql_content)`. Statements already in 240/290 came from
-`msm.edit_schema` (each under a `-- msm.editSchema: ...` comment): keep them, and
-add the migration for every change made by hand, in the order the changes need.
+`msm.edit_schema` (each under a `-- msm.editSchema: ...` comment): keep them,
+add the data steps they need between them (a backfill before a foreign key on a
+new `NOT NULL` column), and add the migration for every change made by hand, in
+the order the changes need.
 
 - **Section 240 — non-idempotent changes + all drops.** `ALTER TABLE`, new
   `CREATE TABLE`, data backfill (`UPDATE`/`INSERT`), and any `DROP` of objects
@@ -68,7 +70,8 @@ add the migration for every change made by hand, in the order the changes need.
   deployment script runs the target version's full section 150 on every
   deployment, after all table changes, so they reach upgraded schemas without
   any per-version statement. A *removed* object is the one change 150 cannot
-  express — drop it in 240 with `DROP ... IF EXISTS`.
+  express — drop it in 240 with `DROP ... IF EXISTS` (a procedure or function
+  in 290, see below).
 - **Section 270 — revoked privileges and dropped roles only.** `REVOKE` /
   `DROP ROLE` for what the new version no longer has (stored-procedure body →
   plain `;`, no `DELIMITER`). New roles and `GRANT`s belong in the dev script's
