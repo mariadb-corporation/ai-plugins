@@ -122,12 +122,10 @@ determines how the deployment script treats it.** Always edit sections with
 `format`, `document`) holds one row `schema_definition` (format `msm-schema/1`):
 a snapshot of the schema objects the CREATE statements define, as the MariaDB SQL
 language server (`mariadb-lsp`) outlines them; and one row per EER diagram
-(format `msm-diagram/1`: layers, figures, connections; figures are tables,
-views, routine groups, notes and images). **The CREATE statements are the source
-of truth** — never edit the snapshot; change the SQL and run
-`msm.update_schema_definition`, or make the change with `msm.edit_schema`, which
-also renames the objects on the diagrams (a table renamed by hand loses its
-figures). `msm.prepare_release` makes the snapshot again
+(format `msm-diagram/1`: layers, figures, connections). **The CREATE statements
+are the source of truth** — never edit the snapshot; change the SQL and run
+`msm.update_schema_definition`, or use `msm.edit_schema` (see `-develop`).
+`msm.prepare_release` makes the snapshot again
 itself and **fails without `mariadb-lsp`, or when a statement of the
 development script cannot be parsed** (the snapshot would miss its objects). Once
 the VIEW is larger than the project's `maxInlineSectionSize` (default 16 KB, in
@@ -159,6 +157,11 @@ script, sections **140, 240, 170, 270** become the *body of a stored procedure*
   columns, indexes, keys, views and routines in the SQL; see `-develop`).
 - **Release / deploy:** `msm.prepare_release`, `msm.generate_deployment_script`,
   `msm.deploy_schema` (the last needs an open `db.connect` connection).
+
+Every tool that reads the structure of the SQL — the snapshot, diagram creation
+and layout, `edit_schema`, `split_sections`, the Workbench import and
+`prepare_release` — needs the MariaDB SQL language server's binary
+`mariadb-lsp`, installed with the MariaDB Shell; without it the call fails.
 
 ## See Also
 

@@ -34,7 +34,7 @@ This:
   `releases/updates/<schema>_<prev>_to_1.1.0.sql` from the template. It is
   empty except for the statements `msm.edit_schema` kept since the last release
   in `development/<schema>_update_next.sql` (sections 240 and 290), which move
-  into it; the pending file is emptied.
+  into it.
 - Bumps the development version in `_next.sql` to `next_version` (1.2.0).
 
 Semver validation: `version` must be ≥ the last released version, and
@@ -47,10 +47,9 @@ script.
 `prepare_release` only creates the update script; it does **not** know how to
 migrate data/structure. You must write the migration from the previous release
 to this one into its sections, using `msm.set_section_sql_content(file_path,
-section_id, sql_content)`. Read the sections first: statements already there
-came from `msm.edit_schema` (each under a comment such as `-- msm.editSchema: rename_table note -> notes`) and cover only
-those edits — keep them, put your own statements where the order needs them,
-and add the migration for every change made by hand.
+section_id, sql_content)`. Statements already in 240/290 came from
+`msm.edit_schema` (each under a `-- msm.editSchema: ...` comment): keep them, and
+add the migration for every change made by hand, in the order the changes need.
 
 - **Section 240 — non-idempotent changes + all drops.** `ALTER TABLE`, new
   `CREATE TABLE`, data backfill (`UPDATE`/`INSERT`), and any `DROP` of objects
@@ -77,7 +76,9 @@ and add the migration for every change made by hand.
   **Never `GRANT` in 270**: on an upgrade it runs before 170 creates a role that
   is new in this version, and the deployment fails with error 1133.
 - **Sections 230 / 290 — update helpers** (`msm_`-prefixed) if the migration
-  needs temporary routines; drop them in 290.
+  needs temporary routines; drop them in 290. Section 290 also takes the
+  `DROP PROCEDURE` / `DROP FUNCTION` of routines the new version no longer has
+  (it cannot run in 240: error 1357); `msm.edit_schema` puts them there.
 
 Write the migration to match exactly what changed in the **tables** between the
 previous version snapshot and this one: an upgraded schema must end with the

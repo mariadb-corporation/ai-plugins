@@ -45,17 +45,11 @@ msm.import_workbench_model(
 ```
 
 - It creates a **new** project only; there is no re-import into an existing one.
-- The development script gets the model's tables, foreign keys and stored rows
-  (as `INSERT`s) in section 140, views, routines, triggers and events in 150,
-  and roles and grants in 170 — in breakout files under `development/sections/`
-  where a section is larger than `maxInlineSectionSize`. User-defined types are
-  replaced by their SQL definition.
-- The model's EER diagrams become the project's diagrams (section 160), with
-  their table, view, routine group, note and image figures. A picture larger
-  than 512 KB, or past 4 MB for one diagram, is left out and reported.
+- Tables, keys and the model's rows go to section 140, the other objects to
+  150, roles and grants to 170 (as breakout files where a section is large);
+  the model's EER diagrams become the project's diagrams (section 160).
 - SQL scripts attached to the model are listed in `scripts_not_imported`, never
   run or copied: read them and move what belongs into the right sections.
-- It needs the `mariadb-lsp` binary (the language server), like a release.
 
 Read `warnings` in the result, then review the generated sections as if you had
 written them (step 2's rules apply). A Workbench model is a MySQL model: check
@@ -91,19 +85,22 @@ intact. Put each kind of object in the section that matches how MSM deploys it:
 - **Section 150 — all other objects (idempotent).** VIEWs, PROCEDUREs,
   FUNCTIONs, TRIGGERs, EVENTs. This is emitted at top level with `DELIMITER %%`;
   every object must be safe to re-run, so use `CREATE OR REPLACE` or an explicit
-  `DROP ... IF EXISTS` first.
+  `DROP ... IF EXISTS` first. Create routines before views: a `CREATE VIEW`
+  that calls a function not created yet fails (error 1305), while routine,
+  trigger and event bodies are not checked at `CREATE`. A view on another view
+  comes after it.
 
   ```sql
   DELIMITER %%
-
-  CREATE OR REPLACE SQL SECURITY INVOKER VIEW `notes-app`.`note_titles` AS
-      SELECT `id`, `title` FROM `notes-app`.`note`%%
 
   DROP PROCEDURE IF EXISTS `notes-app`.`add_note`%%
   CREATE PROCEDURE `notes-app`.`add_note`(IN t VARCHAR(255))
   BEGIN
       INSERT INTO `notes-app`.`note`(`title`) VALUES (t);
   END%%
+
+  CREATE OR REPLACE SQL SECURITY INVOKER VIEW `notes-app`.`note_titles` AS
+      SELECT `id`, `title` FROM `notes-app`.`note`%%
 
   DELIMITER ;
   ```
