@@ -34,9 +34,10 @@ deploy vX (create fresh OR upgrade)        →  mariadb-schema-management-deploy
         └──────────────► back to develop (dev version already bumped)
 ```
 
-> **The one rule everyone gets wrong:** `prepare_release` creates an *empty*
-> update script (`releases/updates/<schema>_<prev>_to_<vX>.sql`). You MUST fill
-> its table-migration section 240 (and 270 for revoked privileges) **before**
+> **The one rule everyone gets wrong:** `prepare_release` creates the update
+> script (`releases/updates/<schema>_<prev>_to_<vX>.sql`) holding only the
+> statements `msm.edit_schema` kept, often nothing. You MUST complete its
+> table-migration section 240 (and 270 for revoked privileges) **before**
 > generating the deployment script — the deployment script embeds them to
 > upgrade existing installs. See `mariadb-schema-management-release`.
 
@@ -49,6 +50,7 @@ deploy vX (create fresh OR upgrade)        →  mariadb-schema-management-deploy
 ├── msm.project.json     # schemaName, license, copyrightHolder, schemaDependencies
 ├── development/
 │   ├── <schema>_next.sql            # the working script; version lives in section 910
+│   ├── <schema>_update_next.sql     # migration kept by msm.edit_schema (after a first release)
 │   └── sections/                    # optional SOURCE breakout files (see -develop)
 └── releases/
     ├── versions/    <schema>_<x.y.z>.sql              # full CREATE snapshot per release
@@ -120,9 +122,12 @@ determines how the deployment script treats it.** Always edit sections with
 `format`, `document`) holds one row `schema_definition` (format `msm-schema/1`):
 a snapshot of the schema objects the CREATE statements define, as the MariaDB SQL
 language server (`mariadb-lsp`) outlines them; and one row per EER diagram
-(format `msm-diagram/1`: layers, figures, connections). **The CREATE statements
-are the source of truth** — never edit the snapshot; change the SQL and run
-`msm.update_schema_definition`. `msm.prepare_release` makes the snapshot again
+(format `msm-diagram/1`: layers, figures, connections; figures are tables,
+views, routine groups, notes and images). **The CREATE statements are the source
+of truth** — never edit the snapshot; change the SQL and run
+`msm.update_schema_definition`, or make the change with `msm.edit_schema`, which
+also renames the objects on the diagrams (a table renamed by hand loses its
+figures). `msm.prepare_release` makes the snapshot again
 itself and **fails without `mariadb-lsp`, or when a statement of the
 development script cannot be parsed** (the snapshot would miss its objects). Once
 the VIEW is larger than the project's `maxInlineSectionSize` (default 16 KB, in
@@ -138,14 +143,20 @@ script, sections **140, 240, 170, 270** become the *body of a stored procedure*
 
 ## The `msm.*` MCP tools
 
-- **Project:** `msm.create_project`, `msm.get_project_information`.
-- **Sections:** `msm.get_sql_content_from_section`, `msm.set_section_sql_content`.
+- **Project:** `msm.create_project`, `msm.import_workbench_model` (a new project
+  from a MySQL Workbench `.mwb` model), `msm.get_project_information`.
+- **Sections:** `msm.get_sql_content_from_section`, `msm.set_section_sql_content`,
+  `msm.split_sections` (move sections 140/150/170 into breakout files).
 - **Versions:** `msm.set_development_version`, `msm.get_released_versions`,
   `msm.get_last_released_version`, `msm.get_last_deployment_version`,
   `msm.get_deployment_script_versions`.
 - **Diagrams:** `msm.list_schema_diagrams`, `msm.get_schema_diagrams`,
-  `msm.update_schema_definition` (after changing CREATE statements),
-  `msm.set_schema_diagram`, `msm.remove_schema_diagram`.
+  `msm.get_schema_diagram_image`, `msm.update_schema_definition` (after
+  changing CREATE statements), `msm.create_schema_diagram`,
+  `msm.layout_schema_diagram`, `msm.set_schema_diagram`,
+  `msm.remove_schema_diagram`.
+- **Schema edits:** `msm.edit_schema` (rename tables, columns, views and
+  routines everywhere in the SQL; see `-develop`).
 - **Release / deploy:** `msm.prepare_release`, `msm.generate_deployment_script`,
   `msm.deploy_schema` (the last needs an open `db.connect` connection).
 

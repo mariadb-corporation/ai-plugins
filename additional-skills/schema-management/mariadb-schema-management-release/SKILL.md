@@ -12,7 +12,7 @@ See `mariadb-schema-management` for the section model. Assume MariaDB 11.8.
 **The order is mandatory:**
 
 ```text
-1. msm.prepare_release          → version snapshot (+ empty update script)
+1. msm.prepare_release          → version snapshot (+ update script)
 2. FILL the update script       → sections 240 (+ 270)  ← do NOT skip
 3. msm.generate_deployment_script  ← only after step 2
 ```
@@ -30,8 +30,11 @@ This:
   script cannot be parsed** — fix the statement it names and try again.
 - Inlines any `SOURCE` breakout files and writes the full snapshot
   `releases/versions/<schema>_1.1.0.sql`.
-- If a previous release exists, creates an **empty** update script
-  `releases/updates/<schema>_<prev>_to_1.1.0.sql` from the template.
+- If a previous release exists, creates the update script
+  `releases/updates/<schema>_<prev>_to_1.1.0.sql` from the template. It is
+  empty except for the statements `msm.edit_schema` kept since the last release
+  in `development/<schema>_update_next.sql` (sections 240 and 290), which move
+  into it; the pending file is emptied.
 - Bumps the development version in `_next.sql` to `next_version` (1.2.0).
 
 Semver validation: `version` must be ≥ the last released version, and
@@ -44,7 +47,10 @@ script.
 `prepare_release` only creates the update script; it does **not** know how to
 migrate data/structure. You must write the migration from the previous release
 to this one into its sections, using `msm.set_section_sql_content(file_path,
-section_id, sql_content)`:
+section_id, sql_content)`. Read the sections first: statements already there
+came from `msm.edit_schema` (each under a comment such as `-- msm.editSchema: rename_table note -> notes`) and cover only
+those edits — keep them, put your own statements where the order needs them,
+and add the migration for every change made by hand.
 
 - **Section 240 — non-idempotent changes + all drops.** `ALTER TABLE`, new
   `CREATE TABLE`, data backfill (`UPDATE`/`INSERT`), and any `DROP` of objects
