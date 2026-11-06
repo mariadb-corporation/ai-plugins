@@ -92,10 +92,16 @@ so send a column's whole definition to `modify_column`.
 | `add_view` | `view`: `name`, `definition` (the `SELECT` alone) |
 | `drop_view` | `view` |
 | `add_routine` | `routine`: `name`, `kind`, `parameters`, `returns` (a function), `body` |
+| `add_trigger` | `trigger`: `name`, `timing` (`BEFORE`, `AFTER`), `events` (`INSERT`, ...), `table`, `body` |
+| `rename_trigger`, `drop_trigger` | `trigger`, `new_name` (rename) |
+| `add_event` | `event`: `name`, `schedule` (`EVERY 1 DAY`, ...), `body` |
+| `rename_event`, `drop_event` | `event`, `new_name` (rename) |
+| `add_sequence` | `sequence`: `name`, and `type`, `start`, `increment`, ... where wanted |
+| `rename_sequence`, `drop_sequence` | `sequence`, `new_name` (rename) |
 
-- New tables go into section 140, views and routines into section 150, written
-  so the section can run again (`CREATE OR REPLACE`, or `DROP ... IF EXISTS`
-  first). No index is written for a foreign key: send `add_index` first where
+- New tables and sequences go into section 140; views, routines, triggers and
+  events into section 150, written so the section can run again
+  (`CREATE OR REPLACE`, or `DROP ... IF EXISTS` first). No index is written for a foreign key: send `add_index` first where
   one should be (a 1:1 relationship's `UNIQUE`).
 - An index or foreign key sent without a `name` (`add_index`, `add_foreign_key`,
   `add_table`) gets one in the script: an index its first column's name (`_2`,
@@ -103,8 +109,10 @@ so send a column's whole definition to `modify_column`.
   later drop of it migrates too; dropping a key the script already had without a
   name has no migration (note `no-migration`).
 - Refused, with nothing written: a drop of a table, column or index that a
-  foreign key (or an `AUTO_INCREMENT` column) still needs (`referenced`: drop
-  the foreign key first), a name already taken, an unknown object.
+  foreign key (or an `AUTO_INCREMENT` column) still needs, of a sequence a
+  column's default takes values from, or of a trigger another one `FOLLOWS` or
+  `PRECEDES` (`referenced`: drop what needs it first); a name already taken; an
+  unknown object.
 - It needs a `mariadb-lsp` with the `edit` command (an older one does fewer ops,
   and the call names those it cannot do). With a binary that lacks the op, make
   the change by hand, run `msm.update_schema_definition`, and add renamed objects
@@ -132,10 +140,10 @@ Make and change the diagrams of section 160 through the tools, never in the SQL:
 
 | Task | Tool |
 | --- | --- |
-| New diagram | `msm.create_schema_diagram(name, tables=, views=, routines=)`: all tables by default, laid out; views and routines only when named |
-| Add objects, tidy up | `msm.layout_schema_diagram(name, tables=, views=, routines=, keep_placed=True)`: places the figures without a position; `keep_placed=False` lays all out again |
+| New diagram | `msm.create_schema_diagram(name, tables=, views=, sequences=, routines=, events=)`: all tables by default, laid out; the other objects only when named |
+| Add objects, tidy up | `msm.layout_schema_diagram(name, tables=, views=, sequences=, routines=, events=, keep_placed=True)`: places the figures without a position; `keep_placed=False` lays all out again |
 | Read | `msm.list_schema_diagrams`, `msm.get_schema_diagrams(diagram=)`; `msm.get_schema_diagram_image` for a picture they leave out |
-| Change by hand | `msm.set_schema_diagram(document)`: an `msm-diagram/1` document; figure types `TableFigure`, `ViewFigure`, `RoutineGroupFigure`, `NoteFigure`, `ImageFigure`; a figure without `left`/`top` is placed by the layout |
+| Change by hand | `msm.set_schema_diagram(document)`: an `msm-diagram/1` document; figure types `TableFigure` (its card lists the table's triggers unless `triggersExpanded` is false), `ViewFigure`, `SequenceFigure`, `RoutineGroupFigure` (`routines`), `EventGroupFigure` (`events`), `NoteFigure`, `ImageFigure`; a figure without `left`/`top` is placed by the layout |
 | Remove | `msm.remove_schema_diagram(name)` |
 
 ## SOURCE breakout files (keeping the script maintainable)

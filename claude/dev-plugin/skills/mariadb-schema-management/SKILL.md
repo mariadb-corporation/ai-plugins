@@ -78,7 +78,7 @@ determines how the deployment script treats it.** Always edit sections with
 | 110 | `CREATE SCHEMA IF NOT EXISTS` (provided) |
 | 120 | Version-creation indicator: `msm_schema_version` = `0,0,0` (provided) |
 | 130 | Helper routines used during creation — names must start `msm_` |
-| **140** | **Non-idempotent: `CREATE TABLE` + base-data `INSERT`s** |
+| **140** | **Non-idempotent: `CREATE TABLE`, `CREATE SEQUENCE` + base-data `INSERT`s** |
 | **150** | **Idempotent: VIEWs / PROCEDUREs / FUNCTIONs / TRIGGERs / EVENTs** — run in full on every deployment |
 | 160 | Schema diagrams: the `msm_schema_diagrams` VIEW — **written by msm, never by hand** (see below) |
 | 170 | Authorization: `CREATE ROLE IF NOT EXISTS` / `GRANT` — run in full on every deployment |
@@ -93,7 +93,7 @@ determines how the deployment script treats it.** Always edit sections with
 | --- | --- |
 | 010 / 220 | Server vars + update indicator `0,0,0` (provided) |
 | 230 | Update helper routines (`msm_`) |
-| **240** | **Non-idempotent changes + ALL drops: `ALTER TABLE`, new tables, data backfill, and `DROP ... IF EXISTS` of every table, view, trigger or event the new version no longer has** |
+| **240** | **Non-idempotent changes + ALL drops: `ALTER TABLE`, new tables and sequences, data backfill, and `DROP ... IF EXISTS` of every table, sequence, view, trigger or event the new version no longer has** |
 | 250 | **Not deployed — leave it empty.** New/changed VIEWs / routines / triggers / events go in the dev script's section 150 |
 | 270 | `REVOKE` / `DROP ROLE` only. New roles and grants go in the dev script's section 170 |
 | 290 | Removal of update helpers, and `DROP PROCEDURE` / `DROP FUNCTION IF EXISTS` of routines the new version no longer has (error 1357 in 240) |
