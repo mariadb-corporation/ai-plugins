@@ -97,6 +97,11 @@ so send a column's whole definition to `modify_column`.
   so the section can run again (`CREATE OR REPLACE`, or `DROP ... IF EXISTS`
   first). No index is written for a foreign key: send `add_index` first where
   one should be (a 1:1 relationship's `UNIQUE`).
+- An index or foreign key sent without a `name` (`add_index`, `add_foreign_key`,
+  `add_table`) gets one in the script: an index its first column's name (`_2`,
+  `_3`, ... when taken), a foreign key `fk_<table>_<referenced table>`. So a
+  later drop of it migrates too; dropping a key the script already had without a
+  name has no migration (note `no-migration`).
 - Refused, with nothing written: a drop of a table, column or index that a
   foreign key (or an `AUTO_INCREMENT` column) still needs (`referenced`: drop
   the foreign key first), a name already taken, an unknown object.
