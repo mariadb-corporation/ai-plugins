@@ -1,6 +1,6 @@
 ---
 name: mariadb-schema-management-develop
-description: "Develop the next version of a MariaDB Schema Management (MSM) schema in development/<schema>_next.sql — rename tables, columns, views and routines with msm.edit_schema, keep schema diagrams (create, lay out, edit) in step, and keep large scripts maintainable by splitting sections into development/sections/ files linked with the SOURCE '<path>'[start:end]; statement (msm.split_sections). Use when evolving an existing MSM schema for a new version, editing the _next.sql development script, renaming tables, columns, views or routines, creating or laying out an MSM schema diagram, or splitting a growing schema script into SOURCE-included section files. Read mariadb-schema-management first for the section model."
+description: "Develop the next version of a MariaDB Schema Management (MSM) schema in development/<schema>_next.sql — change tables, columns, keys, views and routines with msm.edit_schema, keep schema diagrams (create, lay out, edit) in step, and keep large scripts maintainable by splitting sections into development/sections/ files linked with the SOURCE '<path>'[start:end]; statement (msm.split_sections). Use when evolving an existing MSM schema for a new version, editing the _next.sql development script, renaming or changing tables, columns, indexes, foreign keys, views or routines, creating or laying out an MSM schema diagram, or splitting a growing schema script into SOURCE-included section files. Read mariadb-schema-management first for the section model."
 ---
 
 # MSM — Developing the Next Version
@@ -40,12 +40,14 @@ the previous version is written separately when you prepare the release (see
 Keep the development version in section 910 current with
 `msm.set_development_version` as the target version firms up.
 
-## Renaming with `msm.edit_schema`
+## Changing the schema with `msm.edit_schema`
 
-`msm.edit_schema` renames schema objects in the SQL for you, through the MariaDB
-SQL language server (`mariadb-lsp`): the definition and every reference — foreign
-keys, indexes, views, routine and trigger bodies, `GRANT`s — in `_next.sql` and
-every breakout file. Prefer it over renaming by hand: the diagrams follow a
+`msm.edit_schema` makes schema changes in the SQL for you, through the MariaDB SQL
+language server (`mariadb-lsp`): in `_next.sql` and every breakout file, in the
+section each object belongs to and in the style of the statements around it.
+Prefer it over editing by hand, for renames in particular: a rename reaches the
+definition and every reference (foreign keys, indexes, views, routine and
+trigger bodies, `GRANT`s, `DROP ... IF EXISTS`), and the diagrams follow a
 renamed table, view or routine, while one renamed by hand disappears from them.
 
 ```text
@@ -55,31 +57,66 @@ msm.edit_schema(
     base_hash="<that source_hash>",
     edits=[
         {"op": "rename_table", "table": "note", "new_name": "notes"},
-        {"op": "rename_column", "table": "notes", "column": "body", "new_name": "content"},
+        {"op": "add_column", "table": "notes",
+         "column": {"name": "author_id", "type": "INT UNSIGNED", "nullable": False},
+         "after": "id"},
+        {"op": "add_foreign_key", "table": "notes", "foreign_key": {
+            "name": "fk_notes_author", "columns": ["author_id"],
+            "references": {"table": "author", "columns": ["id"]}}},
     ],
 )
 ```
 
-- Ops: `rename_table` (`table`, `new_name`), `rename_column` (`table`, `column`,
-  `new_name`), `rename_view` (`view`, `new_name`), `rename_routine` (`routine`,
-  `new_name`, and `kind` = `procedure` or `function` when both have the name).
-  Edits apply in order, so a later one uses the new names. Other ops (add,
-  change or drop tables, columns, indexes, foreign keys) are planned but refused
-  as `unsupported` by today's binary: make those changes in the SQL by hand,
-  then run `msm.update_schema_definition`.
-- It needs a `mariadb-lsp` that has the `edit` command. Without one the call
-  fails; then rename by hand, run `msm.update_schema_definition`, and add the
-  renamed objects back to the diagrams with `msm.layout_schema_diagram`.
+Edits apply in order, so a later one uses the names an earlier one gave.
+Objects are given in the shape `msm.get_schema_diagrams`' snapshot has them; a
+member left out takes the snapshot's default (`nullable` true, no `comment`, ...),
+so send a column's whole definition to `modify_column`.
+
+| Op | Members |
+| --- | --- |
+| `rename_table`, `rename_view` | `table` / `view`, `new_name` |
+| `rename_column` | `table`, `column`, `new_name` |
+| `rename_routine`, `drop_routine` | `routine`, `new_name` (rename), `kind` = `procedure` or `function` when both kinds have the name |
+| `add_table` | `table`: `name`, `columns`, `indexes`, `foreign_keys`, `options` |
+| `drop_table` | `table` |
+| `add_column` | `table`, `column`, and `after` (a column name) or `first` |
+| `modify_column` | `table`, `column` (its name now), `new_column` (a new `name` renames it too) |
+| `drop_column` | `table`, `column` |
+| `set_table_options` | `table`, `options` (`{"engine": ..., "comment": ...}`; `null` removes one) |
+| `add_index` | `table`, `index`: `name`, `kind` (`unique`, ...), `columns` (or `key_parts` for lengths and order) |
+| `drop_index` | `table`, and `name`, `kind: "primary"`, or `columns` (an unnamed index) |
+| `set_primary_key` | `table`, `columns` |
+| `add_foreign_key` | `table`, `foreign_key`: `name`, `columns`, `references` (`table`, `columns`), `on_delete`, `on_update` |
+| `drop_foreign_key` | `table`, and `name` or `columns` (an unnamed key) |
+| `add_view` | `view`: `name`, `definition` (the `SELECT` alone) |
+| `drop_view` | `view` |
+| `add_routine` | `routine`: `name`, `kind`, `parameters`, `returns` (a function), `body` |
+
+- New tables go into section 140, views and routines into section 150, written
+  so the section can run again (`CREATE OR REPLACE`, or `DROP ... IF EXISTS`
+  first). No index is written for a foreign key: send `add_index` first where
+  one should be (a 1:1 relationship's `UNIQUE`).
+- Refused, with nothing written: a drop of a table, column or index that a
+  foreign key (or an `AUTO_INCREMENT` column) still needs (`referenced`: drop
+  the foreign key first), a name already taken, an unknown object.
+- It needs a `mariadb-lsp` that has the `edit` command. An older one does
+  fewer ops, or only the renames; the call then names the ops it cannot do.
+  Without one, make the change by hand, run `msm.update_schema_definition`,
+  and add renamed objects back to the diagrams with `msm.layout_schema_diagram`.
 - `base_hash` is the stored snapshot's `source_hash`. If the snapshot was made
   again since you read it, the call is refused: read it again and redo the edits.
   A project without a snapshot needs `msm.update_schema_definition` first; do
   the same when `msm.list_schema_diagrams` says the snapshot is not `current`,
   so the names you read are the script's.
-- All edits are applied, or none. Read `notes`: places the binary could not
-  change itself (e.g. the name inside a string) for you to check.
-- **After the first release**, each edit's migration statements (e.g.
-  `RENAME TABLE`) are appended to `development/<schema>_update_next.sql`
-  (sections 240 and 290). The next `prepare_release` moves them into the new
+- All edits are applied, or none. Read `notes`: a name left inside a string, a
+  statement that still refers to a dropped object (`still-referenced`), part of
+  an edit with no migration statement (`no-migration`, e.g. an unnamed key
+  dropped). These are yours to check.
+- **After the first release**, each edit's migration statements are appended to
+  `development/<schema>_update_next.sql`: table and key changes (`RENAME TABLE`,
+  `ALTER TABLE ...`, `CREATE TABLE`, `DROP ... IF EXISTS`) in section 240,
+  dropped routines in 290. New views and routines need none: section 150 creates
+  them on every deployment. The next `prepare_release` moves them into the new
   update script. Changes you make by hand are not collected: their migration is
   still yours to write at release time.
 

@@ -155,8 +155,8 @@ script, sections **140, 240, 170, 270** become the *body of a stored procedure*
   changing CREATE statements), `msm.create_schema_diagram`,
   `msm.layout_schema_diagram`, `msm.set_schema_diagram`,
   `msm.remove_schema_diagram`.
-- **Schema edits:** `msm.edit_schema` (rename tables, columns, views and
-  routines everywhere in the SQL; see `-develop`).
+- **Schema edits:** `msm.edit_schema` (rename, add, change or drop tables,
+  columns, indexes, keys, views and routines in the SQL; see `-develop`).
 - **Release / deploy:** `msm.prepare_release`, `msm.generate_deployment_script`,
   `msm.deploy_schema` (the last needs an open `db.connect` connection).
 
