@@ -6,6 +6,13 @@ project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- The MCP server is given `MARIADB_RESTD_VERSION` (26.11.0): the lowest MariaDB
+  REST Daemon it accepts when an agent sets one up without naming a version. It
+  moves with the newest rest-daemon release, as `MARIADB_SHELL_VERSION` does
+  with the shell's (`scripts/set-mariadb-restd-version.sh`).
+
 ### Changed
 
 - The `LICENSE` file follows legal's review: MariaDB plc, for its

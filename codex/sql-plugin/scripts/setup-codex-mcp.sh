@@ -41,11 +41,13 @@
 #   CODEX_HOME              Codex config dir to write to (default ~/.codex).
 #   CODEX_BIN               codex binary to use (default: the one on PATH).
 #   MARIADB_SHELL_VERSION   Minimum mariadb-shell version to pass to the launcher.
+#   MARIADB_RESTD_VERSION   Lowest mariadb-restd the MCP server accepts by default.
 
 set -euo pipefail
 
 SERVER_NAME="mariadb"
 SHELL_VERSION="26.10.4"
+RESTD_VERSION="26.11.0"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PLUGIN_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
@@ -66,6 +68,7 @@ fi
 
 "$CODEX" mcp add "$SERVER_NAME" \
   --env "MARIADB_SHELL_VERSION=$SHELL_VERSION" \
+  --env "MARIADB_RESTD_VERSION=$RESTD_VERSION" \
   -- "$LAUNCHER"
 
 echo "Registered MCP server '$SERVER_NAME' -> $LAUNCHER"

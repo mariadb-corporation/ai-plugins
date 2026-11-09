@@ -45,10 +45,12 @@ rem Environment:
 rem   CODEX_HOME              Codex config dir to write to (default %USERPROFILE%\.codex).
 rem   CODEX_BIN               codex binary to use (default: the one on PATH).
 rem   MARIADB_SHELL_VERSION   Minimum mariadb-shell version to pass to the launcher.
+rem   MARIADB_RESTD_VERSION   Lowest mariadb-restd the MCP server accepts by default.
 rem ============================================================================
 
 set "SERVER_NAME=mariadb"
 if not defined MARIADB_SHELL_VERSION set "MARIADB_SHELL_VERSION=26.10.4"
+if not defined MARIADB_RESTD_VERSION set "MARIADB_RESTD_VERSION=26.11.0"
 
 rem %~dp0 is this script's directory, with a trailing backslash.
 set "PLUGIN_ROOT=%~dp0.."
@@ -74,7 +76,7 @@ rem Re-registering the same name is how an update is done, so drop any existing
 rem entry first rather than letting `add` fail on the collision.
 "%CODEX%" mcp remove "%SERVER_NAME%" >nul 2>&1
 
-"%CODEX%" mcp add "%SERVER_NAME%" --env "MARIADB_SHELL_VERSION=%MARIADB_SHELL_VERSION%" -- "%LAUNCHER%"
+"%CODEX%" mcp add "%SERVER_NAME%" --env "MARIADB_SHELL_VERSION=%MARIADB_SHELL_VERSION%" --env "MARIADB_RESTD_VERSION=%MARIADB_RESTD_VERSION%" -- "%LAUNCHER%"
 if errorlevel 1 (
   echo error: codex mcp add failed 1>&2
   exit /b 1

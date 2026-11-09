@@ -28,7 +28,9 @@ step 4 takes turns the same way.
 
 from __future__ import annotations
 
+import json
 import os
+import re
 import signal
 import subprocess
 import time
@@ -274,3 +276,67 @@ def test_a_shell_printing_messages_before_its_version_is_accepted(box: Box):
     run = box.run()
     _started(run, NEW)
     assert box.installs() == 0, run.stderr
+
+
+def _restd_default(launcher: Path) -> str:
+    return re.search(r"MARIADB_RESTD_VERSION:-([^}]+)\}", launcher.read_text(encoding="utf-8")).group(1)
+
+
+def test_the_restd_floor_reaches_the_mcp_server(box: Box):
+    """The launcher only passes MARIADB_RESTD_VERSION on: the MCP server reads it."""
+    reporter = SHELL_STUB.format(ver=NEW).replace(
+        f'echo "STARTED {NEW}"', 'echo "RESTD ${MARIADB_RESTD_VERSION:-unset}"')
+    (box.bindir / "mariadb-shell").unlink()
+    _exe(box.bindir / "mariadb-shell", reporter)
+
+    run = box.run()
+    assert run.stdout == f"RESTD {_restd_default(box.launcher)}\n", run.stderr
+    run = box.run(MARIADB_RESTD_VERSION="27.1.0")
+    assert run.stdout == "RESTD 27.1.0\n", run.stderr
+    assert box.installs() == 0, run.stderr
+
+
+def test_every_plugin_carries_the_same_restd_floor():
+    """scripts/set-mariadb-restd-version.sh keeps these together: the MCP
+    configs, the MCP launchers' fallback and the setup-codex-mcp scripts."""
+    root = skills.REPO_ROOT
+    found = {}
+    for path in sorted(root.glob("*/*-plugin/scripts/mariadb-mcp-launcher.sh")):
+        found[path] = _restd_default(path)
+    for path in sorted(root.glob("*/*-plugin/scripts/mariadb-mcp-launcher.cmd")) + sorted(
+            root.glob("codex/*-plugin/scripts/setup-codex-mcp.cmd")):
+        found[path] = re.search(r'set "MARIADB_RESTD_VERSION=([^"]+)"', path.read_text(encoding="utf-8")).group(1)
+    for path in sorted(root.glob("codex/*-plugin/scripts/setup-codex-mcp.sh")):
+        found[path] = re.search(r'^RESTD_VERSION="([^"]+)"', path.read_text(encoding="utf-8"), re.M).group(1)
+    configs = (
+        [(p, ("mcpServers", "mariadb", "env")) for p in root.glob("*/*-plugin/.mcp.json")]
+        + [(p, ("mcpServers", "mariadb", "env")) for p in root.glob("hermes/*-plugin/mcp.json")]
+        + [(p, ("mcp", "mariadb", "environment")) for p in root.glob("opencode/*-plugin/opencode.json")]
+    )
+    for path, keys in configs:
+        node = json.loads(path.read_text(encoding="utf-8"))
+        for key in keys:
+            node = node[key]
+        found[path] = node["MARIADB_RESTD_VERSION"]
+
+    assert len(found) >= 30, f"expected every MCP launcher and config, found {len(found)}"
+    versions = {v for v in found.values()}
+    assert len(versions) == 1, "\n".join(f"{p.relative_to(root)}: {v}" for p, v in found.items())
+    assert re.fullmatch(r"\d+\.\d+\.\d+", versions.pop())
+
+
+def test_hermes_passes_its_restd_pin_and_checksums_on(tmp_path):
+    """Hermes pins mariadb-restd as the shell: v<restd floor>, with the committed SHA256SUMS."""
+    box = Box(tmp_path, LAUNCHERS["hermes"])
+    reporter = SHELL_STUB.format(ver=NEW).replace(
+        f'echo "STARTED {NEW}"', 'echo "TAG=$MARIADB_RESTD_TAG SUMS=${MARIADB_RESTD_SHA256SUMS:-none}"')
+    (box.bindir / "mariadb-shell").unlink()
+    _exe(box.bindir / "mariadb-shell", reporter)
+    floor = _restd_default(box.launcher)
+    sums = box.launcher.parent / f"mariadb-restd-v{floor}.SHA256SUMS"
+
+    run = box.run()
+    assert run.stdout == f"TAG=v{floor} SUMS={sums}\n", run.stderr
+    run = box.run(MARIADB_RESTD_TAG="v27.1.0")
+    assert run.stdout == "TAG=v27.1.0 SUMS=none\n", run.stderr
+    assert "no committed checksums for mariadb-restd v27.1.0" in run.stderr

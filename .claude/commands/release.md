@@ -1,5 +1,5 @@
 ---
-description: Cut an ai-plugins release, suggesting its next YY.MM.x version and raising the mariadb-shell floor to the latest shell release where there is a newer one, PR it, sync the fork, then PR the new pin to the Hermes plugin catalog. Usage: /release [version|-] [shell-version|-]
+description: Cut an ai-plugins release, suggesting its next YY.MM.x version and raising the mariadb-shell floor to the latest shell release and the mariadb-restd floor to the latest rest-daemon release where there are newer ones, PR it, sync the fork, then PR the new pin to the Hermes plugin catalog. Usage: /release [version|-] [shell-version|-]
 ---
 
 # Release Command
@@ -51,8 +51,9 @@ remote has gone missing before. If either is missing, stop and report it.
 ## 2. Check the versions
 
 Do all of this before changing anything, and report what you find in one
-summary: the plugin version and the floor, each with its current value, the
-value this release ships, and whether that was given or suggested.
+summary: the plugin version, the floor and the restd floor, each with its
+current value, the value this release ships, and whether that was given or
+suggested.
 
 **When anything was suggested, stop and ask the user to confirm the summary.**
 They may accept it, or change either version, for example to keep the current
@@ -108,16 +109,41 @@ Sort the `tagName`s as versions (strip the `v`; `sort -V`), not by date.
   - A version higher than it exists → say so and ask whether to use the given floor anyway.
   - Otherwise continue, and report the publish date of `v<floor>`.
 
+**The restd floor** is `MARIADB_RESTD_VERSION`, which every plugin passes on to
+the MCP server: the lowest mariadb-restd its `restd.configure_restd` accepts
+when an agent names no version (an older one is passed over and the newest
+release installed). It has no argument: it follows the newest rest-daemon
+release, as the shell floor follows the newest shell release. Read the current
+one from the launchers' fallback
+(`export MARIADB_RESTD_VERSION="${MARIADB_RESTD_VERSION:-<v>}"`), then list the
+releases:
+
+```bash
+gh release list --repo mariadb-corporation/rest-daemon --exclude-drafts --limit 30 --json tagName,isPrerelease,publishedAt
+```
+
+Sort the `tagName`s as versions, as for the shell. A stable release is preferred
+over a newer prerelease; take a prerelease only while no stable release exists
+(every rest-daemon release is a prerelease so far). If that release is newer
+than the current restd floor, suggest raising it, naming both versions and the
+release's publish date; otherwise it stays. Never suggest lowering it, and stop
+if the current restd floor is not a published release.
+
 ## 3. Branch and set the versions
 
 ```bash
 git switch -c wip/<version>
 scripts/set-mariadb-shell-version.sh <floor>   # only when the floor moves (step 2)
+scripts/set-mariadb-restd-version.sh <restd>   # only when the restd floor moves (step 2)
 scripts/set-plugin-version.sh <version>
 ```
 
 Run them in that order and stop at the first non-zero exit. Skip the shell-floor
-script entirely when the floor is not moving. After each, note how many files
+script entirely when the floor is not moving, and the restd-floor script when the
+restd floor is not. The restd-floor script moves 39 files (18
+MCP launchers, 8 MCP configs, 4 setup-codex-mcp scripts, 8 READMEs and the
+docs-ref Configuration Reference); it checks that the release is published before
+editing anything. After each, note how many files
 changed (`git status --short | wc -l`). For reference, 26.9.5 moved 33 files for
 the shell floor and 17 for the plugin version; the Hermes plugins, added after
 26.10.2, add 8 and 6 to those, and `hermes/guard-plugin` (26.10.4) 2 more to the
@@ -129,6 +155,8 @@ The shell-floor script also replaces the Hermes launchers' committed checksums,
 that release's `SHA256SUMS` — so it needs network access and a published `v<floor>`,
 and it stops before editing anything otherwise. The old file is deleted and the new
 one is untracked: `git add` both directories' `scripts/` so the commit carries them.
+The restd-floor script does the same for `mariadb-restd-v<restd>.SHA256SUMS`, which the
+Hermes launchers pass on to the MCP server with `MARIADB_RESTD_TAG`.
 A very different count is worth
 looking into before going on. If a version was already at its target the script
 changes nothing — say so, don't treat it as a failure. Commit each step on its

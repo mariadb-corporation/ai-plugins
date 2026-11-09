@@ -62,6 +62,12 @@ rem                             v%MARIADB_SHELL_VERSION%). A tag with no committ
 rem                             SHA256SUMS next to this script is checked against
 rem                             the release's own.
 rem   MARIADB_SHELL_REPO        Passed through: owner/repo to install from.
+rem   MARIADB_RESTD_TAG         Passed on to the MCP server: the mariadb-restd
+rem                             release it installs (default
+rem                             v%MARIADB_RESTD_VERSION%).
+rem   MARIADB_RESTD_VERSION     Passed on to the MCP server: the lowest
+rem                             mariadb-restd its restd.configure_restd accepts
+rem                             when the agent names none (default below).
 rem ============================================================================
 
 rem A harness or terminal running PowerShell 7 passes on its PSModulePath, and
@@ -71,6 +77,16 @@ rem builds its own default. setlocal keeps this to the launcher and its children
 set "PSModulePath="
 
 if not defined MARIADB_SHELL_VERSION set "MARIADB_SHELL_VERSION=26.10.4"
+rem The MCP server reads this, not the launcher (see MARIADB_RESTD_VERSION above).
+if not defined MARIADB_RESTD_VERSION set "MARIADB_RESTD_VERSION=26.11.0"
+rem mariadb-restd is pinned as the shell is: the MCP server installs exactly
+rem MARIADB_RESTD_TAG (default v<restd floor>), checked against the copy of
+rem that release's SHA256SUMS committed next to this script, or against the
+rem release's own where the plugin carries none for that tag.
+if not defined MARIADB_RESTD_TAG set "MARIADB_RESTD_TAG=v%MARIADB_RESTD_VERSION%"
+set "MARIADB_RESTD_SHA256SUMS="
+if exist "%~dp0mariadb-restd-%MARIADB_RESTD_TAG%.SHA256SUMS" set "MARIADB_RESTD_SHA256SUMS=%~dp0mariadb-restd-%MARIADB_RESTD_TAG%.SHA256SUMS"
+if not defined MARIADB_RESTD_SHA256SUMS echo mariadb-mcp-launcher: no committed checksums for mariadb-restd %MARIADB_RESTD_TAG%; an install checks it against the release's own SHA256SUMS 1>&2
 if not defined MARIADB_SHELL_REPO set "MARIADB_SHELL_REPO=mariadb-corporation/mariadb-shell"
 if not defined MARIADB_SHELL_BINDIR set "MARIADB_SHELL_BINDIR=%LOCALAPPDATA%\Programs\mariadb-shell\bin"
 

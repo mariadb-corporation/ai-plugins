@@ -314,16 +314,26 @@ def _sums_name() -> str:
     return f"mariadb-shell-v{_shell_version()}.SHA256SUMS"
 
 
+def _restd_version() -> str:
+    return _json("mcp.json")["mcpServers"]["mariadb"]["env"]["MARIADB_RESTD_VERSION"]
+
+
+def _restd_sums_name() -> str:
+    return f"mariadb-restd-v{_restd_version()}.SHA256SUMS"
+
+
 def _installer_commits(script: str) -> set[str]:
     """Every value assigned to INSTALLER_COMMIT (sh: X="…", cmd: set "X=…")."""
     text = (skills.PLUGIN_ROOT / "scripts" / script).read_text(encoding="utf-8")
     return set(re.findall(r'INSTALLER_COMMIT="?([0-9a-f]+)"', text))
 
 
-@pytest.mark.parametrize("script", [*PINNED_FILES, "mariadb-shell-vVERSION.SHA256SUMS"])
+@pytest.mark.parametrize(
+    "script", [*PINNED_FILES, "mariadb-shell-vVERSION.SHA256SUMS", "mariadb-restd-vVERSION.SHA256SUMS"])
 def test_pinned_install_files_match_the_sql_plugin(script: str):
     """Both Hermes plugins carry the same launchers and checksums."""
     script = script.replace("mariadb-shell-vVERSION.SHA256SUMS", _sums_name())
+    script = script.replace("mariadb-restd-vVERSION.SHA256SUMS", _restd_sums_name())
     ours = (skills.PLUGIN_ROOT / "scripts" / script).read_bytes()
     sql = (skills.REPO_ROOT / "hermes" / "sql-plugin" / "scripts" / script).read_bytes()
     assert ours == sql, f"scripts/{script} differs from hermes/sql-plugin/scripts/{script}"
@@ -332,7 +342,7 @@ def test_pinned_install_files_match_the_sql_plugin(script: str):
 def test_committed_checksums_are_the_pinned_release():
     """One SHA256SUMS, for the release the launchers install, listing its packages."""
     scripts = skills.PLUGIN_ROOT / "scripts"
-    sums = sorted(p.name for p in scripts.glob("*.SHA256SUMS"))
+    sums = sorted(p.name for p in scripts.glob("mariadb-shell-*.SHA256SUMS"))
     assert sums == [_sums_name()], (
         f"expected only {_sums_name()} (scripts/set-mariadb-shell-version.sh writes it), found {sums}"
     )
@@ -354,6 +364,34 @@ def test_launcher_installs_a_pinned_release(script: str):
     assert "mariadb-shell-" in text and ".SHA256SUMS" in text and "MARIADB_SHELL_SHA256SUMS" in text
     tag_default = "MARIADB_SHELL_TAG:-v$VERSION" if script.endswith(".sh") else "MARIADB_SHELL_TAG=v%MARIADB_SHELL_VERSION%"
     assert tag_default in text, "the tag must default to v<MARIADB_SHELL_VERSION>"
+
+
+def test_committed_restd_checksums_are_the_pinned_release():
+    """One mariadb-restd SHA256SUMS, for the release the MCP server is told to install."""
+    scripts = skills.PLUGIN_ROOT / "scripts"
+    sums = sorted(p.name for p in scripts.glob("mariadb-restd-*.SHA256SUMS"))
+    assert sums == [_restd_sums_name()], (
+        f"expected only {_restd_sums_name()} (scripts/set-mariadb-restd-version.sh writes it), found {sums}"
+    )
+    lines = (scripts / _restd_sums_name()).read_text(encoding="utf-8").splitlines()
+    entry = re.compile(rf"^[0-9a-f]{{64}}  mariadb-restd-{re.escape(_restd_version())}-\S+\.(tar\.gz|zip)$")
+    assert lines and all(entry.fullmatch(line) for line in lines), "not a SHA256SUMS for this version"
+    for platform in ("linux", "macos", "windows"):
+        assert any(f"-{platform}-" in line for line in lines), f"no {platform} package listed"
+
+
+@pytest.mark.parametrize("script", PINNED_FILES)
+def test_launcher_pins_mariadb_restd(script: str):
+    """MARIADB_RESTD_TAG defaults to v<restd floor>, with the committed checksums."""
+    text = (skills.PLUGIN_ROOT / "scripts" / script).read_text(encoding="utf-8")
+    if script.endswith(".sh"):
+        assert 'MARIADB_RESTD_TAG="${MARIADB_RESTD_TAG:-v$MARIADB_RESTD_VERSION}"' in text
+        assert "mariadb-restd-$MARIADB_RESTD_TAG.SHA256SUMS" in text
+        assert 'export MARIADB_RESTD_SHA256SUMS="$RESTD_SUMS_FILE"' in text
+    else:
+        assert 'set "MARIADB_RESTD_TAG=v%MARIADB_RESTD_VERSION%"' in text
+        assert "mariadb-restd-%MARIADB_RESTD_TAG%.SHA256SUMS" in text
+        assert 'set "MARIADB_RESTD_SHA256SUMS="' in text
 
 
 def test_launchers_pin_the_same_installer_commit():

@@ -66,6 +66,8 @@ for example `mcp__mariadb__db_list_connections`.
 The launcher ([scripts/mariadb-mcp-launcher.sh](scripts/mariadb-mcp-launcher.sh)):
 
 - Resolves the minimum version from `MARIADB_SHELL_VERSION` (default `26.10.4`).
+
+- Passes `MARIADB_RESTD_VERSION` (default `26.11.0`) on to the MCP server: the lowest MariaDB REST Daemon (mariadb-restd) it accepts when it sets one up.
 - Runs the first `mariadb-shell` that meets it: `$MARIADB_SHELL_BIN`, then one on
   `PATH`, then a local install at `~/.local/bin/mariadb-shell`
   (`%LOCALAPPDATA%\Programs\mariadb-shell\bin\mariadb-shell.cmd` on Windows).
@@ -78,6 +80,12 @@ The launcher ([scripts/mariadb-mcp-launcher.sh](scripts/mariadb-mcp-launcher.sh)
   replaced on the release afterwards is refused. It unpacks under
   `~/.local/share/mariadb-shell/` and links the binary into `~/.local/bin`.
   Later starts reuse that install.
+- Pins the MariaDB REST Daemon the same way. It passes `MARIADB_RESTD_TAG`
+  (`v$MARIADB_RESTD_VERSION`) and
+  [`scripts/mariadb-restd-v26.11.0.SHA256SUMS`](scripts/mariadb-restd-v26.11.0.SHA256SUMS)
+  on to the MCP server, which installs exactly that release, verified against
+  those checksums, when an agent sets up a REST Daemon and none new enough is
+  installed.
 - Sends no credentials and reads none: `mariadb-shell` is public.
 - Execs whichever binary it settled on as
   `mariadb-shell -- mcp start-server --transport=stdio`. stdout belongs to the

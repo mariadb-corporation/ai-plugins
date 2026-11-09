@@ -66,6 +66,10 @@
 #                             one to install. Set to 1 to go straight for a
 #                             prerelease, or to 0 to refuse one entirely.
 #   MARIADB_SHELL_REPO        Passed through: owner/repo to install from.
+#   MARIADB_RESTD_VERSION     Passed on to the MCP server: the lowest mariadb-restd
+#                             its restd.configure_restd accepts when the agent names
+#                             none (default below). An older one is passed over and
+#                             the newest release installed.
 #   MARIADB_SHELL_TOKEN       Token for a private repository. GH_TOKEN and
 #                             GITHUB_TOKEN are consulted too, then `gh auth token`
 #                             — the same order install.sh itself uses.
@@ -73,6 +77,9 @@
 set -euo pipefail
 
 VERSION="${MARIADB_SHELL_VERSION:-26.10.4}"
+# The MCP server reads this, not the launcher: the floor for the mariadb-restd it
+# installs, kept beside the shell's by scripts/set-mariadb-restd-version.sh.
+export MARIADB_RESTD_VERSION="${MARIADB_RESTD_VERSION:-26.11.0}"
 REPO="${MARIADB_SHELL_REPO:-mariadb-corporation/mariadb-shell}"
 BINDIR="${MARIADB_SHELL_BINDIR:-$HOME/.local/bin}"
 # install.sh's own default, so the lock sits beside the installs it guards.

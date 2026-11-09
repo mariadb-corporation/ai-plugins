@@ -93,6 +93,8 @@ that entry takes precedence over the plugin's.
 The real launcher ([scripts/mariadb-mcp-launcher.sh](scripts/mariadb-mcp-launcher.sh)), which the shim execs:
 
 - Resolves the minimum version from `MARIADB_SHELL_VERSION` (default `26.10.4`).
+
+- Passes `MARIADB_RESTD_VERSION` (default `26.11.0`) on to the MCP server: the lowest MariaDB REST Daemon (mariadb-restd) it accepts when it sets one up.
 - Runs the first `mariadb-shell` that meets it: `$MARIADB_SHELL_BIN`, then one on
   `PATH`, then a local install at `~/.local/bin/mariadb-shell`
   (`%LOCALAPPDATA%\Programs\mariadb-shell\bin\mariadb-shell.cmd` on Windows).

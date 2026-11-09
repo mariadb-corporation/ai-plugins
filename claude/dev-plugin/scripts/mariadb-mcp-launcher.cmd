@@ -57,6 +57,9 @@ rem                             a prerelease installed only when there is no sta
 rem                             one. Set to 1 to go straight for a prerelease, or
 rem                             to 0 to refuse one entirely.
 rem   MARIADB_SHELL_REPO        Passed through: owner/repo to install from.
+rem   MARIADB_RESTD_VERSION     Passed on to the MCP server: the lowest
+rem                             mariadb-restd its restd.configure_restd accepts
+rem                             when the agent names none (default below).
 rem   MARIADB_SHELL_TOKEN       Token for a private repository. GH_TOKEN and
 rem                             GITHUB_TOKEN are consulted too, then
 rem                             `gh auth token` -- install.ps1's own order.
@@ -69,6 +72,8 @@ rem builds its own default. setlocal keeps this to the launcher and its children
 set "PSModulePath="
 
 if not defined MARIADB_SHELL_VERSION set "MARIADB_SHELL_VERSION=26.10.4"
+rem The MCP server reads this, not the launcher (see MARIADB_RESTD_VERSION above).
+if not defined MARIADB_RESTD_VERSION set "MARIADB_RESTD_VERSION=26.11.0"
 if not defined MARIADB_SHELL_REPO set "MARIADB_SHELL_REPO=mariadb-corporation/mariadb-shell"
 if not defined MARIADB_SHELL_BINDIR set "MARIADB_SHELL_BINDIR=%LOCALAPPDATA%\Programs\mariadb-shell\bin"
 

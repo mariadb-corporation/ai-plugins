@@ -69,10 +69,20 @@
 #                             A tag with no committed SHA256SUMS next to this
 #                             script is checked against the release's own.
 #   MARIADB_SHELL_REPO        Passed through: owner/repo to install from.
+#   MARIADB_RESTD_TAG         Passed on to the MCP server: the mariadb-restd release it
+#                             installs (default v$MARIADB_RESTD_VERSION), with
+#                             mariadb-restd-<tag>.SHA256SUMS from next to this script.
+#   MARIADB_RESTD_VERSION     Passed on to the MCP server: the lowest mariadb-restd
+#                             its restd.configure_restd accepts when the agent names
+#                             none (default below). An older one is passed over and
+#                             the newest release installed.
 
 set -euo pipefail
 
 VERSION="${MARIADB_SHELL_VERSION:-26.10.4}"
+# The MCP server reads this, not the launcher: the floor for the mariadb-restd it
+# installs, kept beside the shell's by scripts/set-mariadb-restd-version.sh.
+export MARIADB_RESTD_VERSION="${MARIADB_RESTD_VERSION:-26.11.0}"
 REPO="${MARIADB_SHELL_REPO:-mariadb-corporation/mariadb-shell}"
 BINDIR="${MARIADB_SHELL_BINDIR:-$HOME/.local/bin}"
 # install.sh's own default, so the lock sits beside the installs it guards.
@@ -96,6 +106,20 @@ MCP_ARGS=(-- mcp start-server --transport=stdio)
 
 log() { echo "mariadb-mcp-launcher: $*" >&2; }
 die() { log "error: $*"; exit 1; }
+
+# mariadb-restd is pinned as the shell is: the MCP server installs exactly
+# MARIADB_RESTD_TAG (default v<restd floor>) with the install script at that
+# tag, checked against the copy of that release's SHA256SUMS committed next to
+# this script. A tag the plugin carries none for is checked against the
+# release's own. The launcher only exports these; the MCP server reads them.
+export MARIADB_RESTD_TAG="${MARIADB_RESTD_TAG:-v$MARIADB_RESTD_VERSION}"
+RESTD_SUMS_FILE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/mariadb-restd-$MARIADB_RESTD_TAG.SHA256SUMS"
+if [ -f "$RESTD_SUMS_FILE" ]; then
+  export MARIADB_RESTD_SHA256SUMS="$RESTD_SUMS_FILE"
+else
+  unset MARIADB_RESTD_SHA256SUMS
+  log "no committed checksums for mariadb-restd $MARIADB_RESTD_TAG; an install checks it against the release's own SHA256SUMS"
+fi
 
 # version_ge A B — succeed (return 0) when dotted-numeric version A >= B.
 version_ge() {

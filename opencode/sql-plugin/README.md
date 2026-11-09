@@ -75,6 +75,8 @@ is started.
 The launcher ([scripts/mariadb-mcp-launcher.sh](scripts/mariadb-mcp-launcher.sh)):
 
 - Resolves the minimum version from `MARIADB_SHELL_VERSION` (default `26.10.4`).
+
+- Passes `MARIADB_RESTD_VERSION` (default `26.11.0`) on to the MCP server: the lowest MariaDB REST Daemon (mariadb-restd) it accepts when it sets one up.
 - Runs the first `mariadb-shell` that meets it: `$MARIADB_SHELL_BIN`, then one on
   `PATH`, then a local install at `~/.local/bin/mariadb-shell`
   (`%LOCALAPPDATA%\Programs\mariadb-shell\bin\mariadb-shell.cmd` on Windows).
