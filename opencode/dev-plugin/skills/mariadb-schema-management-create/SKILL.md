@@ -1,6 +1,6 @@
 ---
 name: mariadb-schema-management-create
-description: "Scaffold a MariaDB Schema Management (MSM) project and author the initial schema in the development folder — create the project with msm.create_project and write the first version's tables, objects and grants into the MSM sections of <schema>_next.sql. Use when starting a new versioned/maintainable MariaDB schema, creating an MSM schema project, or authoring the initial development script, or when turning a MySQL Workbench model (.mwb) into an MSM project with msm.import_workbench_model. Read mariadb-schema-management first for the section model."
+description: "Scaffold a MariaDB Schema Management (MSM) project and author the initial schema in the development folder — create the project with msm.create_project, or import it from a MySQL Workbench model (msm.import_workbench_model) or a schema on a live server (msm.import_live_schema), and write the first version's tables, objects and grants into the MSM sections of <schema>_next.sql. Use when starting a new versioned/maintainable MariaDB schema, creating an MSM schema project, bringing an existing schema under MSM, or authoring the initial development script. Read mariadb-schema-management first for the section model."
 ---
 
 # MSM — Creating the Initial Schema
@@ -16,23 +16,30 @@ the **first** version of the schema in the development folder. Driven by the
 msm.create_project(
     schema_name="notes-app",
     target_path="<parent dir>",
-    copyright_holder="...",   # optional
+    copyright_holder="...",   # optional, written into notices as given
     license="MIT",            # optional: GPL-2.0 | MIT | BSD | None
+    year_of_creation="2024",  # optional; defaults to the current year
 )
 ```
 
 This creates `<schema>.msm.project/` with `msm.project.json`, the
 `development/<schema>_next.sql` working script (initial development version
-`0.0.1`), and the empty `releases/{versions,updates,deployment}/` folders.
-`msm.get_project_information` returns the schema name, versions and paths.
+`0.0.1`), and the empty `releases/{versions,updates,deployment}/` folders, and
+adds the project to the project list (`msm.list_projects`). Several holders go
+in `copyrights=[{holder, yearOfCreation, yearOfLastUpdate, tracksUpdates}]`
+instead of `copyright_holder`. `msm.get_project_information` returns the schema
+name, versions, paths and settings; change settings later (a `CUSTOM` license,
+`maxInlineSectionSize`, ...) with `msm.set_project_settings`, never by editing
+`msm.project.json`.
 
-Do **not** add the standalone "Start Block" from `mariadb-schema-create-script`
-here — sections 010/920 already save and restore the server variables.
+### Or import an existing schema
 
-### Or: start from a MySQL Workbench model
+Both imports create a **new** project (like `msm.create_project`, same
+`target_path`, copyright and license arguments), write the CREATE statements
+into sections 140/150 (breakout files where a section is large) and make the
+schema snapshot, so they need `mariadb-lsp`.
 
-When the schema already exists as a MySQL Workbench model, create the project
-from it instead of authoring the SQL by hand:
+#### From a MySQL Workbench model
 
 ```text
 msm.import_workbench_model(
@@ -44,7 +51,7 @@ msm.import_workbench_model(
 )
 ```
 
-- It creates a **new** project only; there is no re-import into an existing one.
+- There is no re-import into an existing project.
 - Tables, keys and the model's rows go to section 140, the other objects to
   150, roles and grants to 170 (as breakout files where a section is large);
   the model's EER diagrams become the project's diagrams (section 160).
@@ -56,15 +63,47 @@ written them (step 2's rules apply). A Workbench model is a MySQL model: check
 collations (such as `utf8mb4_0900_ai_ci`), engines and defaults against the
 target MariaDB version.
 
+#### From a schema on a server
+
+Needs a `db.connect` connection.
+
+1. `msm.list_live_schema_objects(connection_id, schema)` lists the tables
+   (with their triggers), views (with `reads`: what each view reads),
+   procedures, functions, triggers, events and sequences, plus
+   `schema_version` (the version msm deployed there, or null).
+2. `msm.import_live_schema(connection_id, schema, target_path,
+   objects=None)` imports all, or only the names in `objects` (`{tables,
+   views, procedures, functions, triggers, events, sequences: [names]}`; a
+   kind left out imports none; without `triggers` the selected tables bring
+   theirs). It starts a task: follow it with `task.get`; a `task.cancel`
+   leaves no project behind. Anything that would refuse the import (target
+   path, selection, license, missing `mariadb-lsp`) refuses the call itself.
+
+DEFINER clauses, the schema's own name and `AUTO_INCREMENT=N` are removed,
+so the project deploys under any name. **Not imported:** data, users, roles,
+grants and msm's own `msm_*` objects; add base data and authorization by
+hand. A foreign key to a table left out is dropped with a warning; a view
+reading an object left out gets a warning too. Refused: two names that differ
+only in case (tables, views and sequences share one namespace), and any
+selected view when the `mariadb-lsp` found cannot tell what views read (then
+every view's `reads` is null). The
+server's schema is not changed, and `msm.deploy_schema` refuses an existing
+schema msm does not manage (no `msm_schema_version` view).
+
+Do **not** add the standalone "Start Block" from `mariadb-schema-create-script`
+here — sections 010/920 already save and restore the server variables.
+
 ## 2. Author the schema into the right sections
 
 Edit `development/<schema>_next.sql` by section, using
 `msm.set_section_sql_content(file_path, section_id, sql_content)` (and
 `msm.get_sql_content_from_section` to read one) so the section banners stay
-intact. Put each kind of object in the section that matches how MSM deploys it:
+intact (it replaces the whole body, so the template's commented-out examples
+go with it). Put each kind of object in the section that matches how MSM
+deploys it:
 
-- **Section 140 — tables and base data (non-idempotent).** `CREATE TABLE` and
-  standard seed `INSERT`s only. This becomes a stored-procedure body in the
+- **Section 140 — tables, sequences and base data (non-idempotent).**
+  `CREATE TABLE`, `CREATE SEQUENCE` and standard seed `INSERT`s only. This becomes a stored-procedure body in the
   deployment script, so write plain `;`-terminated statements with **no
   `DELIMITER`**.
 
@@ -116,6 +155,12 @@ intact. Put each kind of object in the section that matches how MSM deploys it:
 - **Sections 130 / 190 — creation helpers.** Optional routines whose names must
   start `msm_`, defined in 130 and dropped in 190; use them for logic needed only while building the schema.
 
+Instead of writing a section by hand, `msm.add_schema_object` adds a view,
+procedure, function, trigger, event or sequence from a template, and
+`msm.edit_schema` adds tables, columns, keys, views and routines; both put the
+statement in the right section themselves (see
+`mariadb-schema-management-develop`).
+
 ## 3. Set the initial version
 
 The version lives in section 910 (the `msm_schema_version` view). Set it with:
@@ -128,7 +173,7 @@ Use whatever development version you intend to release first; MSM starts a fresh
 
 ## Guidelines
 
-- Only tables/data go in 140; **everything else** goes in 150 — mixing them
+- Only tables, sequences and data go in 140; **everything else** goes in 150 — mixing them
   breaks the deployment script's create/upgrade split.
 - Idempotent objects (150) must use `CREATE OR REPLACE` / `DROP IF EXISTS`.
 - Keep object definitions grouped and commented; once the file grows, split

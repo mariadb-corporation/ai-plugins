@@ -1,6 +1,6 @@
 ---
 name: mariadb-schema-management-release
-description: "Prepare a MariaDB Schema Management (MSM) version release — snapshot the development script with msm.prepare_release, FILL the generated previous→new update script (table changes and drops in section 240, revoked privileges in 270) with the actual migration, and only then generate the deployment script with msm.generate_deployment_script. Use when cutting/preparing an MSM schema release or version, writing the release-to-release migration, or generating a deployment script. Read mariadb-schema-management first for the section model."
+description: "Prepare a MariaDB Schema Management (MSM) version release — snapshot the development script with msm.prepare_release, FILL the generated previous→new update script (table changes and drops in section 240, removed procedures/functions in 260, revoked privileges in 270) with the actual migration, and only then generate the deployment script with msm.generate_deployment_script. Use when cutting/preparing an MSM schema release or version, writing the release-to-release migration, or generating a deployment script. Read mariadb-schema-management first for the section model."
 ---
 
 # MSM — Preparing a Version Release
@@ -13,7 +13,7 @@ See `mariadb-schema-management` for the section model. Assume MariaDB 11.8.
 
 ```text
 1. msm.prepare_release          → version snapshot (+ update script)
-2. FILL the update script       → sections 240 (+ 270)  ← do NOT skip
+2. FILL the update script       → sections 240 (+ 260, 270)  ← do NOT skip
 3. msm.generate_deployment_script  ← only after step 2
 ```
 
@@ -31,10 +31,10 @@ This:
 - Inlines any `SOURCE` breakout files and writes the full snapshot
   `releases/versions/<schema>_1.1.0.sql`.
 - If a previous release exists, creates the update script
-  `releases/updates/<schema>_<prev>_to_1.1.0.sql` from the template. It is
-  empty except for the statements `msm.edit_schema` kept since the last release
-  in `development/<schema>_update_next.sql` (sections 240 and 290), which move
-  into it.
+  `releases/updates/<schema>_<prev>_to_1.1.0.sql` from the template, **empty**
+  except for what `msm.edit_schema` / `msm.add_schema_object` kept in the
+  pending `development/<schema>_update_next.sql` (moved in; the pending script
+  starts over).
 - Bumps the development version in `_next.sql` to `next_version` (1.2.0).
 
 Semver validation: `version` must be ≥ the last released version, and
@@ -45,33 +45,57 @@ script.
 ## 2. FILL the update script — the step everyone forgets
 
 `prepare_release` only creates the update script; it does **not** know how to
-migrate data/structure. You must write the migration from the previous release
-to this one into its sections, using `msm.set_section_sql_content(file_path,
-section_id, sql_content)`. Statements already in 240/290 came from
-`msm.edit_schema` (each under a `-- msm.editSchema: ...` comment): keep them,
-add the data steps they need between them (a backfill before a foreign key on a
-new `NOT NULL` column), and add the migration for every change made by hand, in
-the order the changes need.
+migrate data/structure. Even where `msm.edit_schema` filled it, check it: it
+holds only the changes made through msm, never hand edits or data backfills.
+Write the migration from the previous release to this one into its sections,
+using `msm.set_section_sql_content(file_path, section_id, sql_content)`.
+Statements already in 240/260 came from msm (each under a
+`-- msm.editSchema: ...` comment): keep them, add the data steps they need
+between them (a backfill before a foreign key on a new `NOT NULL` column), and
+add the migration for every change made by hand, in the order the changes need.
 
-- **Section 240 — non-idempotent changes + all drops.** `ALTER TABLE`, new
-  `CREATE TABLE`, data backfill (`UPDATE`/`INSERT`), and any `DROP` of objects
-  that would block a table change. Order matters — these are largely
-  irreversible. This becomes a stored-procedure body in the deployment script, so
-  write plain `;`-terminated statements, **no `DELIMITER`**; use dynamic SQL
-  (`PREPARE`/`EXECUTE`) for conditional DDL.
+- **Section 240 — non-idempotent changes + drops.** `ALTER TABLE`, new
+  `CREATE TABLE` / `CREATE SEQUENCE`, data backfill (`UPDATE`/`INSERT`), any
+  `DROP` of objects that would block a table change, and `DROP ... IF EXISTS`
+  of every table, SEQUENCE, VIEW, TRIGGER and EVENT the new version no longer
+  has — but **not** of a PROCEDURE or FUNCTION (that fails here, error 1357:
+  use 260). Order matters — these are largely irreversible. This becomes a
+  stored-procedure body in the deployment script, so write plain
+  `;`-terminated statements, **no `DELIMITER`**; use dynamic SQL
+  (`PREPARE`/`EXECUTE`) for conditional DDL. Do not re-create views, routines,
+  triggers or events here.
 
   ```sql
   ALTER TABLE `notes-app`.`note` ADD COLUMN `created_at` DATETIME;
   UPDATE `notes-app`.`note` SET `created_at` = NOW() WHERE `created_at` IS NULL;
   ```
 
-- **Section 250 — leave it empty; it is not deployed.** New and changed VIEWs /
-  routines / triggers / events belong in the dev script's section 150. The
-  deployment script runs the target version's full section 150 on every
-  deployment, after all table changes, so they reach upgraded schemas without
-  any per-version statement. A *removed* object is the one change 150 cannot
-  express — drop it in 240 with `DROP ... IF EXISTS` (a procedure or function
-  in 290, see below).
+  `msm.deploy_schema` runs each **top-level** `ALTER TABLE` of 240 online (see
+  `mariadb-schema-management-deploy`). So write plain ALTERs, one per table
+  where you can, **without** `ALGORITHM` / `LOCK` / `ONLINE` / `IGNORE` /
+  `IF EXISTS`: an ALTER with any of them, one that changes partitioning, one
+  nested in `IF`/`BEGIN`, and every ALTER of a 240 body with a top-level
+  `DECLARE` run as written, possibly blocking the table.
+
+- **Section 260 — removed PROCEDUREs and FUNCTIONs only.** `DROP PROCEDURE IF
+  EXISTS` / `DROP FUNCTION IF EXISTS` for each routine the new version no
+  longer has. Emitted at top level, so plain `;`-terminated statements. It runs
+  on **every** deployment of this or a later version, fresh installs too,
+  after the table changes and before the target's section 150 — hence
+  `IF EXISTS`, and a routine added again in a later version is re-created by
+  that version's 150.
+
+  ```sql
+  DROP PROCEDURE IF EXISTS `notes-app`.`add_note`;
+  ```
+
+- **No section 250.** New and changed VIEWs / routines / triggers / events
+  belong in the dev script's section 150. The deployment script runs the
+  target version's full section 150 on every deployment, after all table
+  changes, so they reach upgraded schemas without any per-version statement.
+  A *removed* object is the one change 150 cannot express — drop it in 240, or
+  in 260 for a routine. An update script made by an older msm still has a 250:
+  leave it empty, it is never deployed.
 - **Section 270 — revoked privileges and dropped roles only.** `REVOKE` /
   `DROP ROLE` for what the new version no longer has (stored-procedure body →
   plain `;`, no `DELIMITER`). New roles and `GRANT`s belong in the dev script's
@@ -79,9 +103,14 @@ the order the changes need.
   **Never `GRANT` in 270**: on an upgrade it runs before 170 creates a role that
   is new in this version, and the deployment fails with error 1133.
 - **Sections 230 / 290 — update helpers** (`msm_`-prefixed) if the migration
-  needs temporary routines; drop them in 290. Section 290 also takes the
-  `DROP PROCEDURE` / `DROP FUNCTION` of routines the new version no longer has
-  (it cannot run in 240: error 1357); `msm.edit_schema` puts them there.
+  needs temporary routines; drop them in 290, and put **nothing else** there.
+  Every update script's 290 runs at the very end of every later deployment,
+  after the target's 150, so a routine DROP in 290 would remove a routine a
+  later version adds again. An update script made by an older msm (it has a
+  250 and no 260) may hold such a DROP in 290; when a later version brings the
+  routine back, move the DROP into a Section 260 by hand, banner included (copy
+  it from a new update script: `msm.set_section_sql_content` refuses a section
+  the file lacks).
 
 Write the migration to match exactly what changed in the **tables** between the
 previous version snapshot and this one: an upgraded schema must end with the
@@ -103,10 +132,12 @@ What it produces:
   any prior released version** to the target: it builds `msm_create_<target>()`
   from section 140, an `msm_update_<from>_to_<to>()` from **each** update script's
   section 240, an `msm_create_or_update()` dispatcher that reads
-  `msm_schema_version` and applies the right path, then the target's idempotent
-  objects (150), authorization (`msm_auth_*`: the 270 steps, then the target's
-  170) and REST endpoints (180), and finally drops all `msm_` procedures and
-  stamps the new version. The update scripts' section 250 is not included.
+  `msm_schema_version` and applies the right path, then every update script's
+  260 (removed routines), the target's idempotent objects (150) and diagrams
+  (160), authorization (`msm_auth_*`: the 270 steps, then the target's 170) and
+  REST endpoints (180), and finally the 290 helper removals, drops all `msm_`
+  procedures and stamps the new version. An update script's section 250, where
+  an old one has it, is not included.
 
 Because it embeds the update sections, generating **before** filling them yields
 a script that can create fresh but cannot correctly upgrade older installs. Every
