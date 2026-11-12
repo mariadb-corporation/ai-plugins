@@ -12,6 +12,15 @@ recover the exact statement that created an endpoint before altering it.
 
 Assume MariaDB 11.8 if not told otherwise.
 
+> **Only when the endpoints belong to an MSM project** (a
+> `<schema>.msm.project` folder, see `mariadb-schema-management`): the
+> project's endpoints are in its section 180
+> (`msm.get_sql_content_from_section`) and in the `rest` part of the schema
+> snapshot (`msm.get_schema_diagrams`); `SHOW REST ...` on a server shows only
+> what was deployed there. Outside MSM projects, inspect the server as this
+> skill shows. See "REST endpoints in an MSM project" in
+> `mariadb-schema-management-develop`.
+
 ## Set a default context first (optional)
 
 Most `SHOW` statements take an explicit `ON`/`FROM SERVICE ...` (and `SCHEMA

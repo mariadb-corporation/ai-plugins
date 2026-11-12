@@ -93,7 +93,7 @@ determines how the deployment script treats it.** Always edit sections with
 | **150** | **Idempotent: VIEWs / PROCEDUREs / FUNCTIONs / TRIGGERs / EVENTs** — run in full on every deployment |
 | 160 | Schema diagrams: the `msm_schema_diagrams` VIEW — **written by msm, never by hand** (see below) |
 | 170 | Authorization: `CREATE ROLE IF NOT EXISTS` / `GRANT` — run in full on every deployment |
-| 180 | Optional MariaDB REST Service endpoints (`CREATE OR REPLACE REST ...`) — run in full on every deployment; updates endpoints in place and keeps their ids, but never removes one (that is the update script's 280) |
+| 180 | Optional MariaDB REST Service endpoints (`CREATE OR REPLACE REST ...`) — run in full on every deployment; updates endpoints in place and keeps their ids, but never removes one (that is the update script's 280). Write it with `msm.set_rest_statements` / `msm.drop_rest_object` (see `-develop`) |
 | 190 | Removal of the `msm_` helpers |
 | 910 | Final schema version — set via `msm.set_development_version` |
 | 920 | Server-variable restore (provided) |
@@ -165,14 +165,20 @@ script, sections **140, 240, 170, 270** become the *body of a stored procedure*
 ## The `msm.*` MCP tools
 
 - **Project:** `msm.create_project`, `msm.import_workbench_model` (from a MySQL
-  Workbench `.mwb`), `msm.get_project_information`, `msm.set_project_settings`.
-- **Project list:** `msm.list_projects`, `msm.add_project`,
+  Workbench `.mwb`), `msm.get_project_information`, `msm.set_project_settings`,
+  `msm.rename_schema` (only before the first release).
+- **Project list:** `msm.list_projects` (with each project's
+  `development_version` and `last_released_version`), `msm.add_project`,
   `msm.update_project`, `msm.remove_project` (the list only; folders stay).
 - **Sections:** `msm.get_sql_content_from_section`, `msm.set_section_sql_content`,
   `msm.split_sections` (into breakout files).
-- **Objects:** `msm.edit_schema` (rename/add/change/drop tables, columns,
-  indexes, keys, views, routines), `msm.get_object_templates`,
-  `msm.add_schema_object` (view, procedure, function, trigger, event, sequence).
+- **Objects:** `msm.set_schema_statements` (add a table, sequence, view,
+  routine, trigger or event from its CREATE statement, or replace a view,
+  routine, trigger or event), `msm.drop_schema_object`, `msm.edit_schema`
+  (structured edits: renames, columns, indexes, keys, table options),
+  `msm.get_object_templates`.
+- **REST (section 180):** `msm.set_rest_statements` (add or replace a REST
+  service, schema or object), `msm.drop_rest_object`.
 - **Versions:** `msm.set_development_version`, `msm.get_released_versions`,
   `msm.get_last_released_version`, `msm.get_last_deployment_version`,
   `msm.get_deployment_script_versions`.
@@ -194,6 +200,55 @@ Every tool that reads the structure of the SQL — the snapshot, diagram creatio
 and layout, `edit_schema`, `split_sections`, the Workbench import and
 `prepare_release` — needs the MariaDB SQL language server's binary
 `mariadb-lsp`, installed with the MariaDB Shell; without it the call fails.
+
+## Handing the project back: the review link
+
+After you have created or changed an MSM project with the `msm.*` tools, end
+your answer, after the summary of what you built, with a link the user can
+click to review it in the MariaDB extension. The link adds the project to the
+extension's MSM Projects view (a listed project keeps its place) and opens the
+named schema diagram. It runs nothing else, so offer it every time.
+
+Write it **always as a Markdown link, never a bare URL**, exactly in this form:
+
+```text
+[Open <diagram> of <schema> in MariaDB](vscode://mariadb.mariadb-shell/msm/openDiagram?project=<P>&diagram=<D>)
+```
+
+- The scheme is always `vscode://`, whatever the editor. The authority is
+  exactly `mariadb.mariadb-shell` (lowercase) and the path exactly
+  `/msm/openDiagram`.
+- `<schema>` in the link text is the project's `schemaName`.
+- `P` is the **absolute** path of the `<schema>.msm.project` folder (the one
+  holding `msm.project.json`), percent-encoded whole as `encodeURIComponent`
+  does: `/` → `%2F`, space → `%20`; on Windows also `:` → `%3A` and `\` → `%5C`.
+- `D` is the diagram's name as `msm.list_schema_diagrams` lists it, encoded the
+  same way.
+- Give one link for each diagram you created or changed. A new project gets
+  its diagram before the link (see `mariadb-schema-management-create`, step
+  4). Give one link without `&diagram=...` only when no diagram was created or
+  changed, for example because the user did not want one. That link adds the
+  project to the MSM Projects view. It then opens the project's only diagram,
+  lets the user pick one of several, or, when there is none, offers to create
+  one. Describe it that way, not as only adding the project.
+- Use no parameters other than `project` and `diagram`.
+
+Example, for the diagram `Main Diagram` of the `shop` project in
+`/Users/me/work/shop.msm.project`:
+
+```markdown
+[Open Main Diagram of shop in MariaDB](vscode://mariadb.mariadb-shell/msm/openDiagram?project=%2FUsers%2Fme%2Fwork%2Fshop.msm.project&diagram=Main%20Diagram)
+```
+
+and, for the project alone:
+
+```markdown
+[Open the shop MSM project in MariaDB](vscode://mariadb.mariadb-shell/msm/openDiagram?project=%2FUsers%2Fme%2Fwork%2Fshop.msm.project)
+```
+
+Describe the link only as a way to review the project in the MariaDB
+extension. The first click may show an editor prompt asking to allow the
+MariaDB extension to open the URI, and an older extension ignores the link.
 
 ## See Also
 

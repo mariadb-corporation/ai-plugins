@@ -1,6 +1,6 @@
 ---
 name: mariadb-schema-management-develop
-description: "Develop the next version of a MariaDB Schema Management (MSM) schema in development/<schema>_next.sql: by section, or with msm.edit_schema / msm.add_schema_object, which change tables, columns, keys, views and routines in the SQL and keep the migration for the next update script; create and lay out schema diagrams; and split large sections into SOURCE-included files under development/sections/ with msm.split_sections. Use when evolving an existing MSM schema, editing the _next.sql script, adding, renaming or changing schema objects, working on an MSM schema diagram, or splitting a growing script. Read mariadb-schema-management first for the section model."
+description: "Develop the next version of a MariaDB Schema Management (MSM) schema in development/<schema>_next.sql: by section, or with msm.set_schema_statements / msm.drop_schema_object / msm.edit_schema, which add, replace, change and drop tables, columns, keys, views and routines in the SQL and keep the migration for the next update script; REST endpoints with msm.set_rest_statements / msm.drop_rest_object; rename the schema before its first release; create and lay out schema diagrams; and split large sections into SOURCE-included files under development/sections/ with msm.split_sections. Use when evolving an existing MSM schema, editing the _next.sql script, adding, renaming or changing schema objects, working on an MSM schema diagram, or splitting a growing script. Read mariadb-schema-management first for the section model."
 ---
 
 # MSM — Developing the Next Version
@@ -14,8 +14,12 @@ model. Assume MariaDB 11.8.
 
 ## Iterating on `_next.sql`
 
-Make changes in the same sections you authored initially, using
-`msm.set_section_sql_content` / `msm.get_sql_content_from_section`:
+Prefer the tools that place statements themselves: `msm.set_schema_statements`
+and `msm.drop_schema_object` for objects from SQL, `msm.edit_schema` for
+structured changes, `msm.set_rest_statements` / `msm.drop_rest_object` for
+section 180. Otherwise make changes in the same sections you authored
+initially, using `msm.set_section_sql_content` /
+`msm.get_sql_content_from_section`:
 
 - New/changed **tables, sequences and data** → section 140.
 - New/changed **views, routines, triggers, events** → section 150 (idempotent:
@@ -90,12 +94,12 @@ so send a column's whole definition to `modify_column`.
 | `set_primary_key` | `table`, `columns` |
 | `add_foreign_key` | `table`, `foreign_key`: `name`, `columns`, `references` (`table`, `columns`), `on_delete`, `on_update` |
 | `drop_foreign_key` | `table`, and `name` or `columns` (an unnamed key) |
-| `add_view` | `view`: `name`, `definition` (the `SELECT` alone) |
+| `add_view`, `replace_view` | `view`: `name`, `definition` (the `SELECT` alone) |
 | `drop_view` | `view` |
-| `add_routine` | `routine`: `name`, `kind`, `parameters`, `returns` (a function), `body` |
-| `add_trigger` | `trigger`: `name`, `timing` (`BEFORE`, `AFTER`), `events` (`INSERT`, ...), `table`, `body` |
+| `add_routine`, `replace_routine` | `routine`: `name`, `kind`, `parameters`, `returns` (a function), `body` |
+| `add_trigger`, `replace_trigger` | `trigger`: `name`, `timing` (`BEFORE`, `AFTER`), `events` (`INSERT`, ...), `table`, `body` |
 | `rename_trigger`, `drop_trigger` | `trigger`, `new_name` (rename) |
-| `add_event` | `event`: `name`, `schedule` (`EVERY 1 DAY`, ...), `body` |
+| `add_event`, `replace_event` | `event`: `name`, `schedule` (`EVERY 1 DAY`, ...), `body` |
 | `rename_event`, `drop_event` | `event`, `new_name` (rename) |
 | `add_sequence` | `sequence`: `name`, and `type`, `start`, `increment`, ... where wanted |
 | `rename_sequence`, `drop_sequence` | `sequence`, `new_name` (rename) |
@@ -138,17 +142,140 @@ so send a column's whole definition to `modify_column`.
   Changes you make by hand are not kept:
   their migration is still yours to write at release time.
 
-### Adding an object from a template
+### Adding and replacing objects from SQL: `msm.set_schema_statements`
 
-`msm.add_schema_object(kind, name, base_hash, template=None, table=None)` adds a
-`view`, `procedure`, `function`, `trigger` (needs `table`), `event` or
-`sequence` from msm's template (`msm.get_object_templates`) or your own: one
-plain CREATE of that kind with unqualified names and the placeholders
-`${name}`, `${schema}` and, for a trigger, `${table}`. A sequence goes into 140
-before the first table, the rest into 150. It returns the `file` and `line`
-where the new statement starts, so you can fill in its body. Refused: a name
-taken (tables, views and sequences share one namespace), an unknown table, a
-stale `base_hash`.
+When you have the CREATE statement, let msm decide where it goes and in what
+form:
+
+```text
+msm.set_schema_statements(
+    base_hash="<source_hash>",
+    statements=[
+        "CREATE TABLE author (id INT UNSIGNED NOT NULL PRIMARY KEY, name VARCHAR(100) NOT NULL)",
+        "CREATE VIEW note_titles AS SELECT id, title FROM note",
+    ],
+    expect=[{"kind": "table", "name": "author"},
+            {"kind": "view", "name": "note_titles"}],   # optional guard
+)
+```
+
+- One CREATE per statement, of a table, sequence, view, procedure, function,
+  trigger or event, **named without its schema**, without `DELIMITER`.
+- A new object is added: a table or sequence to section 140, the others to 150
+  in the form that runs again.
+- A view, routine, trigger or event the project has is **replaced where it
+  stands** (no update-script statement: 150 runs in full on every
+  deployment). An unchanged definition is left alone (`changed: false`).
+- A table or sequence the project has is refused: change it with
+  `msm.edit_schema`, which writes the `ALTER`s a deployed server needs.
+- `expect` (`{kind, name, table?}` per statement) refuses a statement that
+  creates another object, before anything is written.
+- All statements are one edit, with `msm.edit_schema`'s answer plus
+  `statements: [{kind, name, file, line, replaced, changed}]`.
+- It needs a current `mariadb-lsp` (it refuses an older one, saying to update
+  it or the MariaDB Shell).
+
+`msm.get_object_templates` gives msm's plain CREATE templates for a view,
+procedure, function, trigger, event and sequence (placeholders `${name}`,
+`${schema}`, and `${table}` for a trigger); fill them and send them here.
+
+`msm.drop_schema_object(kind, name, base_hash)` removes a table, sequence,
+view, procedure, function, trigger or event (through `msm.edit_schema`'s drop
+ops, so after the first release the DROP is kept for the next update script).
+It is refused for an object another one needs.
+
+## REST endpoints in an MSM project
+
+An MSM project's REST endpoints live in its section 180, which every
+deployment runs in full. When the user wants endpoints in the project, put
+them there with `msm.set_rest_statements`, not by running them on a server
+(the project would not know them, and the next deployment would not create
+them) and not with `msm.set_section_sql_content`. Running REST statements on
+a server directly, when the user asks for that, is still fine; it only leaves
+the project out. For the REST DDL itself (the
+`CREATE REST VIEW` field mapping, options, `@` flags) read
+`mariadb-rest-service-create`.
+
+### Adding endpoints, step by step
+
+1. **Get the base hash.** `msm.get_schema_diagrams()`: the
+   `schema_definition` row's `source_hash`. Each REST call answers with the
+   next one (the first of its `rows`).
+2. **Make sure the objects exist in the project.** A `CREATE REST VIEW`,
+   `PROCEDURE` or `FUNCTION` exposes a table, view or routine of this schema,
+   so add those first (`msm.set_schema_statements`).
+3. **Write the service, its schema and its objects** in one call, parents
+   first. Every statement names its place, as a statement of its own (no `USE
+   REST ...`): a schema `ON SERVICE /svc`, an object `ON SERVICE /svc SCHEMA
+   /p` (one combined clause). Write the database schema's name as the
+   project's schema. Give options such as `PUBLISHED` or `ADD AUTH APP "name"`
+   in the `CREATE` itself, as an `ALTER` can't be passed:
+
+   ```text
+   msm.set_rest_statements(
+       base_hash="<source_hash>",
+       statements=[
+           'CREATE REST SERVICE /shop PUBLISHED COMMENT "Shop API"',
+           'CREATE REST SCHEMA /v1 ON SERVICE /shop FROM `shop` COMMENT "Version 1"',
+           'CREATE REST VIEW /products ON SERVICE /shop SCHEMA /v1 AS `shop`.`product` { id: id @KEY @SORTABLE, name: name, price: price } AUTHENTICATION NOT REQUIRED COMMENT "Product catalog"',
+       ],
+   )
+   ```
+
+   msm writes each as `CREATE OR REPLACE` (`IF NOT EXISTS` is refused) and
+   places it: an item section 180 already creates is replaced where it stands
+   (its other statements go, except `ALTER`s that only link or unlink auth
+   apps; an `ALTER` that links an app and changes more is refused); a new
+   item goes after its service's or schema's statements. Backtick a name that
+   is a keyword, such as a `CLASS` name. The answer has `statements: [{kind,
+   service, schema, object, file, line, replaced}]` and `notes` to check.
+4. **Change or rename** an endpoint by sending its new `CREATE` the same way;
+   `replaces={"kind": "object", "service": ..., "schema": ..., "object":
+   ...}` renames a REST object (not a service or schema).
+5. **Remove** one with `msm.drop_rest_object(kind, service, base_hash,
+   schema=None, object=None)` (`kind`: `service`, `schema` or `object`): its
+   statements and everything on it go. It writes no DROP: the next
+   `msm.prepare_release` writes it into the update script's section 280.
+6. **Show the endpoints on the diagram** (unless the user doesn't want a
+   diagram): read the diagram with `msm.get_schema_diagrams(diagram=)`, add
+   one `RestObjectFigure` per REST object (`restService`, `restSchema`,
+   `restObject` exactly as section 180 writes them, and a `left`/`top` clear of
+   the other figures, as the layout never places or moves them) and send the
+   whole document back with `msm.set_schema_diagram`. Then end with the review
+   link (see "Handing the project back" in `mariadb-schema-management`).
+
+Both tools check that nothing but the given items changed, write everything or
+nothing, and make the snapshot again. Paths are compared as the server does:
+case and quotes ignored, `anna, mike@/svc` the same as `mike,anna@/svc`.
+
+### What stays outside section 180
+
+`msm.set_rest_statements` takes only services, schemas and their views,
+procedures and functions, and section 280 can only remove those and auth app
+links. Keep the rest on the server, not in the project:
+
+- `CONFIGURE REST METADATA`: once per server, before the first deployment
+  that has REST endpoints. The deployment account needs its REST role active.
+- Auth apps, REST users and REST roles (`mariadb-rest-service-authorization`):
+  create them on each server. The project only links an app by name (`ADD AUTH
+  APP` in `CREATE REST SERVICE`), so the app must exist on the server before
+  the deployment.
+- Content sets.
+
+## Renaming the schema: `msm.rename_schema`
+
+`msm.rename_schema(new_schema_name, dry_run=False)` renames the schema of a
+project **that has no release yet**. Everything that names it follows, all or
+nothing: `msm.project.json`, the development file names, `USE`, `CREATE
+SCHEMA`, every schema qualifier and banner in the SQL and its breakout files,
+the pending update script, the template's README/CHANGELOG lines, the
+snapshot, the project folder where it still has msm's name for the schema,
+and the project lists. Call it with `dry_run=True` first: it answers
+`allowed` and a `reason` (`released`, `invalid-name`, `same-name`,
+`folder-exists`, `lsp-missing`, `restricted`) without changing anything. Show
+the user the `warnings` (the schema name inside strings, projects whose
+`schemaDependencies` name the old schema). After a rename,
+`project_path` is the project's new folder; use it in the review link.
 
 ## Schema diagrams
 
@@ -159,9 +286,31 @@ Make and change the diagrams of section 160 through the tools, never in the SQL:
 | New diagram | `msm.create_schema_diagram(name, tables=, views=, sequences=, routines=, events=)`: all tables by default, laid out; the other objects only when named |
 | Add objects, tidy up | `msm.layout_schema_diagram(name, tables=, views=, sequences=, routines=, events=, keep_placed=True)`: places the figures without a position; `keep_placed=False` lays all out again |
 | Read | `msm.list_schema_diagrams`, `msm.get_schema_diagrams(diagram=)`; `msm.get_schema_diagram_image` for a picture they leave out |
-| Change by hand | `msm.set_schema_diagram(document)`: an `msm-diagram/1` document; figure types `TableFigure` (its card lists the table's triggers unless `triggersExpanded` is false), `ViewFigure`, `SequenceFigure`, `RoutineGroupFigure` (`routines`), `EventGroupFigure` (`events`), `NoteFigure`, `ImageFigure`; a figure without `left`/`top` is placed by the layout; an `ImageFigure` sent without its picture keeps the stored one |
+| Change by hand | `msm.set_schema_diagram(document)`: an `msm-diagram/1` document; figure types `TableFigure` (its card lists the table's triggers unless `triggersExpanded` is false), `ViewFigure`, `SequenceFigure`, `RoutineGroupFigure` (`routines`), `EventGroupFigure` (`events`), `RestObjectFigure` (`restService`, `restSchema`, `restObject`: the paths as section 180 writes them), `NoteFigure`, `ImageFigure`; a figure without `left`/`top` is placed by the layout; an `ImageFigure` sent without its picture keeps the stored one |
 | Rename | `msm.rename_schema_diagram(name, new_name)`: refused for a name another diagram has, compared case-insensitively |
 | Remove | `msm.remove_schema_diagram(name)` |
+
+- **REST object figures** are added only with `msm.set_schema_diagram` (see
+  "REST endpoints in an MSM project", step 6). The layout never places or moves
+  them, and they are dropped once section 180 no longer creates their object.
+- **`upright`:** any card figure may have `upright`. When `true`, the card
+  stands on the page and covers `width` × `depth` (`depth` 20 by default);
+  `height` is how high it stands. When `false`, it lies flat and covers
+  `width` × `height`. Without the key, a REST object figure stands and every
+  other figure lies flat.
+- **Connections** follow the foreign keys' definitions, not just their names. A
+  key that is dropped and added again under a new name keeps its line and that
+  line's settings. A line is dropped only when no key between its two tables
+  is left. Lines go from the child table (the start figure) to the parent.
+
+**Keep the diagrams current.** When you add tables, views, sequences, routines
+or events, add them to the project's diagram with
+`msm.layout_schema_diagram(name, tables=, views=, ...)`, which places them and
+runs the automatic layout on them. A project without a diagram gets one as in
+`mariadb-schema-management-create`, step 4, unless the user doesn't want one.
+Then end the answer with a review link to each diagram you created or changed,
+or, when no diagram was created or changed, one link to the project alone
+(see "Handing the project back" in `mariadb-schema-management`).
 
 ## SOURCE breakout files (keeping the script maintainable)
 

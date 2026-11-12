@@ -41,6 +41,15 @@ and can be run individually (`pytest -k step4`). The steps:
      deployed).
   5. The v1.1.0 deployment script contains **all** objects (both versions' tables
      and views) → the release composed the full schema.
+  6. The development script's section 160 holds an `msm-diagram/1` diagram that
+     shows every table of both versions → the skills' "add a diagram of every
+     object" step (create) and "add new objects to the diagram" (develop) ran.
+     The prompt never asks for a diagram, so this tests the skills alone.
+  7. The views are on that diagram too.
+  8. The agent's final answer ends with the review link: a Markdown link
+     `vscode://mariadb.mariadb-shell/msm/openDiagram?project=<P>&diagram=<D>`
+     (never a bare URL) whose `project` is the project folder's absolute path,
+     percent-encoded whole, and whose `diagram` names a diagram of the project.
 
 MSM tool calls are path-gated by the MCP server's `settings.json` allow-list. To
 keep the run hermetic the fixture builds an isolated shell config home via
@@ -62,11 +71,13 @@ Knobs (all optional): CLAUDE_BIN, E2E_MODEL, E2E_TIMEOUT.
 
 from __future__ import annotations
 
+import json
 import os
 import re
 import shutil
 import subprocess
 from pathlib import Path
+from urllib.parse import unquote
 
 import pytest
 
@@ -218,6 +229,74 @@ def _read(path: Path) -> str:
     return path.read_text(encoding="utf-8") if path.is_file() else ""
 
 
+# A diagram row of the `msm_schema_diagrams` VIEW (section 160, inline in the
+# development script or in development/sections/160_schema_diagrams.sql):
+#   SELECT '<name>', 'msm-diagram/1',
+#   '<the JSON document, as a SQL string literal>'
+# followed by UNION ALL or the statement's end.
+_DIAGRAM_ROW_RE = re.compile(
+    r"SELECT\s+'((?:[^']|'')*)'\s*,\s*'msm-diagram/1'\s*,\s*'((?:[^'\\]|''|\\.)*)'",
+    re.DOTALL,
+)
+
+
+def _sql_string(literal: str) -> str:
+    """The value of a single-quoted SQL string literal's body."""
+    return re.sub(r"\\(.)", r"\1", literal.replace("''", "'"))
+
+
+def _diagrams(proj: Path) -> dict:
+    """{diagram name: its msm-diagram/1 document} of the development files.
+
+    A document that does not parse as JSON is kept as {"_raw": text}, so a
+    figure check can still fall back to the text."""
+    dev = proj / "development"
+    texts = [_read(p) for p in sorted(dev.glob("*_next.sql"))]
+    texts += [_read(p) for p in sorted((dev / "sections").glob("160*.sql"))]
+    out: dict = {}
+    for text in texts:
+        for m in _DIAGRAM_ROW_RE.finditer(text):
+            name, body = _sql_string(m.group(1)), _sql_string(m.group(2))
+            try:
+                out[name] = json.loads(body)
+            except ValueError:
+                out[name] = {"_raw": body}
+    return out
+
+
+def _figure_names(document: dict, figure_type: str, member: str) -> set:
+    """The lower-cased object names the figures of one type show."""
+    if "_raw" in document:
+        pattern = (
+            r'"type"\s*:\s*"' + figure_type + r'"[^{}]*?"' + member + r'"\s*:\s*"([^"]+)"'
+        )
+        return {n.lower() for n in re.findall(pattern, document["_raw"])}
+    return {
+        str(f.get(member, "")).lower()
+        for f in document.get("figures", [])
+        if f.get("type") == figure_type
+    }
+
+
+_LINK_PREFIX = "vscode://mariadb.mariadb-shell/msm/openDiagram"
+_MD_LINK_RE = re.compile(
+    r"\[([^\]\n]+)\]\((" + re.escape(_LINK_PREFIX) + r"\?[^)\s]*)\)"
+)
+
+
+def _review_links(text: str) -> list:
+    """[(link text, {param: raw value})] of the Markdown review links."""
+    links = []
+    for m in _MD_LINK_RE.finditer(text):
+        query = m.group(2).split("?", 1)[1]
+        params = {}
+        for pair in query.split("&"):
+            key, _, value = pair.partition("=")
+            params[key] = value
+        links.append((m.group(1), params))
+    return links
+
+
 # --------------------------------------------------------------------------- #
 # The workflow runs ONCE in a module-scoped fixture; each step below asserts one
 # side effect of that shared run. `pytest -k step4` still drives the one claude
@@ -233,10 +312,12 @@ def workflow(tmp_path_factory):
     config_home = sandbox._prepare_config_home(project)
     env = sandbox._server_env(config_home)
 
-    ctx = {"project": project, "timed_out": False, "diagnostics": ""}
+    ctx = {"project": project, "timed_out": False, "diagnostics": "", "answer": ""}
     try:
         try:
             proc = _run_claude(project, mcp_config, env, _build_prompt())
+            # In -p text mode stdout is the agent's final answer.
+            ctx["answer"] = proc.stdout
             ctx["diagnostics"] = (
                 f"\n--- claude stdout ---\n{proc.stdout}\n--- claude stderr ---\n{proc.stderr}"
             )
@@ -373,4 +454,98 @@ def test_step5_v1_1_0_deployment_has_all_objects(workflow):
     assert not missing, (
         f"the 1.1.0 deployment script is missing objects {missing}; it should "
         f"contain every table and view from both releases.{workflow['diagnostics']}"
+    )
+
+
+TABLES = ["user", "note", "notebook", "tag"]
+VIEWS = ["user_activity", "notes_details"]
+
+
+def _diagram_tables(diagrams: dict) -> set:
+    shown: set = set()
+    for document in diagrams.values():
+        shown |= _figure_names(document, "TableFigure", "table")
+    return shown
+
+
+def test_step6_diagram_shows_every_table(workflow):
+    """The project has a schema diagram, and it shows the tables of both versions.
+
+    The prompt asks for no diagram: the create skill's step 4 (a diagram of
+    every object) and the develop skill's "keep the diagrams current" did it."""
+    proj = workflow["msm_project"]
+    assert proj is not None, f"no MSM project.{workflow['diagnostics']}"
+    diagrams = _diagrams(proj)
+    assert diagrams, (
+        "section 160 of the development script holds no msm-diagram/1 diagram — "
+        "the agent did not create one (msm.create_schema_diagram)."
+        f"{workflow['diagnostics']}"
+    )
+    shown = _diagram_tables(diagrams)
+    missing = [t for t in TABLES if t not in shown]
+    assert not missing, (
+        f"the diagrams {sorted(diagrams)} lack table figures for {missing} "
+        f"(shown: {sorted(shown)}) — new tables were not added with "
+        f"msm.layout_schema_diagram.{workflow['diagnostics']}"
+    )
+
+
+def test_step7_diagram_shows_the_views(workflow):
+    """The views are on the diagram as well: the skills say every object."""
+    proj = workflow["msm_project"]
+    assert proj is not None, f"no MSM project.{workflow['diagnostics']}"
+    diagrams = _diagrams(proj)
+    shown: set = set()
+    for document in diagrams.values():
+        shown |= _figure_names(document, "ViewFigure", "view")
+    missing = [v for v in VIEWS if v not in shown]
+    assert not missing, (
+        f"the diagrams {sorted(diagrams)} lack view figures for {missing} "
+        f"(shown: {sorted(shown)}).{workflow['diagnostics']}"
+    )
+
+
+def test_step8_answer_has_the_review_link(workflow):
+    """The final answer carries the Markdown review link to the project and a diagram."""
+    proj = workflow["msm_project"]
+    assert proj is not None, f"no MSM project.{workflow['diagnostics']}"
+    answer = workflow["answer"]
+    links = _review_links(answer)
+    assert links, (
+        f"the final answer has no Markdown link to {_LINK_PREFIX}."
+        f"\n--- answer ---\n{answer}{workflow['diagnostics']}"
+    )
+    # Every occurrence of the URL is inside a Markdown link, never bare.
+    assert answer.count(_LINK_PREFIX) == len(links), (
+        f"the answer has the review URL outside a Markdown link."
+        f"\n--- answer ---\n{answer}"
+    )
+
+    names = {n.lower() for n in _diagrams(proj)}
+    real_project = os.path.realpath(proj)
+    for text, params in links:
+        assert set(params) <= {"project", "diagram"}, (
+            f"link [{text}] has parameters other than project and diagram: "
+            f"{sorted(params)}\n--- answer ---\n{answer}"
+        )
+        raw = params.get("project", "")
+        assert raw and "/" not in raw, (
+            f"link [{text}]: project={raw!r} is not the percent-encoded path "
+            f"(every / as %2F).\n--- answer ---\n{answer}"
+        )
+        path = unquote(raw)
+        assert os.path.isabs(path) and os.path.realpath(path) == real_project, (
+            f"link [{text}]: project points at {path!r}, not the project folder "
+            f"{real_project!r}.\n--- answer ---\n{answer}"
+        )
+    # A diagram was made (step 6), so a link names it.
+    with_diagram = [unquote(p["diagram"]).lower() for _, p in links if p.get("diagram")]
+    assert with_diagram, (
+        f"no review link names a diagram, though the project has {sorted(names)}."
+        f"\n--- answer ---\n{answer}"
+    )
+    unknown = [d for d in with_diagram if d not in names]
+    assert not unknown, (
+        f"review links name diagrams {unknown} the project does not have "
+        f"({sorted(names)}).\n--- answer ---\n{answer}"
     )

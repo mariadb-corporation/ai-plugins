@@ -1,6 +1,6 @@
 ---
 name: mariadb-schema-management-create
-description: "Scaffold a MariaDB Schema Management (MSM) project and author the initial schema in the development folder — create the project with msm.create_project, or import it from a MySQL Workbench model (msm.import_workbench_model) or a schema on a live server (msm.import_live_schema), and write the first version's tables, objects and grants into the MSM sections of <schema>_next.sql. Use when starting a new versioned/maintainable MariaDB schema, creating an MSM schema project, bringing an existing schema under MSM, or authoring the initial development script. Read mariadb-schema-management first for the section model."
+description: "Scaffold a MariaDB Schema Management (MSM) project and author the initial schema in the development folder — create the project with msm.create_project, or import it from a MySQL Workbench model (msm.import_workbench_model) or a schema on a live server (msm.import_live_schema), write the first version's tables, objects and grants into the MSM sections of <schema>_next.sql, add a laid-out schema diagram of all objects, and end with a link that opens the project in the MariaDB extension. Use when starting a new versioned/maintainable MariaDB schema, creating an MSM schema project, bringing an existing schema under MSM, or authoring the initial development script. Read mariadb-schema-management first for the section model."
 ---
 
 # MSM — Creating the Initial Schema
@@ -150,20 +150,23 @@ deploys it:
   must be re-runnable; create every role before granting to it — a `GRANT` to a
   missing role fails the deployment (error 1133).
 - **Section 180 — optional REST endpoints** (see `mariadb-rest-service-create`).
-  Runs in full on every deployment: use `CREATE OR REPLACE REST ...`, which
-  updates an endpoint in place and keeps its id. To remove an endpoint, just
-  delete it from 180: on upgrades msm drops it (`msm.prepare_release` writes
-  the drop into the update script's section 280). The server needs the REST
-  metadata schema, and only MariaDB Shell (`msm.deploy_schema`) can run these
+  Write them with `msm.set_rest_statements`, not by section: msm places each
+  `CREATE REST ...` and writes it as `CREATE OR REPLACE`, which updates an
+  endpoint in place and keeps its id on every deployment. To remove one, use
+  `msm.drop_rest_object`: on upgrades msm drops it (`msm.prepare_release`
+  writes the drop into the update script's section 280). See
+  `mariadb-schema-management-develop`. The server needs the REST metadata
+  schema, and only MariaDB Shell (`msm.deploy_schema`) can run these
   statements.
 - **Sections 130 / 190 — creation helpers.** Optional routines whose names must
   start `msm_`, defined in 130 and dropped in 190; use them for logic needed only while building the schema.
 
-Instead of writing a section by hand, `msm.add_schema_object` adds a view,
-procedure, function, trigger, event or sequence from a template, and
-`msm.edit_schema` adds tables, columns, keys, views and routines; both put the
-statement in the right section themselves (see
-`mariadb-schema-management-develop`).
+Instead of writing a section by hand, `msm.set_schema_statements` takes the
+CREATE statements of tables, sequences, views, routines, triggers and events
+and puts each in the right section, in the form that section needs
+(`msm.get_object_templates` has a starting point for each kind but tables).
+`msm.edit_schema` makes structured changes. See
+`mariadb-schema-management-develop` for both.
 
 ## 3. Set the initial version
 
@@ -175,6 +178,46 @@ msm.set_development_version(version="0.1.0")
 
 Use whatever development version you intend to release first; MSM starts a fresh project at `0.0.1`.
 
+## 4. Add a schema diagram
+
+Once the schema is written, give the project a diagram that shows it, unless
+the user said they don't want one. Put **every** object of the schema on it:
+the tables, and the views, sequences, routines and events by name (the
+snapshot of `msm.get_schema_diagrams` lists them):
+
+```text
+msm.create_schema_diagram(
+    name="Main Diagram",
+    views=["note_titles"],          # all views
+    sequences=[...],                # all sequences
+    routines=["add_note"],          # all procedures and functions
+    events=[...],                   # all events
+)                                   # tables: all by default
+```
+
+`msm.create_schema_diagram` places the figures and runs the automatic layout
+in the same call: tables in layers along their foreign keys, with every
+foreign key drawn, and the views, sequences and the routine and event groups
+below them. If objects were left out or added afterwards, add them with
+`msm.layout_schema_diagram(name, tables=, views=, sequences=, routines=,
+events=)`, which lays out the new figures. Call it with `keep_placed=False` to
+lay the whole diagram out again.
+
+- A Workbench import brings the model's EER diagrams. Keep them, and add the
+  objects they leave out with `msm.layout_schema_diagram`. Create a diagram
+  only if the model had none.
+- A project imported from a server has no diagram: create one as above.
+
+## 5. Hand the project back
+
+End the answer, after the summary of what you built, with the review link of
+`mariadb-schema-management` ("Handing the project back"):
+
+- with a diagram: one link that opens the project and that diagram;
+- without one (the user did not want a diagram): one link without
+  `&diagram=...`. Describe it as adding the project to the MSM Projects
+  view, and say that it may offer to create a diagram.
+
 ## Guidelines
 
 - Only tables, sequences and data go in 140; **everything else** goes in 150 — mixing them
@@ -183,8 +226,7 @@ Use whatever development version you intend to release first; MSM starts a fresh
 - Keep object definitions grouped and commented; once the file grows, split
   sections into SOURCE breakout files with `msm.split_sections` (see
   `mariadb-schema-management-develop`).
-- For a picture of the schema, add a laid-out diagram with
-  `msm.create_schema_diagram` (see `mariadb-schema-management-develop`).
+- Don't finish without the diagram (step 4) and the review link (step 5).
 - When the first version is ready, prepare a release
   (`mariadb-schema-management-release`).
 
