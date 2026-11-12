@@ -93,7 +93,7 @@ determines how the deployment script treats it.** Always edit sections with
 | **150** | **Idempotent: VIEWs / PROCEDUREs / FUNCTIONs / TRIGGERs / EVENTs** — run in full on every deployment |
 | 160 | Schema diagrams: the `msm_schema_diagrams` VIEW — **written by msm, never by hand** (see below) |
 | 170 | Authorization: `CREATE ROLE IF NOT EXISTS` / `GRANT` — run in full on every deployment |
-| 180 | Optional MariaDB REST Service endpoints (`CREATE OR REPLACE REST ...`) — run in full on every deployment |
+| 180 | Optional MariaDB REST Service endpoints (`CREATE OR REPLACE REST ...`) — run in full on every deployment; updates endpoints in place and keeps their ids, but never removes one (that is the update script's 280) |
 | 190 | Removal of the `msm_` helpers |
 | 910 | Final schema version — set via `msm.set_development_version` |
 | 920 | Server-variable restore (provided) |
@@ -107,6 +107,7 @@ determines how the deployment script treats it.** Always edit sections with
 | **240** | **Non-idempotent changes + drops: `ALTER TABLE`, new tables/sequences, data backfill, and `DROP ... IF EXISTS` of every table / SEQUENCE / VIEW / TRIGGER / EVENT the new version no longer has** |
 | **260** | **Removal of PROCEDUREs and FUNCTIONs: `DROP PROCEDURE/FUNCTION IF EXISTS`** of every routine the new version no longer has (a routine DROP fails inside 240, error 1357) |
 | 270 | `REVOKE` / `DROP ROLE` only. New roles and grants go in the dev script's section 170 |
+| 280 | Removal of REST Endpoints — **filled by `msm.prepare_release`**: `DROP REST ...` / `DROP REST SERVICE IF EXISTS` / `ALTER REST SERVICE ... REMOVE AUTH APP ... IF EXISTS` for what the previous release's 180 created and this one's does not. Review it; do not normally write it |
 | 290 | Removal of the 230 update helpers — **nothing else** |
 | 910 / 920 | New version + server-variable restore (provided) |
 
@@ -133,7 +134,9 @@ routine DROPs such scripts keep in 290).
   removed in one release and added again later survives.
 - **Authorization and REST work the same way:** the target's sections 170 and
   180 also run on every deployment (170 after the 270 steps), so new roles,
-  grants and endpoints reach upgraded schemas through them. Section 270 is only
+  grants and endpoints reach upgraded schemas through them. Removing an
+  endpoint from 180 is enough: `msm.prepare_release` writes its drop into the
+  update script's section 280. Section 270 is only
   for what 170 cannot express: `REVOKE` and `DROP ROLE`. Never `GRANT` in 270 —
   on an upgrade it runs before 170 creates a new role, and the deployment fails
   (error 1133, because the scripts set `NO_AUTO_CREATE_USER`).
@@ -156,7 +159,7 @@ included with SOURCE.
 script, sections **140, 240, 170, 270** become the *body of a stored procedure*
 — write them as plain `;`-terminated statements, **no `DELIMITER`**, no `USE`
 (qualify names with the schema), use dynamic SQL for conditional DDL. Sections
-**130, 150, 160, 180, 230, 260, 190, 290** are emitted at top level; use
+**130, 150, 160, 180, 230, 260, 280, 190, 290** are emitted at top level; use
 `DELIMITER %%` for routine bodies.
 
 ## The `msm.*` MCP tools
