@@ -23,8 +23,8 @@ with real data in it, and your job is to get it to 1.1.0 without dropping
 anything.
 
 <div class="callout callout--warn" markdown="1">
-**The one rule everyone gets wrong.** Preparing a release creates an **empty**
-update script. It has to be filled in **before** the deployment script is
+**The one rule everyone gets wrong.** Preparing a release creates an update
+script that is **empty** but for the statements `msm.edit_schema` kept. It has to be filled in **before** the deployment script is
 generated, because the deployment script *embeds* it.
 
 Ask for both in one breath — *"prepare the release and generate the deployment

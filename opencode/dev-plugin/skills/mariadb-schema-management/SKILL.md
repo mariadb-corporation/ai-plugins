@@ -34,9 +34,10 @@ deploy vX (create fresh OR upgrade)        →  mariadb-schema-management-deploy
         └──────────────► back to develop (dev version already bumped)
 ```
 
-> **The one rule everyone gets wrong:** `prepare_release` creates an *empty*
-> update script (`releases/updates/<schema>_<prev>_to_<vX>.sql`). You MUST fill
-> its table-migration section 240 (and 270 for revoked privileges) **before**
+> **The one rule everyone gets wrong:** `prepare_release` creates the update
+> script (`releases/updates/<schema>_<prev>_to_<vX>.sql`) holding only the
+> statements `msm.edit_schema` kept, often nothing. You MUST complete its
+> table-migration section 240 (and 270 for revoked privileges) **before**
 > generating the deployment script — the deployment script embeds them to
 > upgrade existing installs. See `mariadb-schema-management-release`.
 
@@ -49,6 +50,7 @@ deploy vX (create fresh OR upgrade)        →  mariadb-schema-management-deploy
 ├── msm.project.json     # schemaName, license, copyrightHolder, schemaDependencies
 ├── development/
 │   ├── <schema>_next.sql            # the working script; version lives in section 910
+│   ├── <schema>_update_next.sql     # migration kept by msm.edit_schema (after a first release)
 │   └── sections/                    # optional SOURCE breakout files (see -develop)
 └── releases/
     ├── versions/    <schema>_<x.y.z>.sql              # full CREATE snapshot per release
@@ -76,7 +78,7 @@ determines how the deployment script treats it.** Always edit sections with
 | 110 | `CREATE SCHEMA IF NOT EXISTS` (provided) |
 | 120 | Version-creation indicator: `msm_schema_version` = `0,0,0` (provided) |
 | 130 | Helper routines used during creation — names must start `msm_` |
-| **140** | **Non-idempotent: `CREATE TABLE` + base-data `INSERT`s** |
+| **140** | **Non-idempotent: `CREATE TABLE`, `CREATE SEQUENCE` + base-data `INSERT`s** |
 | **150** | **Idempotent: VIEWs / PROCEDUREs / FUNCTIONs / TRIGGERs / EVENTs** — run in full on every deployment |
 | 160 | Schema diagrams: the `msm_schema_diagrams` VIEW — **written by msm, never by hand** (see below) |
 | 170 | Authorization: `CREATE ROLE IF NOT EXISTS` / `GRANT` — run in full on every deployment |
@@ -91,10 +93,10 @@ determines how the deployment script treats it.** Always edit sections with
 | --- | --- |
 | 010 / 220 | Server vars + update indicator `0,0,0` (provided) |
 | 230 | Update helper routines (`msm_`) |
-| **240** | **Non-idempotent changes + ALL drops: `ALTER TABLE`, new tables, data backfill, and `DROP ... IF EXISTS` of every object the new version no longer has** |
+| **240** | **Non-idempotent changes + ALL drops: `ALTER TABLE`, new tables and sequences, data backfill, and `DROP ... IF EXISTS` of every table, sequence, view, trigger or event the new version no longer has** |
 | 250 | **Not deployed — leave it empty.** New/changed VIEWs / routines / triggers / events go in the dev script's section 150 |
 | 270 | `REVOKE` / `DROP ROLE` only. New roles and grants go in the dev script's section 170 |
-| 290 | Removal of update helpers |
+| 290 | Removal of update helpers, and `DROP PROCEDURE` / `DROP FUNCTION IF EXISTS` of routines the new version no longer has (error 1357 in 240) |
 | 910 / 920 | New version + server-variable restore (provided) |
 
 **Idempotent vs. non-idempotent** — the core distinction:
@@ -108,7 +110,8 @@ determines how the deployment script treats it.** Always edit sections with
   deployment, after the table changes**, so the objects always end in the target
   state whatever version the server started from. They therefore never need
   per-version update statements — which is why the update script's section 250
-  is not deployed. Only a *removed* object needs a `DROP ... IF EXISTS` in 240.
+  is not deployed. Only a *removed* object needs a `DROP ... IF EXISTS`: in
+  240, or in 290 for a routine.
 - **Authorization and REST work the same way:** the target's sections 170 and
   180 also run on every deployment (170 after the 270 steps), so new roles,
   grants and endpoints reach upgraded schemas through them. Section 270 is only
@@ -122,7 +125,8 @@ a snapshot of the schema objects the CREATE statements define, as the MariaDB SQ
 language server (`mariadb-lsp`) outlines them; and one row per EER diagram
 (format `msm-diagram/1`: layers, figures, connections). **The CREATE statements
 are the source of truth** — never edit the snapshot; change the SQL and run
-`msm.update_schema_definition`. `msm.prepare_release` makes the snapshot again
+`msm.update_schema_definition`, or use `msm.edit_schema` (see `-develop`).
+`msm.prepare_release` makes the snapshot again
 itself and **fails without `mariadb-lsp`, or when a statement of the
 development script cannot be parsed** (the snapshot would miss its objects). Once
 the VIEW is larger than the project's `maxInlineSectionSize` (default 16 KB, in
@@ -138,16 +142,27 @@ script, sections **140, 240, 170, 270** become the *body of a stored procedure*
 
 ## The `msm.*` MCP tools
 
-- **Project:** `msm.create_project`, `msm.get_project_information`.
-- **Sections:** `msm.get_sql_content_from_section`, `msm.set_section_sql_content`.
+- **Project:** `msm.create_project`, `msm.import_workbench_model` (a new project
+  from a MySQL Workbench `.mwb` model), `msm.get_project_information`.
+- **Sections:** `msm.get_sql_content_from_section`, `msm.set_section_sql_content`,
+  `msm.split_sections` (move sections 140/150/170 into breakout files).
 - **Versions:** `msm.set_development_version`, `msm.get_released_versions`,
   `msm.get_last_released_version`, `msm.get_last_deployment_version`,
   `msm.get_deployment_script_versions`.
 - **Diagrams:** `msm.list_schema_diagrams`, `msm.get_schema_diagrams`,
-  `msm.update_schema_definition` (after changing CREATE statements),
-  `msm.set_schema_diagram`, `msm.remove_schema_diagram`.
+  `msm.get_schema_diagram_image`, `msm.update_schema_definition` (after
+  changing CREATE statements), `msm.create_schema_diagram`,
+  `msm.layout_schema_diagram`, `msm.set_schema_diagram`,
+  `msm.remove_schema_diagram`.
+- **Schema edits:** `msm.edit_schema` (rename, add, change or drop tables,
+  columns, indexes, keys, views and routines in the SQL; see `-develop`).
 - **Release / deploy:** `msm.prepare_release`, `msm.generate_deployment_script`,
   `msm.deploy_schema` (the last needs an open `db.connect` connection).
+
+Every tool that reads the structure of the SQL — the snapshot, diagram creation
+and layout, `edit_schema`, `split_sections`, the Workbench import and
+`prepare_release` — needs the MariaDB SQL language server's binary
+`mariadb-lsp`, installed with the MariaDB Shell; without it the call fails.
 
 ## See Also
 

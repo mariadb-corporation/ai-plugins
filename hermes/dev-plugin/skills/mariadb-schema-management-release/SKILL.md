@@ -12,7 +12,7 @@ See `mariadb-schema-management` for the section model. Assume MariaDB 11.8.
 **The order is mandatory:**
 
 ```text
-1. msm.prepare_release          → version snapshot (+ empty update script)
+1. msm.prepare_release          → version snapshot (+ update script)
 2. FILL the update script       → sections 240 (+ 270)  ← do NOT skip
 3. msm.generate_deployment_script  ← only after step 2
 ```
@@ -30,8 +30,11 @@ This:
   script cannot be parsed** — fix the statement it names and try again.
 - Inlines any `SOURCE` breakout files and writes the full snapshot
   `releases/versions/<schema>_1.1.0.sql`.
-- If a previous release exists, creates an **empty** update script
-  `releases/updates/<schema>_<prev>_to_1.1.0.sql` from the template.
+- If a previous release exists, creates the update script
+  `releases/updates/<schema>_<prev>_to_1.1.0.sql` from the template. It is
+  empty except for the statements `msm.edit_schema` kept since the last release
+  in `development/<schema>_update_next.sql` (sections 240 and 290), which move
+  into it.
 - Bumps the development version in `_next.sql` to `next_version` (1.2.0).
 
 Semver validation: `version` must be ≥ the last released version, and
@@ -44,7 +47,11 @@ script.
 `prepare_release` only creates the update script; it does **not** know how to
 migrate data/structure. You must write the migration from the previous release
 to this one into its sections, using `msm.set_section_sql_content(file_path,
-section_id, sql_content)`:
+section_id, sql_content)`. Statements already in 240/290 came from
+`msm.edit_schema` (each under a `-- msm.editSchema: ...` comment): keep them,
+add the data steps they need between them (a backfill before a foreign key on a
+new `NOT NULL` column), and add the migration for every change made by hand, in
+the order the changes need.
 
 - **Section 240 — non-idempotent changes + all drops.** `ALTER TABLE`, new
   `CREATE TABLE`, data backfill (`UPDATE`/`INSERT`), and any `DROP` of objects
@@ -63,7 +70,8 @@ section_id, sql_content)`:
   deployment script runs the target version's full section 150 on every
   deployment, after all table changes, so they reach upgraded schemas without
   any per-version statement. A *removed* object is the one change 150 cannot
-  express — drop it in 240 with `DROP ... IF EXISTS`.
+  express — drop it in 240 with `DROP ... IF EXISTS` (a procedure or function
+  in 290, see below).
 - **Section 270 — revoked privileges and dropped roles only.** `REVOKE` /
   `DROP ROLE` for what the new version no longer has (stored-procedure body →
   plain `;`, no `DELIMITER`). New roles and `GRANT`s belong in the dev script's
@@ -71,7 +79,9 @@ section_id, sql_content)`:
   **Never `GRANT` in 270**: on an upgrade it runs before 170 creates a role that
   is new in this version, and the deployment fails with error 1133.
 - **Sections 230 / 290 — update helpers** (`msm_`-prefixed) if the migration
-  needs temporary routines; drop them in 290.
+  needs temporary routines; drop them in 290. Section 290 also takes the
+  `DROP PROCEDURE` / `DROP FUNCTION` of routines the new version no longer has
+  (it cannot run in 240: error 1357); `msm.edit_schema` puts them there.
 
 Write the migration to match exactly what changed in the **tables** between the
 previous version snapshot and this one: an upgraded schema must end with the

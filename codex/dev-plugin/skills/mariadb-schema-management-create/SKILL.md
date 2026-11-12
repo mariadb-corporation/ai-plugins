@@ -1,6 +1,6 @@
 ---
 name: mariadb-schema-management-create
-description: "Scaffold a MariaDB Schema Management (MSM) project and author the initial schema in the development folder — create the project with msm.create_project and write the first version's tables, objects and grants into the MSM sections of <schema>_next.sql. Use when starting a new versioned/maintainable MariaDB schema, creating an MSM schema project, or authoring the initial development script. Read mariadb-schema-management first for the section model."
+description: "Scaffold a MariaDB Schema Management (MSM) project and author the initial schema in the development folder — create the project with msm.create_project and write the first version's tables, objects and grants into the MSM sections of <schema>_next.sql. Use when starting a new versioned/maintainable MariaDB schema, creating an MSM schema project, or authoring the initial development script, or when turning a MySQL Workbench model (.mwb) into an MSM project with msm.import_workbench_model. Read mariadb-schema-management first for the section model."
 ---
 
 # MSM — Creating the Initial Schema
@@ -28,6 +28,33 @@ This creates `<schema>.msm.project/` with `msm.project.json`, the
 
 Do **not** add the standalone "Start Block" from `mariadb-schema-create-script`
 here — sections 010/920 already save and restore the server variables.
+
+### Or: start from a MySQL Workbench model
+
+When the schema already exists as a MySQL Workbench model, create the project
+from it instead of authoring the SQL by hand:
+
+```text
+msm.import_workbench_model(
+    model_path="<path>/shop.mwb",
+    target_path="<parent dir>",
+    schema="shop",            # only needed when the model has several schemas
+    copyright_holder="...",   # optional, as for msm.create_project
+    license="MIT",            # optional
+)
+```
+
+- It creates a **new** project only; there is no re-import into an existing one.
+- Tables, keys and the model's rows go to section 140, the other objects to
+  150, roles and grants to 170 (as breakout files where a section is large);
+  the model's EER diagrams become the project's diagrams (section 160).
+- SQL scripts attached to the model are listed in `scripts_not_imported`, never
+  run or copied: read them and move what belongs into the right sections.
+
+Read `warnings` in the result, then review the generated sections as if you had
+written them (step 2's rules apply). A Workbench model is a MySQL model: check
+collations (such as `utf8mb4_0900_ai_ci`), engines and defaults against the
+target MariaDB version.
 
 ## 2. Author the schema into the right sections
 
@@ -58,19 +85,22 @@ intact. Put each kind of object in the section that matches how MSM deploys it:
 - **Section 150 — all other objects (idempotent).** VIEWs, PROCEDUREs,
   FUNCTIONs, TRIGGERs, EVENTs. This is emitted at top level with `DELIMITER %%`;
   every object must be safe to re-run, so use `CREATE OR REPLACE` or an explicit
-  `DROP ... IF EXISTS` first.
+  `DROP ... IF EXISTS` first. Create routines before views: a `CREATE VIEW`
+  that calls a function not created yet fails (error 1305), while routine,
+  trigger and event bodies are not checked at `CREATE`. A view on another view
+  comes after it.
 
   ```sql
   DELIMITER %%
-
-  CREATE OR REPLACE SQL SECURITY INVOKER VIEW `notes-app`.`note_titles` AS
-      SELECT `id`, `title` FROM `notes-app`.`note`%%
 
   DROP PROCEDURE IF EXISTS `notes-app`.`add_note`%%
   CREATE PROCEDURE `notes-app`.`add_note`(IN t VARCHAR(255))
   BEGIN
       INSERT INTO `notes-app`.`note`(`title`) VALUES (t);
   END%%
+
+  CREATE OR REPLACE SQL SECURITY INVOKER VIEW `notes-app`.`note_titles` AS
+      SELECT `id`, `title` FROM `notes-app`.`note`%%
 
   DELIMITER ;
   ```
@@ -102,7 +132,10 @@ Use whatever development version you intend to release first; MSM starts a fresh
   breaks the deployment script's create/upgrade split.
 - Idempotent objects (150) must use `CREATE OR REPLACE` / `DROP IF EXISTS`.
 - Keep object definitions grouped and commented; once the file grows, split
-  sections into SOURCE breakout files (see `mariadb-schema-management-develop`).
+  sections into SOURCE breakout files with `msm.split_sections` (see
+  `mariadb-schema-management-develop`).
+- For a picture of the schema, add a laid-out diagram with
+  `msm.create_schema_diagram` (see `mariadb-schema-management-develop`).
 - When the first version is ready, prepare a release
   (`mariadb-schema-management-release`).
 
