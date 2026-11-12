@@ -163,6 +163,10 @@ Make and change the diagrams of section 160 through the tools, never in the SQL:
 | Rename | `msm.rename_schema_diagram(name, new_name)`: refused for a name another diagram has, compared case-insensitively |
 | Remove | `msm.remove_schema_diagram(name)` |
 
+After changing the project, end the answer with a review link to each diagram
+you created or changed (see "Handing the project back" in
+`mariadb-schema-management`).
+
 ## SOURCE breakout files (keeping the script maintainable)
 
 When a section grows large, move its body into one or more files under

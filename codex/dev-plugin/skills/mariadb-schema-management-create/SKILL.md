@@ -185,6 +185,8 @@ Use whatever development version you intend to release first; MSM starts a fresh
   `mariadb-schema-management-develop`).
 - For a picture of the schema, add a laid-out diagram with
   `msm.create_schema_diagram` (see `mariadb-schema-management-develop`).
+- End the answer with the review link to the project and its diagram (see
+  "Handing the project back" in `mariadb-schema-management`).
 - When the first version is ready, prepare a release
   (`mariadb-schema-management-release`).
 

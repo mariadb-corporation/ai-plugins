@@ -195,6 +195,45 @@ and layout, `edit_schema`, `split_sections`, the Workbench import and
 `prepare_release` — needs the MariaDB SQL language server's binary
 `mariadb-lsp`, installed with the MariaDB Shell; without it the call fails.
 
+## Handing the project back: the review link
+
+After you have created or changed an MSM project with the `msm.*` tools, end
+your answer, after the summary of what you built, with a link the user can
+click to review it in the MariaDB extension. The link adds the project to the
+extension's MSM Projects view (a listed project keeps its place) and opens the
+named schema diagram. It runs nothing else, so offer it every time.
+
+Write it **always as a Markdown link, never a bare URL**, exactly in this form:
+
+```text
+[Open <diagram> of <schema> in MariaDB](vscode://mariadb.mariadb-shell/msm/openDiagram?project=<P>&diagram=<D>)
+```
+
+- The scheme is always `vscode://`, whatever the editor. The authority is
+  exactly `mariadb.mariadb-shell` (lowercase) and the path exactly
+  `/msm/openDiagram`.
+- `<schema>` in the link text is the project's `schemaName`.
+- `P` is the **absolute** path of the `<schema>.msm.project` folder (the one
+  holding `msm.project.json`), percent-encoded whole as `encodeURIComponent`
+  does: `/` → `%2F`, space → `%20`; on Windows also `:` → `%3A` and `\` → `%5C`.
+- `D` is the diagram's name as `msm.list_schema_diagrams` lists it, encoded the
+  same way.
+- Give one link for each diagram you created or changed. If you changed no
+  diagram, give one link without `&diagram=...`: the user then picks a diagram,
+  or is offered a new one when the project has none.
+- Use no parameters other than `project` and `diagram`.
+
+Example, for the diagram `Main Diagram` of the `shop` project in
+`/Users/me/work/shop.msm.project`:
+
+```markdown
+[Open Main Diagram of shop in MariaDB](vscode://mariadb.mariadb-shell/msm/openDiagram?project=%2FUsers%2Fme%2Fwork%2Fshop.msm.project&diagram=Main%20Diagram)
+```
+
+Describe the link only as a way to review the project in the MariaDB
+extension. The first click may show an editor prompt asking to allow the
+MariaDB extension to open the URI, and an older extension ignores the link.
+
 ## See Also
 
 - `mariadb-schema-management-create` — scaffold or import the project and author the initial schema.
