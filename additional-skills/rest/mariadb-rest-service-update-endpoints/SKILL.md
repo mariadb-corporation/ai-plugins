@@ -18,6 +18,13 @@ they run `GRANT`/`REVOKE`.
 
 Assume MariaDB 11.8 if not told otherwise.
 
+> **In an MSM project** (a `<schema>.msm.project` folder, see
+> `mariadb-schema-management`): don't run its REST services, schemas and
+> endpoints on a server; change an endpoint by sending its new `CREATE` to
+> `msm.set_rest_statements` (it replaces the item where it stands; options
+> such as `PUBLISHED` go in the `CREATE`, as no `ALTER` can be passed). See
+> "REST endpoints in an MSM project" in `mariadb-schema-management-develop`.
+
 ## Inspect before you change
 
 `ALTER` overwrites the options you specify. Before altering, dump the current

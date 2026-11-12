@@ -184,28 +184,80 @@ view, procedure, function, trigger or event (through `msm.edit_schema`'s drop
 ops, so after the first release the DROP is kept for the next update script).
 It is refused for an object another one needs.
 
-### REST endpoints: `msm.set_rest_statements` and `msm.drop_rest_object`
+## REST endpoints in an MSM project
 
-Edit section 180 through these, not by section:
+An MSM project's REST endpoints live in its section 180, which every
+deployment runs in full. Put them there with `msm.set_rest_statements`, **never
+by running them on a server** (the next deployment would not know them) and
+never with `msm.set_section_sql_content`. For the REST DDL itself (the
+`CREATE REST VIEW` field mapping, options, `@` flags) read
+`mariadb-rest-service-create`.
 
-- `msm.set_rest_statements(statements, base_hash, replaces=None)`: each
-  statement is one `CREATE REST SERVICE | SCHEMA | VIEW | PROCEDURE |
-  FUNCTION`; a schema names its service (`ON SERVICE /svc`), an object its
-  service and schema (`ON SERVICE /svc SCHEMA /p`), and a new schema comes
-  before its objects. msm writes each as `CREATE OR REPLACE` (`IF NOT EXISTS`
-  is refused). An item 180 already creates is replaced where it stands (its
-  later `ALTER`s go, except those that only link or unlink auth apps). A new
-  item goes after its service's or schema's statements. `replaces={kind:
-  "object", service, schema, object}` renames a REST object; a service or
-  schema can't be renamed this way.
-- `msm.drop_rest_object(kind, service, base_hash, schema=None, object=None)`
-  (`kind`: `service`, `schema` or `object`) removes the item and everything on
-  it, with the comments right above. It writes no DROP: the next
-  `msm.prepare_release` writes it into the update script's section 280.
+### Adding endpoints, step by step
 
-Both check that nothing but the given items changed, write everything or
+1. **Get the base hash.** `msm.get_schema_diagrams()`: the
+   `schema_definition` row's `source_hash`. Each REST call answers with the
+   next one (the first of its `rows`).
+2. **Make sure the objects exist in the project.** A `CREATE REST VIEW`,
+   `PROCEDURE` or `FUNCTION` exposes a table, view or routine of this schema,
+   so add those first (`msm.set_schema_statements`).
+3. **Write the service, its schema and its objects** in one call, parents
+   first. Every statement names its place, as a statement of its own (no `USE
+   REST ...`): a schema `ON SERVICE /svc`, an object `ON SERVICE /svc SCHEMA
+   /p` (one combined clause). Write the database schema's name as the
+   project's schema. Give options such as `PUBLISHED` or `ADD AUTH APP "name"`
+   in the `CREATE` itself, as an `ALTER` can't be passed:
+
+   ```text
+   msm.set_rest_statements(
+       base_hash="<source_hash>",
+       statements=[
+           'CREATE REST SERVICE /shop PUBLISHED COMMENT "Shop API"',
+           'CREATE REST SCHEMA /v1 ON SERVICE /shop FROM `shop` COMMENT "Version 1"',
+           'CREATE REST VIEW /products ON SERVICE /shop SCHEMA /v1 AS `shop`.`product` { id: id @KEY @SORTABLE, name: name, price: price } AUTHENTICATION NOT REQUIRED COMMENT "Product catalog"',
+       ],
+   )
+   ```
+
+   msm writes each as `CREATE OR REPLACE` (`IF NOT EXISTS` is refused) and
+   places it: an item section 180 already creates is replaced where it stands
+   (its other statements go, except `ALTER`s that only link or unlink auth
+   apps; an `ALTER` that links an app and changes more is refused); a new
+   item goes after its service's or schema's statements. Backtick a name that
+   is a keyword, such as a `CLASS` name. The answer has `statements: [{kind,
+   service, schema, object, file, line, replaced}]` and `notes` to check.
+4. **Change or rename** an endpoint by sending its new `CREATE` the same way;
+   `replaces={"kind": "object", "service": ..., "schema": ..., "object":
+   ...}` renames a REST object (not a service or schema).
+5. **Remove** one with `msm.drop_rest_object(kind, service, base_hash,
+   schema=None, object=None)` (`kind`: `service`, `schema` or `object`): its
+   statements and everything on it go. It writes no DROP: the next
+   `msm.prepare_release` writes it into the update script's section 280.
+6. **Show the endpoints on the diagram** (unless the user doesn't want a
+   diagram): read the diagram with `msm.get_schema_diagrams(diagram=)`, add
+   one `RestObjectFigure` per REST object (`restService`, `restSchema`,
+   `restObject` exactly as section 180 writes them, and a `left`/`top` clear of
+   the other figures, as the layout never places or moves them) and send the
+   whole document back with `msm.set_schema_diagram`. Then end with the review
+   link (see "Handing the project back" in `mariadb-schema-management`).
+
+Both tools check that nothing but the given items changed, write everything or
 nothing, and make the snapshot again. Paths are compared as the server does:
 case and quotes ignored, `anna, mike@/svc` the same as `mike,anna@/svc`.
+
+### What stays outside section 180
+
+`msm.set_rest_statements` takes only services, schemas and their views,
+procedures and functions, and section 280 can only remove those and auth app
+links. Keep the rest on the server, not in the project:
+
+- `CONFIGURE REST METADATA`: once per server, before the first deployment
+  that has REST endpoints. The deployment account needs its REST role active.
+- Auth apps, REST users and REST roles (`mariadb-rest-service-authorization`):
+  create them on each server. The project only links an app by name (`ADD AUTH
+  APP` in `CREATE REST SERVICE`), so the app must exist on the server before
+  the deployment.
+- Content sets.
 
 ## Renaming the schema: `msm.rename_schema`
 
@@ -235,9 +287,9 @@ Make and change the diagrams of section 160 through the tools, never in the SQL:
 | Rename | `msm.rename_schema_diagram(name, new_name)`: refused for a name another diagram has, compared case-insensitively |
 | Remove | `msm.remove_schema_diagram(name)` |
 
-- **REST object figures** are added only with `msm.set_schema_diagram`. The
-  layout never moves them, and they are dropped once section 180 no longer
-  creates their object.
+- **REST object figures** are added only with `msm.set_schema_diagram` (see
+  "REST endpoints in an MSM project", step 6). The layout never places or moves
+  them, and they are dropped once section 180 no longer creates their object.
 - **`upright`:** any card figure may have `upright`. When `true`, the card
   stands on the page and covers `width` × `depth` (`depth` 20 by default);
   `height` is how high it stands. When `false`, it lies flat and covers

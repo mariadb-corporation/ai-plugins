@@ -17,6 +17,12 @@ over HTTP(S) by the **MariaDB REST Daemon**.
 Assume MariaDB 11.8 and the latest REST Service metadata schema (5.0.0) if not
 told otherwise. Comment each REST object you create to describe its purpose.
 
+> **In an MSM project** (a `<schema>.msm.project` folder, see
+> `mariadb-schema-management`): don't run its REST services, schemas and
+> endpoints on a server; add services, schemas and endpoints to its section
+> 180 with `msm.set_rest_statements`. See "REST endpoints in an MSM project"
+> in `mariadb-schema-management-develop`.
+
 ## The four steps
 
 REST-enabling a schema always follows the same order. Each step has its own

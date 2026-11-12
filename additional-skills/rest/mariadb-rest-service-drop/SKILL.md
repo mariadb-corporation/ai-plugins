@@ -10,6 +10,13 @@ description: "Remove MariaDB REST Service objects with DROP REST statements — 
 
 Assume MariaDB 11.8 if not told otherwise.
 
+> **In an MSM project** (a `<schema>.msm.project` folder, see
+> `mariadb-schema-management`): don't run its REST services, schemas and
+> endpoints on a server; remove a service, schema or endpoint with
+> `msm.drop_rest_object`; the next release drops it from the servers (update
+> script section 280). See "REST endpoints in an MSM project" in
+> `mariadb-schema-management-develop`.
+
 ## Two rules that always apply
 
 1. **DROP REST removes only the REST endpoint/metadata — never the underlying

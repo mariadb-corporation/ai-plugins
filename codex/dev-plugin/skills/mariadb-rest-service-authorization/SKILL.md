@@ -14,6 +14,14 @@ privileges**. All of this is DDL run in **`mariadb-shell`**.
 
 Assume MariaDB 11.8 if not told otherwise.
 
+> **In an MSM project** (a `<schema>.msm.project` folder, see
+> `mariadb-schema-management`): don't run its REST services, schemas and
+> endpoints on a server; auth apps, REST users, REST roles and REST grants
+> stay on the server, created there as below; the project only links an app by
+> name, with `ADD AUTH APP` in the `CREATE REST SERVICE` it sends to
+> `msm.set_rest_statements`. See "REST endpoints in an MSM project" in
+> `mariadb-schema-management-develop`.
+
 ## Two layers: administration vs. end-user access
 
 Do not confuse them:
