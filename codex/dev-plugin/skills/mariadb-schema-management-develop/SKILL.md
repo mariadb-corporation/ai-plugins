@@ -1,6 +1,6 @@
 ---
 name: mariadb-schema-management-develop
-description: "Develop the next version of a MariaDB Schema Management (MSM) schema in development/<schema>_next.sql: change tables, columns, keys, views and routines with msm.edit_schema, create and lay out schema diagrams, and split large sections into SOURCE-included files under development/sections/ with msm.split_sections. Use when evolving an existing MSM schema, editing the _next.sql script, renaming or changing schema objects, working on an MSM schema diagram, or splitting a growing script. Read mariadb-schema-management first for the section model."
+description: "Develop the next version of a MariaDB Schema Management (MSM) schema in development/<schema>_next.sql: by section, or with msm.edit_schema / msm.add_schema_object, which change tables, columns, keys, views and routines in the SQL and keep the migration for the next update script; create and lay out schema diagrams; and split large sections into SOURCE-included files under development/sections/ with msm.split_sections. Use when evolving an existing MSM schema, editing the _next.sql script, adding, renaming or changing schema objects, working on an MSM schema diagram, or splitting a growing script. Read mariadb-schema-management first for the section model."
 ---
 
 # MSM — Developing the Next Version
@@ -17,12 +17,13 @@ model. Assume MariaDB 11.8.
 Make changes in the same sections you authored initially, using
 `msm.set_section_sql_content` / `msm.get_sql_content_from_section`:
 
-- New/changed **tables and data** → section 140.
+- New/changed **tables, sequences and data** → section 140.
 - New/changed **views, routines, triggers, events** → section 150 (idempotent:
   `CREATE OR REPLACE` / `DROP IF EXISTS`). This is the ONLY place for them: the
   target's section 150 runs in full on every deployment, so upgraded schemas
   get them too. Removing an object additionally needs a `DROP ... IF EXISTS` in
-  the update script's section 240 (section 290 for a procedure or function).
+  the update script: section 260 for a procedure or function, 240 for anything
+  else.
 - **Grants/roles** → section 170 (`CREATE ROLE IF NOT EXISTS`, then `GRANT`);
   it also runs on every deployment. Revoking a privilege additionally needs a
   `REVOKE` in the update script's section 270.
@@ -126,13 +127,28 @@ so send a column's whole definition to `modify_column`.
 - All edits are applied, or none. Check every entry of `notes` (e.g.
   `still-referenced`, `no-migration`).
 - **After the first release**, each edit's migration statements are kept in
-  `development/<schema>_update_next.sql` for the next update script (see
-  `mariadb-schema-management-release`). They take the schema along, not its
+  the pending update script `development/<schema>_update_next.sql`: table
+  changes and the DROPs of tables, sequences, views, triggers and events for
+  240, routine DROPs for 260 (a new view, routine, trigger or event needs none:
+  150 creates it). The next `prepare_release` moves them into the new update
+  script (see `mariadb-schema-management-release`). They take the schema along, not its
   data: a `NOT NULL` column added to a table with rows gets the type's default
   (`0` for a number), not a valid reference, so a backfill has to run before a
   foreign key on it.
   Changes you make by hand are not kept:
   their migration is still yours to write at release time.
+
+### Adding an object from a template
+
+`msm.add_schema_object(kind, name, base_hash, template=None, table=None)` adds a
+`view`, `procedure`, `function`, `trigger` (needs `table`), `event` or
+`sequence` from msm's template (`msm.get_object_templates`) or your own: one
+plain CREATE of that kind with unqualified names and the placeholders
+`${name}`, `${schema}` and, for a trigger, `${table}`. A sequence goes into 140
+before the first table, the rest into 150. It returns the `file` and `line`
+where the new statement starts, so you can fill in its body. Refused: a name
+taken (tables, views and sequences share one namespace), an unknown table, a
+stale `base_hash`.
 
 ## Schema diagrams
 
@@ -143,7 +159,8 @@ Make and change the diagrams of section 160 through the tools, never in the SQL:
 | New diagram | `msm.create_schema_diagram(name, tables=, views=, sequences=, routines=, events=)`: all tables by default, laid out; the other objects only when named |
 | Add objects, tidy up | `msm.layout_schema_diagram(name, tables=, views=, sequences=, routines=, events=, keep_placed=True)`: places the figures without a position; `keep_placed=False` lays all out again |
 | Read | `msm.list_schema_diagrams`, `msm.get_schema_diagrams(diagram=)`; `msm.get_schema_diagram_image` for a picture they leave out |
-| Change by hand | `msm.set_schema_diagram(document)`: an `msm-diagram/1` document; figure types `TableFigure` (its card lists the table's triggers unless `triggersExpanded` is false), `ViewFigure`, `SequenceFigure`, `RoutineGroupFigure` (`routines`), `EventGroupFigure` (`events`), `NoteFigure`, `ImageFigure`; a figure without `left`/`top` is placed by the layout |
+| Change by hand | `msm.set_schema_diagram(document)`: an `msm-diagram/1` document; figure types `TableFigure` (its card lists the table's triggers unless `triggersExpanded` is false), `ViewFigure`, `SequenceFigure`, `RoutineGroupFigure` (`routines`), `EventGroupFigure` (`events`), `NoteFigure`, `ImageFigure`; a figure without `left`/`top` is placed by the layout; an `ImageFigure` sent without its picture keeps the stored one |
+| Rename | `msm.rename_schema_diagram(name, new_name)`: refused for a name another diagram has, compared case-insensitively |
 | Remove | `msm.remove_schema_diagram(name)` |
 
 ## SOURCE breakout files (keeping the script maintainable)
@@ -208,8 +225,16 @@ SOURCE './sections/150-30_triggers.sql'[ln4:];
 Keep a section inline while its body is small; once it grows past the project's
 `maxInlineSectionSize` (default 16 KB, optional key in `msm.project.json`) move
 it into breakout files. msm does this itself for section 160 (the diagrams VIEW
-nearly always exceeds it). A project that wants a single `_next.sql` file sets a
-large `maxInlineSectionSize`.
+nearly always exceeds it), and the imports for every large section. A project
+that wants a single `_next.sql` file sets a large `maxInlineSectionSize` (with
+`msm.set_project_settings`).
+
+**`msm.split_sections(sections=["140", "150", "170"])`** does the split for
+you: it moves each statement, with the comments above it, into the files below
+and replaces the section body with their `SOURCE ...[lnN:]` lines. A section
+that already includes a file, has nothing to move, or has a statement of no
+known kind between two that move is left as it is and reported in `skipped`;
+running it twice changes nothing.
 
 ### Splitting existing sections: `msm.split_sections`
 
@@ -230,7 +255,8 @@ Name breakout files `<section-id>-<NN>_<topic>.sql` so they sort in load order
 and map back to their section, e.g. `140-10_tables.sql`,
 `140-30_inserts.sql`, `150-10_procedures_functions.sql`, `170_roles.sql`.
 Split by object kind (the names `msm.split_sections` and the Workbench import
-use):
+use) — **routines before views**, since a view on a function that does not
+exist yet fails:
 
 | File | Holds |
 | --- | --- |
