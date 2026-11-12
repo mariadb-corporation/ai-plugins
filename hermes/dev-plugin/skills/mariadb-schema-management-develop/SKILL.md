@@ -187,9 +187,12 @@ It is refused for an object another one needs.
 ## REST endpoints in an MSM project
 
 An MSM project's REST endpoints live in its section 180, which every
-deployment runs in full. Put them there with `msm.set_rest_statements`, **never
-by running them on a server** (the next deployment would not know them) and
-never with `msm.set_section_sql_content`. For the REST DDL itself (the
+deployment runs in full. When the user wants endpoints in the project, put
+them there with `msm.set_rest_statements`, not by running them on a server
+(the project would not know them, and the next deployment would not create
+them) and not with `msm.set_section_sql_content`. Running REST statements on
+a server directly, when the user asks for that, is still fine; it only leaves
+the project out. For the REST DDL itself (the
 `CREATE REST VIEW` field mapping, options, `@` flags) read
 `mariadb-rest-service-create`.
 
