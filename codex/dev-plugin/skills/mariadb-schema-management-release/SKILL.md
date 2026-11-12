@@ -13,7 +13,7 @@ See `mariadb-schema-management` for the section model. Assume MariaDB 11.8.
 
 ```text
 1. msm.prepare_release          → version snapshot (+ update script)
-2. FILL the update script       → sections 240 (+ 260, 270)  ← do NOT skip
+2. FILL the update script       → sections 240 (+ 260, 270), check 280  ← do NOT skip
 3. msm.generate_deployment_script  ← only after step 2
 ```
 
@@ -35,6 +35,11 @@ This:
   except for what `msm.edit_schema` / `msm.add_schema_object` kept in the
   pending `development/<schema>_update_next.sql` (moved in; the pending script
   starts over).
+- Fills the update script's section 280 with the drops of the REST endpoints,
+  schemas, auth app links and services the previous release's section 180
+  created and this one's does not. A REST schema moved to another database gets
+  `DROP REST SCHEMA IF EXISTS ... FROM SERVICE ... FOR SCHEMA <old>`. When the
+  previous release has REST statements this needs a current `mariadb-lsp`.
 - Bumps the development version in `_next.sql` to `next_version` (1.2.0).
 
 Semver validation: `version` must be ≥ the last released version, and
@@ -102,6 +107,9 @@ add the migration for every change made by hand, in the order the changes need.
   section 170, which also runs on every deployment, after the 270 steps.
   **Never `GRANT` in 270**: on an upgrade it runs before 170 creates a role that
   is new in this version, and the deployment fails with error 1133.
+- **Section 280 — removed REST endpoints; check what msm wrote.**
+  `msm.prepare_release` generates it (see above); review it alongside 240 and
+  270 and edit it only if it is wrong. Top level, like 180.
 - **Sections 230 / 290 — update helpers** (`msm_`-prefixed) if the migration
   needs temporary routines; drop them in 290, and put **nothing else** there.
   Every update script's 290 runs at the very end of every later deployment,
@@ -134,8 +142,11 @@ What it produces:
   section 240, an `msm_create_or_update()` dispatcher that reads
   `msm_schema_version` and applies the right path, then every update script's
   260 (removed routines), the target's idempotent objects (150) and diagrams
-  (160), authorization (`msm_auth_*`: the 270 steps, then the target's 170) and
-  REST endpoints (180), and finally the 290 helper removals, drops all `msm_`
+  (160), authorization (`msm_auth_*`: the 270 steps, then the target's 170),
+  the REST drops of every update script's 280 (in the deployment script's
+  section 380; a drop of something the target defines again is commented out,
+  so its endpoints keep their ids), then the target's REST endpoints (180), and
+  finally the 290 helper removals, drops all `msm_`
   procedures and stamps the new version. An update script's section 250, where
   an old one has it, is not included.
 

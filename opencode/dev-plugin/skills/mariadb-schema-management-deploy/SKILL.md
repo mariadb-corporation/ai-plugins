@@ -45,8 +45,8 @@ The deployment script decides what to do from the target schema's state:
 - **Existing MSM schema at an older released version →** upgraded by running each
   update step (the update scripts' 240) in sequence up to the target, then
   dropping the routines the update scripts' 260 remove, then applying the
-  target's idempotent objects (150), authorization (the 270 steps, then 170) and
-  REST endpoints (180).
+  target's idempotent objects (150), authorization (the 270 steps, then 170),
+  the REST drops (280), then REST endpoints (180).
 - **Already at the target version →** nothing to change.
 
 The `msm_schema_version` view is the source of truth for the installed version;
