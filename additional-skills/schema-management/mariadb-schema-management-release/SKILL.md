@@ -32,7 +32,7 @@ This:
   `releases/versions/<schema>_1.1.0.sql`.
 - If a previous release exists, creates the update script
   `releases/updates/<schema>_<prev>_to_1.1.0.sql` from the template, **empty**
-  except for what `msm.edit_schema` / `msm.add_schema_object` kept in the
+  except for what `msm.edit_schema` / `msm.drop_schema_object` kept in the
   pending `development/<schema>_update_next.sql` (moved in; the pending script
   starts over).
 - Fills the update script's section 280 with the drops of the REST endpoints,
