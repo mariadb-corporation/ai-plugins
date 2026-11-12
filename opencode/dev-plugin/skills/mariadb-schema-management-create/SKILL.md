@@ -215,7 +215,8 @@ End the answer, after the summary of what you built, with the review link of
 
 - with a diagram: one link that opens the project and that diagram;
 - without one (the user did not want a diagram): one link without
-  `&diagram=...`, which only opens the project.
+  `&diagram=...`. Describe it as adding the project to the MSM Projects
+  view, and say that it may offer to create a diagram.
 
 ## Guidelines
 

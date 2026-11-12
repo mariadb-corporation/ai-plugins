@@ -227,8 +227,10 @@ Write it **always as a Markdown link, never a bare URL**, exactly in this form:
 - Give one link for each diagram you created or changed. A new project gets
   its diagram before the link (see `mariadb-schema-management-create`, step
   4). Give one link without `&diagram=...` only when no diagram was created or
-  changed, for example because the user did not want one: it opens the
-  project, and the user then picks a diagram or is offered a new one.
+  changed, for example because the user did not want one. That link adds the
+  project to the MSM Projects view. It then opens the project's only diagram,
+  lets the user pick one of several, or, when there is none, offers to create
+  one. Describe it that way, not as only adding the project.
 - Use no parameters other than `project` and `diagram`.
 
 Example, for the diagram `Main Diagram` of the `shop` project in
