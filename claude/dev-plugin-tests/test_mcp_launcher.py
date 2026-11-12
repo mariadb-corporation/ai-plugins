@@ -260,10 +260,14 @@ def test_the_lsp_launcher_waits_for_the_locked_install(tmp_path):
     mcp = [box.start(FAKE_SLEEP="3") for _ in range(2)]
     lsp = box.start(LSP_LAUNCHER, MARIADB_LSP_WAIT="30")
     out, err = lsp.communicate(timeout=60)
-    for p in mcp:
-        p.communicate(timeout=60)
+    runs = [p.communicate(timeout=60) for p in mcp]
     assert out == f"LSP {NEW}\n", f"stdout {out!r}\nstderr:\n{err}"
-    assert box.installs() == 1
+    # Seen failing now and then on CI with 2 installs: show what each MCP
+    # launcher did, so the next failure names the branch that installed again.
+    assert box.installs() == 1, "\n---\n".join(
+        [f"installs:\n{(box.fake / 'installs').read_text()}"]
+        + [f"MCP launcher {i} stdout {o!r}\nstderr:\n{e}" for i, (o, e) in enumerate(runs)]
+        + [f"LSP launcher stderr:\n{err}"])
 
 
 def test_a_shell_printing_messages_before_its_version_is_accepted(box: Box):

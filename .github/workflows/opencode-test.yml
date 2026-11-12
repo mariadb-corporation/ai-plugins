@@ -16,6 +16,8 @@ jobs:
   static:
     name: static (Tier 1)
     runs-on: ubuntu-latest
+    # The nightly schedule is for the eval tier; static runs on every push and PR.
+    if: github.event_name != 'schedule'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
