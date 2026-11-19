@@ -45,3 +45,5 @@ Statements such as `USE REST SERVICE` and `USE REST SCHEMA` set the current REST
 To require authentication for endpoints, the agent uses the `mariadb-rest-service-authorization` skill. It covers REST authentication apps, REST users and roles, and the `GRANT` and `REVOKE` statements for REST privileges on services, schemas, and objects.
 
 <sub>_This page is licensed: GPLv2_</sub>
+
+{% @marketo/form formId="4316" %}
