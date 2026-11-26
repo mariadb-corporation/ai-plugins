@@ -211,8 +211,8 @@ literal on MariaDB in its `orderByVectorDistanceUsing()` and `whereVectorDistanc
   name alongside the vector and re-embed the whole table when it changes.
 - **`M=6` costs recall.** `vectorIndex()` always writes `M=6`, MariaDB's default. On 50,000
   passages, 768 dims, one laptop ([benchmarks](https://github.com/Rhaima96/laravel-mariadb-vector#benchmarks)),
-  at the default `mhnsw_ef_search` (20), recall@10 was 82 to 83% with `M=6` and 99.5% with
-  `M=16`, both at about 2.5 to 2.6 ms per query. The `M=16` index took 3 to 4 times longer to
+  at the default `mhnsw_ef_search` (20), recall@10 was 82 to 86% with `M=6` and 99 to 100%
+  with `M=16`, both at about 2 to 3 ms per query. The `M=16` index took 3 to 4 times longer to
   build (38 s against 9 to 10 s for 50,000 rows). Create it with a raw statement, or with the
   `vectorIndexUsing()` macro of `rhaima96/laravel-vector-metrics`:
 
