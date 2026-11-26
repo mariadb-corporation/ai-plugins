@@ -12,3 +12,5 @@
 8. (Optional) Propagate the REST/MSM e2e steps to the opencode suite (codex has them; pi can reach the server through codemode).
 9. (Optional) Teach CI to use `run_tests.py` — needs a `mariadb-shell` on the runner.
 10. (Optional) Verify the Hermes docs' Windows path (`.cmd` launcher) on a machine with enough disk for Hermes (~1.4 GB); it is untested.
+11. **When the launcher lock flake recurs**, read the launchers' `took/released/left the lock` lines in the test's failure output to find who removed the lock.
+12. **Rework the CLI guard's case list into one map, shell path (`object[.group].method`) → MCP tool**, covering every msm/mrs function that has a tool, with `mrs.*` mapped to `rest.*`; drop the flat msm names the shell does not have.

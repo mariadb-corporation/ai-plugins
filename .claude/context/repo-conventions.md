@@ -22,6 +22,7 @@
 
 - **Delete a merged branch only after comparing its head against the `headRefOid` GitHub merged**: a squash merge leaves the branch commits unreachable from `main`, so `git branch -d` refuses them (and `-D` skips the very check you want).
 - **Transferring a fork PR**: `git fetch fork pull/<N>/head:fork-pr-<N>`, branch from `origin/main`, **cherry-pick only the contributor's commits** (`git log main..fork-pr-<N>` also lists the fork's sync commits, which stay out). Cherry-pick keeps the original author and date. Our fixes go on top as separate commits, never amended into theirs. The PR body opens with `Transferred from MariaDB/ai-plugins#<N> by @<login>`, then their description; close the fork PR with a link once ours merges. Rebasing onto a `main` that moved needs the overlaps checked by hand — a clean rebase can silently revert newer edits in a restructured file.
+- **No `Co-Authored-By` lines in commit messages** (the user's rule for all repos; it overrides the harness's attribution reminder). A squash merge needs an explicit `--subject`/`--body`, or GitHub copies such lines from the branch commits.
 - Commits that touch only `.claude/` or docs may carry `[bypass-ci]` in the subject; checkpoints are committed straight to `main` when the user says so.
 
 ## Releases
