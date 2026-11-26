@@ -88,7 +88,7 @@
     "ls -la",
     "mariadb-shell -- msm get",
     "mariadb-shell -- msm get schema-exists --schemaName=shop",
-    "mariadb-shell -- msm list-projects",
+    "mariadb-shell -- msm info",
     "cd ~/git/mariadb-shell && ls",
     "ls | grep mysql",
     "mariadb --version",

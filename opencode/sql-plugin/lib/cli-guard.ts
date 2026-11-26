@@ -185,8 +185,9 @@ function checkShell(name: string, args: string[]): Finding | null {
     if (GROUPS.has(`${object}.${method}`)) {
       // A group: the method is the word after it.
       tool = next ? COVERED_NESTED_API.get(`${object}.${method}.${snakeCase(next)}`) : undefined;
-    } else if (COVERED_API.has(`${object}.${snakeCase(method)}`)) {
-      tool = `${object}.${snakeCase(method)}`;
+    } else {
+      const flat = `${object}.${snakeCase(method)}`;
+      if (COVERED_API.has(flat)) tool = flat;
     }
     return tool ? { client: name, use: `call the MCP tool ${tool} instead` } : null;
   }

@@ -136,6 +136,7 @@ def test_guard_names_the_tool_of_a_function_in_a_group(command: str, tool: str):
     assert f"call the MCP tool {tool} instead" in reason
 
 
+@pytest.mark.skipif(BASH is None, reason="bash is not installed")
 @pytest.mark.parametrize("command", CASES["allow"])
 def test_guard_allows(command: str):
     assert _decision(CANONICAL / "mariadb-cli-guard.sh", command) == "allow"
