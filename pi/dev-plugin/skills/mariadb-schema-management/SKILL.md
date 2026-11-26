@@ -78,7 +78,7 @@ carries the `_next` suffix (no version in the name); the version is stored in th
 MSM scripts are plain SQL split into numbered sections marked by
 `-- ##### ... MSM Section NNN: Title` banners. **The section a statement lives in
 determines how the deployment script treats it.** Always edit sections with
-`msm.get_sql_content_from_section` / `msm.set_section_sql_content` (by
+`msm.get_section_sql_content` / `msm.set_section_sql_content` (by
 `file_path` + `section_id`) so the banners are never corrupted.
 
 **Create / version script** (author with `-create`, evolve with `-develop`):
@@ -170,7 +170,7 @@ script, sections **140, 240, 170, 270** become the *body of a stored procedure*
 - **Project list:** `msm.list_projects` (with each project's
   `development_version` and `last_released_version`), `msm.add_project`,
   `msm.update_project`, `msm.remove_project` (the list only; folders stay).
-- **Sections:** `msm.get_sql_content_from_section`, `msm.set_section_sql_content`,
+- **Sections:** `msm.get_section_sql_content`, `msm.set_section_sql_content`,
   `msm.split_sections` (into breakout files).
 - **Objects:** `msm.set_schema_statements` (add a table, sequence, view,
   routine, trigger or event from its CREATE statement, or replace a view,

@@ -40,6 +40,13 @@ CASES["deny"] += [
     f"mariadb-shell -- {api.split('.')[0]} {api.split('.')[1].replace('_', '-')} x"
     for api in CASES["covered_shell_api"]
 ]
+# One `mariadb-shell -- <object> <group> <method>` call per function in a
+# group, with the MCP tool its denial has to name.
+NAMED = [
+    (f"mariadb-shell -- {' '.join(path.split('.')[:2])} {path.split('.')[2].replace('_', '-')} x", tool)
+    for path, tool in CASES["covered_nested_shell_api"].items()
+]
+CASES["deny"] += [command for command, _ in NAMED]
 
 
 def _load_guard():
@@ -57,6 +64,12 @@ def test_guard_denies(command: str):
     result = guard._pre_tool_call(tool_name="terminal", args={"command": command})
     assert result is not None and result["action"] == "block"
     assert "mariadb-shell -- mcp setup" in result["message"]
+
+
+@pytest.mark.parametrize("command, tool", NAMED)
+def test_guard_names_the_tool_of_a_function_in_a_group(command: str, tool: str):
+    result = guard._pre_tool_call(tool_name="terminal", args={"command": command})
+    assert result is not None and f"call the MCP tool {tool} instead" in result["message"]
 
 
 @pytest.mark.parametrize("command", CASES["allow"])

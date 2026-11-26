@@ -9,7 +9,7 @@ description: >-
 level: intermediate
 duration: "60 min"
 area: schema-management
-tools: ["msm.create_project", "msm.get_sql_content_from_section", "msm.set_section_sql_content", "msm.prepare_release", "msm.generate_deployment_script", "msm.deploy_schema"]
+tools: ["msm.create_project", "msm.get_section_sql_content", "msm.set_section_sql_content", "msm.prepare_release", "msm.generate_deployment_script", "msm.deploy_schema"]
 skills: ["mariadb-schema-management", "mariadb-schema-management-create", "mariadb-schema-management-release", "mariadb-schema-management-deploy"]
 path_label: "Schema Lifecycle, Step 2"
 prerequisites:

@@ -60,13 +60,40 @@ _COVERED_API = {
     "msm.create_project", "msm.get_project_information",
     "msm.set_development_version", "msm.get_released_versions",
     "msm.get_last_released_version", "msm.get_last_deployment_version",
-    "msm.prepare_release", "msm.get_sql_content_from_section",
+    "msm.prepare_release", "msm.get_section_sql_content",
     "msm.set_section_sql_content", "msm.generate_deployment_script",
     "msm.get_deployment_script_versions", "msm.deploy_schema",
     "mrs.dump_service", "mrs.load_service", "mrs.dump_service_project",
     "mrs.load_service_project", "mrs.load_content_set", "mrs.dump_audit_log",
     "mrs.dump_sdk_service_files",
 }
+
+# The calls of functions that live in a group of an object, as
+# `-- <object> <group> <method>` (`msm get schema-diagrams`): each as
+# <object>.<group>.<method> in snake_case, to the MCP tool that wraps it. A
+# word after the object is a group when an entry starts with it.
+_COVERED_NESTED_API = {
+    "msm.get.project_information": "msm.get_project_information",
+    "msm.get.released_versions": "msm.get_released_versions",
+    "msm.get.last_released_version": "msm.get_last_released_version",
+    "msm.get.last_deployment_version": "msm.get_last_deployment_version",
+    "msm.get.sql_content_from_section": "msm.get_section_sql_content",
+    "msm.get.deployment_script_versions": "msm.get_deployment_script_versions",
+    "msm.get.online_alter_defaults": "msm.get_online_alter_defaults",
+    "msm.get.online_alter_settings": "msm.get_online_alter_settings",
+    "msm.get.schema_diagrams": "msm.get_schema_diagrams",
+    "msm.get.schema_diagram_image": "msm.get_schema_diagram_image",
+    "msm.get.object_templates": "msm.get_object_templates",
+    "msm.set.development_version": "msm.set_development_version",
+    "msm.set.section_sql_content": "msm.set_section_sql_content",
+    "msm.set.project_settings": "msm.set_project_settings",
+    "msm.set.schema_diagram": "msm.set_schema_diagram",
+    "msm.set.schema_statements": "msm.set_schema_statements",
+    "msm.set.rest_statements": "msm.set_rest_statements",
+}
+
+# The groups _COVERED_NESTED_API names, as <object>.<group>.
+_GROUPS = {path.rsplit(".", 1)[0] for path in _COVERED_NESTED_API}
 
 # What runs a command rather than being one, besides VAR=value and -options.
 _WRAPPERS = {
@@ -132,7 +159,7 @@ def _snake_case(method):
 
 
 def _check_shell(name, args):
-    mode = file = object_ = method = ""
+    mode = file = object_ = method = next_ = ""
     api = False
     j = 0
     while j < len(args):
@@ -144,6 +171,8 @@ def _check_shell(name, args):
                     object_ = arg
                 elif not method:
                     method = arg
+                elif not next_:
+                    next_ = arg
             continue
         if _is_info_flag(arg):
             return None
@@ -164,8 +193,13 @@ def _check_shell(name, args):
     if api:
         if not method:
             return None
-        tool = f"{object_}.{_snake_case(method)}"
-        if tool in _COVERED_API:
+        if f"{object_}.{method}" in _GROUPS:
+            # A group: the method is the word after it.
+            tool = _COVERED_NESTED_API.get(f"{object_}.{method}.{_snake_case(next_)}") if next_ else None
+        else:
+            tool = f"{object_}.{_snake_case(method)}"
+            tool = tool if tool in _COVERED_API else None
+        if tool:
             return (name, f"call the MCP tool {tool} instead")
         return None
 

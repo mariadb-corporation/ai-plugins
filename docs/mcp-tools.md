@@ -87,7 +87,7 @@ workflow and the section model.
 | `msm.get_last_released_version` | `schema_project_path` | The most recent release. |
 | `msm.get_last_deployment_version` | `schema_project_path` | The most recent generated deployment script. |
 | `msm.get_deployment_script_versions` | `schema_project_path` | All generated deployment scripts. |
-| `msm.get_sql_content_from_section` | `file_path`, `section_id` | Read one section. |
+| `msm.get_section_sql_content` | `file_path`, `section_id` | Read one section. |
 | `msm.set_section_sql_content` | `file_path`, `section_id`, `sql_content` | Write one section. **Always edit sections through these two** so the banners are never corrupted. |
 | `msm.prepare_release` | `version`, `next_version`, `schema_project_path`, … | Snapshots the development script and creates the update script, empty except for the statements `msm.edit_schema` kept. |
 | `msm.generate_deployment_script` | `version`, `schema_project_path`, `overwrite_existing` | Composes the create-or-upgrade artifact. Run **after** filling the update script. |

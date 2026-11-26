@@ -46,13 +46,44 @@ const COVERED_API = new Set([
   "msm.create_project", "msm.get_project_information",
   "msm.set_development_version", "msm.get_released_versions",
   "msm.get_last_released_version", "msm.get_last_deployment_version",
-  "msm.prepare_release", "msm.get_sql_content_from_section",
+  "msm.prepare_release", "msm.get_section_sql_content",
   "msm.set_section_sql_content", "msm.generate_deployment_script",
   "msm.get_deployment_script_versions", "msm.deploy_schema",
   "mrs.dump_service", "mrs.load_service", "mrs.dump_service_project",
   "mrs.load_service_project", "mrs.load_content_set", "mrs.dump_audit_log",
   "mrs.dump_sdk_service_files",
 ]);
+
+/**
+ * The calls of functions that live in a group of an object, as
+ * `-- <object> <group> <method>` (`msm get schema-diagrams`): each as
+ * <object>.<group>.<method> in snake_case, to the MCP tool that wraps it. A
+ * word after the object is a group when an entry starts with it.
+ */
+const COVERED_NESTED_API = new Map([
+  ["msm.get.project_information", "msm.get_project_information"],
+  ["msm.get.released_versions", "msm.get_released_versions"],
+  ["msm.get.last_released_version", "msm.get_last_released_version"],
+  ["msm.get.last_deployment_version", "msm.get_last_deployment_version"],
+  ["msm.get.sql_content_from_section", "msm.get_section_sql_content"],
+  ["msm.get.deployment_script_versions", "msm.get_deployment_script_versions"],
+  ["msm.get.online_alter_defaults", "msm.get_online_alter_defaults"],
+  ["msm.get.online_alter_settings", "msm.get_online_alter_settings"],
+  ["msm.get.schema_diagrams", "msm.get_schema_diagrams"],
+  ["msm.get.schema_diagram_image", "msm.get_schema_diagram_image"],
+  ["msm.get.object_templates", "msm.get_object_templates"],
+  ["msm.set.development_version", "msm.set_development_version"],
+  ["msm.set.section_sql_content", "msm.set_section_sql_content"],
+  ["msm.set.project_settings", "msm.set_project_settings"],
+  ["msm.set.schema_diagram", "msm.set_schema_diagram"],
+  ["msm.set.schema_statements", "msm.set_schema_statements"],
+  ["msm.set.rest_statements", "msm.set_rest_statements"],
+]);
+
+/** The groups COVERED_NESTED_API names, as <object>.<group>. */
+const GROUPS = new Set([...COVERED_NESTED_API.keys()].map((path) => {
+  return path.slice(0, path.lastIndexOf("."));
+}));
 
 /** What runs a command rather than being one, besides VAR=value and -options. */
 const WRAPPERS = new Set([
@@ -129,12 +160,14 @@ function checkShell(name: string, args: string[]): Finding | null {
   let api = false;
   let object = "";
   let method = "";
+  let next = "";
   for (let j = 0; j < args.length; j++) {
     const arg = args[j];
     if (api) {
       if (arg.startsWith("-")) continue;
       if (!object) object = arg;
       else if (!method) method = arg;
+      else if (!next) next = arg;
       continue;
     }
     if (isInfoFlag(arg)) return null;
@@ -148,8 +181,15 @@ function checkShell(name: string, args: string[]): Finding | null {
 
   if (api) {
     if (!method) return null;
-    const tool = `${object}.${snakeCase(method)}`;
-    return COVERED_API.has(tool) ? { client: name, use: `call the MCP tool ${tool} instead` } : null;
+    let tool: string | undefined;
+    if (GROUPS.has(`${object}.${method}`)) {
+      // A group: the method is the word after it.
+      tool = next ? COVERED_NESTED_API.get(`${object}.${method}.${snakeCase(next)}`) : undefined;
+    } else {
+      const flat = `${object}.${snakeCase(method)}`;
+      if (COVERED_API.has(flat)) tool = flat;
+    }
+    return tool ? { client: name, use: `call the MCP tool ${tool} instead` } : null;
   }
 
   if (!mode) {
