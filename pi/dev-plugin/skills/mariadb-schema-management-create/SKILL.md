@@ -97,7 +97,7 @@ here — sections 010/920 already save and restore the server variables.
 
 Edit `development/<schema>_next.sql` by section, using
 `msm.set_section_sql_content(file_path, section_id, sql_content)` (and
-`msm.get_sql_content_from_section` to read one) so the section banners stay
+`msm.get_section_sql_content` to read one) so the section banners stay
 intact (it replaces the whole body, so the template's commented-out examples
 go with it). Put each kind of object in the section that matches how MSM
 deploys it:
@@ -187,7 +187,7 @@ snapshot of `msm.get_schema_diagrams` lists them):
 
 ```text
 msm.create_schema_diagram(
-    name="Main Diagram",
+    diagram="Main Diagram",
     views=["note_titles"],          # all views
     sequences=[...],                # all sequences
     routines=["add_note"],          # all procedures and functions
@@ -199,7 +199,7 @@ msm.create_schema_diagram(
 in the same call: tables in layers along their foreign keys, with every
 foreign key drawn, and the views, sequences and the routine and event groups
 below them. If objects were left out or added afterwards, add them with
-`msm.layout_schema_diagram(name, tables=, views=, sequences=, routines=,
+`msm.layout_schema_diagram(diagram, tables=, views=, sequences=, routines=,
 events=)`, which lays out the new figures. Call it with `keep_placed=False` to
 lay the whole diagram out again.
 

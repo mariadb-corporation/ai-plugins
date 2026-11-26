@@ -56,11 +56,34 @@ util.copy_schemas util.copy_tables sandbox.deploy sandbox.start sandbox.stop \
 sandbox.kill sandbox.delete msm.create_project msm.get_project_information \
 msm.set_development_version msm.get_released_versions \
 msm.get_last_released_version msm.get_last_deployment_version \
-msm.prepare_release msm.get_sql_content_from_section \
+msm.prepare_release msm.get_section_sql_content \
 msm.set_section_sql_content msm.generate_deployment_script \
 msm.get_deployment_script_versions msm.deploy_schema mrs.dump_service \
 mrs.load_service mrs.dump_service_project mrs.load_service_project \
 mrs.load_content_set mrs.dump_audit_log mrs.dump_sdk_service_files "
+
+# The calls of functions that live in a group of an object, as
+# `-- <object> <group> <method>` (`msm get schema-diagrams`): each as
+# <object>.<group>.<method> in snake_case, then the MCP tool that wraps it.
+# A word after the object is a group when an entry starts with it.
+COVERED_NESTED_API=" \
+msm.get.project_information=msm.get_project_information \
+msm.get.released_versions=msm.get_released_versions \
+msm.get.last_released_version=msm.get_last_released_version \
+msm.get.last_deployment_version=msm.get_last_deployment_version \
+msm.get.sql_content_from_section=msm.get_section_sql_content \
+msm.get.deployment_script_versions=msm.get_deployment_script_versions \
+msm.get.online_alter_defaults=msm.get_online_alter_defaults \
+msm.get.online_alter_settings=msm.get_online_alter_settings \
+msm.get.schema_diagrams=msm.get_schema_diagrams \
+msm.get.schema_diagram_image=msm.get_schema_diagram_image \
+msm.get.object_templates=msm.get_object_templates \
+msm.set.development_version=msm.set_development_version \
+msm.set.section_sql_content=msm.set_section_sql_content \
+msm.set.project_settings=msm.set_project_settings \
+msm.set.schema_diagram=msm.set_schema_diagram \
+msm.set.schema_statements=msm.set_schema_statements \
+msm.set.rest_statements=msm.set_rest_statements "
 
 payload=$(cat) || exit 0
 
@@ -85,9 +108,14 @@ is_info_flag() {
   return 1
 }
 
+# snake_case NAME — kebab-case and camelCase both name the same method.
+snake_case() {
+  printf '%s' "$1" | sed -e 's/-/_/g' -e 's/\([A-Z]\)/_\1/g' | tr 'A-Z' 'a-z'
+}
+
 # check_shell NAME ARG... — mariadb-shell or mysqlsh.
 check_shell() {
-  local name=$1 arg mode="" file="" api=0 object="" method="" next_is_file=0
+  local name=$1 arg mode="" file="" api=0 object="" method="" next="" next_is_file=0
   shift
   for arg in "$@"; do
     if [ $next_is_file = 1 ]; then file=$arg; next_is_file=0; continue; fi
@@ -95,7 +123,8 @@ check_shell() {
       case $arg in
         -*) ;;
         *) if [ -z "$object" ]; then object=$arg
-           elif [ -z "$method" ]; then method=$arg; fi ;;
+           elif [ -z "$method" ]; then method=$arg
+           elif [ -z "$next" ]; then next=$arg; fi ;;
       esac
       continue
     fi
@@ -112,13 +141,28 @@ check_shell() {
 
   if [ $api = 1 ]; then
     [ -n "$method" ] || return 0
-    # kebab-case and camelCase both name the same method.
-    method=$(printf '%s' "$method" | sed -e 's/-/_/g' -e 's/\([A-Z]\)/_\1/g' | tr 'A-Z' 'a-z')
-    case $COVERED_API in
-      *" $object.$method "*)
-        blocked=$name
-        use="call the MCP tool $object.$method instead" ;;
+    local tool=""
+    case $COVERED_NESTED_API in
+      *" $object.$method."*)
+        # A group: the method is the word after it.
+        [ -n "$next" ] || return 0
+        local path
+        path=$object.$method.$(snake_case "$next")
+        case $COVERED_NESTED_API in
+          *" $path="*)
+            tool=${COVERED_NESTED_API#*" $path="}
+            tool=${tool%% *} ;;
+        esac ;;
+      *)
+        method=$(snake_case "$method")
+        case $COVERED_API in
+          *" $object.$method "*) tool=$object.$method ;;
+        esac ;;
     esac
+    if [ -n "$tool" ]; then
+      blocked=$name
+      use="call the MCP tool $tool instead"
+    fi
     return 0
   fi
 

@@ -49,6 +49,13 @@ CASES["deny"] += [
     f"mariadb-shell -- {api.split('.')[0]} {api.split('.')[1].replace('_', '-')} x"
     for api in CASES["covered_shell_api"]
 ]
+# One `mariadb-shell -- <object> <group> <method>` call per function in a
+# group, with the MCP tool its denial has to name.
+NAMED = [
+    (f"mariadb-shell -- {' '.join(path.split('.')[:2])} {path.split('.')[2].replace('_', '-')} x", tool)
+    for path, tool in CASES["covered_nested_shell_api"].items()
+]
+CASES["deny"] += [command for command, _ in NAMED]
 
 # The plugins that carry the mariadb MCP server, and so the guard.
 GUARDED = sorted(p for p in HARNESS_DIR.glob("*-plugin") if (p / ".mcp.json").is_file())
@@ -58,6 +65,11 @@ BASH = shutil.which("bash")
 
 def _decision(hook: Path, command: str, env: dict | None = None) -> str:
     """Runs the hook on a shell-tool payload: 'deny' or 'allow'."""
+    return _output(hook, command, env)[0]
+
+
+def _output(hook: Path, command: str, env: dict | None = None) -> tuple:
+    """Runs the hook on a shell-tool payload: its decision and its reason."""
     payload = json.dumps(
         {
             "hook_event_name": "PreToolUse",
@@ -77,11 +89,11 @@ def _decision(hook: Path, command: str, env: dict | None = None) -> str:
     assert result.returncode == 0, result.stderr
     assert result.stderr == ""
     if not result.stdout.strip():
-        return "allow"
+        return "allow", ""
     output = json.loads(result.stdout)["hookSpecificOutput"]
     assert output["hookEventName"] == "PreToolUse"
     assert "mariadb-shell -- mcp setup" in output["permissionDecisionReason"]
-    return output["permissionDecision"]
+    return output["permissionDecision"], output["permissionDecisionReason"]
 
 
 def test_every_mcp_plugin_is_guarded():
@@ -117,6 +129,13 @@ def test_guard_denies(command: str):
 
 
 @pytest.mark.skipif(BASH is None, reason="bash is not installed")
+@pytest.mark.parametrize("command, tool", NAMED)
+def test_guard_names_the_tool_of_a_function_in_a_group(command: str, tool: str):
+    decision, reason = _output(CANONICAL / "mariadb-cli-guard.sh", command)
+    assert decision == "deny"
+    assert f"call the MCP tool {tool} instead" in reason
+
+
 @pytest.mark.parametrize("command", CASES["allow"])
 def test_guard_allows(command: str):
     assert _decision(CANONICAL / "mariadb-cli-guard.sh", command) == "allow"

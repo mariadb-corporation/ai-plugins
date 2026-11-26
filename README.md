@@ -198,7 +198,8 @@ Two layers keep it that way:
   random password.
 - **A guard** blocks a shell command that uses `mariadb` or `mysql` to run SQL,
   `mariadb-shell` or `mysqlsh` in SQL mode or for an API call a tool wraps
-  (`-- util dump-schemas`), or `mariadb-dump` piped into another client, and
+  (`-- util dump-schemas`, or `-- msm get schema-diagrams` for a function in
+  a group), or `mariadb-dump` piped into another client, and
   tells the model which tool to use instead. Everything the tools do not cover
   still runs, so the agent keeps the clients' other features. The guard is a
   `PreToolUse` hook in the Claude Code and Codex plugins, the Pi extension

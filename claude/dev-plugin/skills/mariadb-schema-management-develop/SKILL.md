@@ -19,7 +19,7 @@ and `msm.drop_schema_object` for objects from SQL, `msm.edit_schema` for
 structured changes, `msm.set_rest_statements` / `msm.drop_rest_object` for
 section 180. Otherwise make changes in the same sections you authored
 initially, using `msm.set_section_sql_content` /
-`msm.get_sql_content_from_section`:
+`msm.get_section_sql_content`:
 
 - New/changed **tables, sequences and data** → section 140.
 - New/changed **views, routines, triggers, events** → section 150 (idempotent:
@@ -283,12 +283,12 @@ Make and change the diagrams of section 160 through the tools, never in the SQL:
 
 | Task | Tool |
 | --- | --- |
-| New diagram | `msm.create_schema_diagram(name, tables=, views=, sequences=, routines=, events=)`: all tables by default, laid out; the other objects only when named |
-| Add objects, tidy up | `msm.layout_schema_diagram(name, tables=, views=, sequences=, routines=, events=, keep_placed=True)`: places the figures without a position; `keep_placed=False` lays all out again |
+| New diagram | `msm.create_schema_diagram(diagram, tables=, views=, sequences=, routines=, events=)`: all tables by default, laid out; the other objects only when named |
+| Add objects, tidy up | `msm.layout_schema_diagram(diagram, tables=, views=, sequences=, routines=, events=, keep_placed=True)`: places the figures without a position; `keep_placed=False` lays all out again |
 | Read | `msm.list_schema_diagrams`, `msm.get_schema_diagrams(diagram=)`; `msm.get_schema_diagram_image` for a picture they leave out |
 | Change by hand | `msm.set_schema_diagram(document)`: an `msm-diagram/1` document; figure types `TableFigure` (its card lists the table's triggers unless `triggersExpanded` is false), `ViewFigure`, `SequenceFigure`, `RoutineGroupFigure` (`routines`), `EventGroupFigure` (`events`), `RestObjectFigure` (`restService`, `restSchema`, `restObject`: the paths as section 180 writes them), `NoteFigure`, `ImageFigure`; a figure without `left`/`top` is placed by the layout; an `ImageFigure` sent without its picture keeps the stored one |
-| Rename | `msm.rename_schema_diagram(name, new_name)`: refused for a name another diagram has, compared case-insensitively |
-| Remove | `msm.remove_schema_diagram(name)` |
+| Rename | `msm.rename_schema_diagram(diagram, new_name)`: refused for a name another diagram has, compared case-insensitively |
+| Remove | `msm.remove_schema_diagram(diagram)` |
 
 - **REST object figures** are added only with `msm.set_schema_diagram` (see
   "REST endpoints in an MSM project", step 6). The layout never places or moves
@@ -305,7 +305,7 @@ Make and change the diagrams of section 160 through the tools, never in the SQL:
 
 **Keep the diagrams current.** When you add tables, views, sequences, routines
 or events, add them to the project's diagram with
-`msm.layout_schema_diagram(name, tables=, views=, ...)`, which places them and
+`msm.layout_schema_diagram(diagram, tables=, views=, ...)`, which places them and
 runs the automatic layout on them. A project without a diagram gets one as in
 `mariadb-schema-management-create`, step 4, unless the user doesn't want one.
 Then end the answer with a review link to each diagram you created or changed,
