@@ -233,13 +233,13 @@ cleanup() {
   if [ "$HAVE_LOCK" = 1 ]; then
     HAVE_LOCK=0
     owner="$(lock_owner)"
-    if [ -n "$INSTALLER_PID" ] && kill -0 "$INSTALLER_PID" 2>/dev/null; then
+    if [ "$owner" != "$$" ]; then
+      log "left the lock $LOCK alone: it names launcher ${owner:-none} now, not this one ($$)"
+    elif [ -n "$INSTALLER_PID" ] && kill -0 "$INSTALLER_PID" 2>/dev/null; then
       log "leaving the lock $LOCK to installer $INSTALLER_PID, which still runs"
-    elif [ "$owner" = "$$" ]; then
+    else
       rm -rf "$LOCK"
       log "released the lock $LOCK (launcher $$)"
-    else
-      log "left the lock $LOCK alone: it names launcher ${owner:-none} now, not this one ($$)"
     fi
   fi
 }
@@ -364,6 +364,9 @@ install_failed=0
 # the background only so that its PID can go into the lock.
 run_installer() {
   local rc=0
+  # The lock is read again before each installer: one that names another
+  # launcher now is that launcher's turn, waited for after this one fails.
+  own_lock || return 1
   MARIADB_SHELL_BINDIR="$BINDIR" \
   MARIADB_SHELL_TOKEN="$TOKEN" \
   sh "$TMP/install.sh" "$@" >&2 &
@@ -428,11 +431,13 @@ else
   fi
 fi
 
-# An installer that failed may have lost to another install into PREFIX (both
-# unpacking into one folder). Give the turn back and wait for one again, which
-# waits out such an install (install.sh's lock or another launcher's), so its
-# shell is started below rather than an old one.
-if [ "$install_failed" = 1 ] && [ "$INSTALLER_RAN" = 1 ]; then
+# An installer that failed while another install into PREFIX ran (install.sh's
+# lock, or this launcher's lock held by another now) most likely lost to it:
+# both unpack into one folder. Give the turn back and wait for one again, which
+# waits that install out, so its shell is started below rather than an old one.
+# A failure with no other install running is not waited on.
+if [ "$install_failed" = 1 ] && [ "$INSTALLER_RAN" = 1 ] &&
+   { lock_busy "$INSTALL_LOCK" || { [ "$(lock_owner)" != "$$" ] && lock_busy "$LOCK"; }; }; then
   cleanup
   take_turn || true
 fi
