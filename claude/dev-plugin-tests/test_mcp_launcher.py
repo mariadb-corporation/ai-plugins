@@ -70,6 +70,26 @@ if [ -n "${FAKE_OTHER_WINS:-}" ]; then
   exit 1
 fi
 [ -z "${FAKE_FAIL:-}" ] || { echo "fake install failing" >&2; exit 1; }
+if [ -n "${FAKE_OTHER_UNPACKING:-}" ]; then
+  # Another install into the prefix is unpacking: it holds install.sh's lock and
+  # puts the new shell in place 2 s later. This one fails, as two unpacking
+  # into one folder do.
+  P="$MARIADB_SHELL_PREFIX"
+  mkdir -p "$P/.install.lock"
+  (
+    sleep 2
+    d="$P/$FAKE_NEW/bin"
+    mkdir -p "$d"
+    cp "$FAKE_DIR/new-shell" "$d/mariadb-shell"
+    ln -sfn "$d/mariadb-shell" "$MARIADB_SHELL_BINDIR/mariadb-shell"
+    rm -rf "$P/.install.lock"
+  ) </dev/null >/dev/null 2>&1 &
+  echo $! >"$P/.install.lock/pid"
+  echo "Can't create: File exists" >&2
+  exit 1
+fi
+# The launcher's lock passes to launcher FAKE_HAND_LOCK while this installs.
+[ -z "${FAKE_HAND_LOCK:-}" ] || echo "$FAKE_HAND_LOCK" >"$MARIADB_SHELL_PREFIX/.mcp-launcher.lock/pid"
 mkdir "$FAKE_DIR/unpacking" 2>/dev/null || { echo "Can't create: File exists" >&2; exit 1; }
 sleep "${FAKE_SLEEP:-1}"
 d="$MARIADB_SHELL_PREFIX/$FAKE_NEW/bin"
@@ -82,6 +102,12 @@ ln -sfn "$d/mariadb-lsp" "$MARIADB_SHELL_BINDIR/mariadb-lsp"
 rmdir "$FAKE_DIR/unpacking"
 """
 CURL_STUB = """#!/bin/sh
+# Once, while the installer downloads: the launcher's lock passes to launcher
+# FAKE_STEAL_LOCK, as when two launchers both took it.
+if [ -n "$FAKE_STEAL_LOCK" ] && [ ! -e "$FAKE_DIR/stolen" ]; then
+  touch "$FAKE_DIR/stolen"
+  echo "$FAKE_STEAL_LOCK" >"$MARIADB_SHELL_PREFIX/.mcp-launcher.lock/pid"
+fi
 while [ $# -gt 0 ]; do
   if [ "$1" = -o ]; then cp "{installer}" "$2"; exit 0; fi
   shift
@@ -202,6 +228,51 @@ def test_a_launcher_stopped_by_the_harness_leaves_the_lock_to_its_installer(box:
     assert box.lock.exists(), "the lock was dropped while its installer still ran"
     run = box.run()
     _started(run, NEW)
+    assert box.installs() == 1, run.stderr
+    assert not box.lock.exists()
+
+
+def test_a_lock_that_names_another_launcher_before_installing_is_waited_for(box: Box):
+    """The lock is read again before installing: another launcher's PID in it
+    means its turn, so this one waits rather than install alongside."""
+    holder = subprocess.Popen(["sleep", "2"])
+    launcher = box.start(FAKE_STEAL_LOCK=str(holder.pid))
+    holder.wait()  # reaped as it ends: a zombie would still answer kill -0
+    out, err = launcher.communicate(timeout=60)
+    run = subprocess.CompletedProcess(launcher.args, launcher.returncode, out, err)
+    _started(run, NEW)
+    assert f"names launcher {holder.pid} now" in run.stderr
+    assert "clearing a lock left by an install that is gone" in run.stderr
+    assert box.installs() == 1, run.stderr
+    assert not box.lock.exists()
+
+
+def test_a_lock_that_names_another_launcher_is_not_removed(box: Box):
+    """cleanup gives back only its own lock."""
+    holder = subprocess.Popen(["sleep", "30"])
+    try:
+        run = box.run(FAKE_HAND_LOCK=str(holder.pid))
+        _started(run, NEW)
+        assert f"left the lock {box.lock} alone: it names launcher {holder.pid} now" in run.stderr
+        assert box.lock_pids()[:1] == [str(holder.pid)], "another launcher's lock was removed"
+    finally:
+        holder.kill()
+        holder.wait()
+
+
+def test_the_lock_is_taken_and_released_with_a_log_line(box: Box):
+    run = box.run()
+    _started(run, NEW)
+    assert f"took the lock {box.lock} (launcher " in run.stderr
+    assert f"released the lock {box.lock} (launcher " in run.stderr
+
+
+def test_an_install_that_lost_to_another_waits_for_it(box: Box):
+    """The installer fails while another install unpacks: wait for that one and
+    start its shell, not the old one."""
+    run = box.run(FAKE_OTHER_UNPACKING="1")
+    _started(run, NEW)
+    assert "waiting for the other install" in run.stderr
     assert box.installs() == 1, run.stderr
     assert not box.lock.exists()
 

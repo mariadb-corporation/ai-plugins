@@ -4,6 +4,19 @@ All notable changes to the MariaDB SQL Hermes Agent plugin are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 project adheres to [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Fixed
+
+- On macOS and Linux, a launcher whose install failed because another install
+  into the same folder was running now waits for that install and starts the
+  shell it put in place, instead of the old shell. A launcher also gives back
+  only its own install lock: it reads the lock again just before installing,
+  and waits for its turn again when the lock names another launcher. Before,
+  two launchers could install at once, and a launcher stopped mid-install could
+  release the lock while its installer still ran. Taking and giving back the
+  lock is now logged with the PIDs involved.
+
 ## [26.11.0] - 2026-11-14
 
 ### Added
