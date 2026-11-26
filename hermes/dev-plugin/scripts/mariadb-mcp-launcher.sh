@@ -236,7 +236,8 @@ fi
 LOCK="$PREFIX/.mcp-launcher.lock"
 INSTALL_LOCK="$PREFIX/.install.lock"
 HAVE_LOCK=0
-INSTALLER_PID=""   # the last installer run; kept once it ends (see run_installer)
+INSTALLER_PID=""
+INSTALLER_RAN=0
 TMP=""
 
 # lock_owner — print the first PID in LOCK's pid file: the launcher that holds
@@ -362,38 +363,23 @@ own_lock() {
   return 1
 }
 
+# launch_if_installed — start a good enough shell that another install put in
+# place meanwhile, if there is one.
+launch_if_installed() {
+  local bin
+  bin="$(good_shell)"
+  [ -n "$bin" ] || return 0
+  log "using mariadb-shell $(shell_version "$bin") installed meanwhile: $bin (>= required $VERSION)"
+  launch "$bin"
+}
+
 # keep_turn — the lock read again just before installing. A launcher whose
 # lock now names another waits for a turn again, and starts any shell that
 # install put in place. Returns 1 when LOCK_WAIT runs out first.
 keep_turn() {
-  local bin
   while ! own_lock; do
     take_turn || return 1
-    bin="$(good_shell)"
-    if [ -n "$bin" ]; then
-      log "using mariadb-shell $(shell_version "$bin") installed meanwhile: $bin (>= required $VERSION)"
-      launch "$bin"
-    fi
-  done
-}
-
-# other_install — succeed while another install into PREFIX runs: install.sh's
-# own lock, or LOCK held by another launcher.
-other_install() {
-  lock_busy "$INSTALL_LOCK" && return 0
-  [ "$(lock_owner)" != "$$" ] && lock_busy "$LOCK"
-}
-
-# wait_other_install — wait (up to LOCK_WAIT) for that other install to end.
-wait_other_install() {
-  local start=$SECONDS
-  log "waiting for the other install into $PREFIX to finish (up to ${LOCK_WAIT}s, MARIADB_SHELL_LOCK_WAIT)"
-  while other_install; do
-    if [ $((SECONDS - start)) -ge "$LOCK_WAIT" ]; then
-      log "gave up after $((SECONDS - start))s waiting for the other install"
-      return 0
-    fi
-    sleep 1
+    launch_if_installed
   done
 }
 
@@ -412,12 +398,10 @@ run_installer() {
   MARIADB_SHELL_SHA256SUMS="$SUMS" \
   sh "$TMP/install.sh" >&2 &
   INSTALLER_PID=$!
+  INSTALLER_RAN=1
   [ "$HAVE_LOCK" = 0 ] || echo "$INSTALLER_PID" >>"$LOCK/pid"
   wait "$INSTALLER_PID" || rc=$?
-  # INSTALLER_PID is not cleared: a signal that interrupts the wait runs its
-  # trap, and so cleanup, only at a later point, which may come after such a
-  # clearing. cleanup would then see no installer and drop the lock while the
-  # installer still runs. kill -0 tells an installer that has ended anyway.
+  INSTALLER_PID=""
   return "$rc"
 }
 
@@ -429,11 +413,7 @@ if ! take_turn; then
   install_failed=1
 else
   # Whoever held the lock before may have installed a good enough shell.
-  BIN="$(good_shell)"
-  if [ -n "$BIN" ]; then
-    log "using mariadb-shell $(shell_version "$BIN") installed meanwhile: $BIN (>= required $VERSION)"
-    launch "$BIN"
-  fi
+  launch_if_installed
 
   log "no suitable mariadb-shell found; installing $TAG from $REPO ..."
   TMP="$(mktemp -d)"
@@ -447,11 +427,13 @@ else
   fi
 fi
 
-# An installer that failed while another install into PREFIX ran most likely
-# lost to it (both unpacking into one folder): wait for that install, then
-# start what it put in place rather than an old shell.
-if [ "$install_failed" = 1 ] && [ -n "$INSTALLER_PID" ] && other_install; then
-  wait_other_install
+# An installer that failed may have lost to another install into PREFIX (both
+# unpacking into one folder). Give the turn back and wait for one again, which
+# waits out such an install (install.sh's lock or another launcher's), so its
+# shell is started below rather than an old one.
+if [ "$install_failed" = 1 ] && [ "$INSTALLER_RAN" = 1 ]; then
+  cleanup
+  take_turn || true
 fi
 
 # The version decides, not the installer's exit status: another install may
