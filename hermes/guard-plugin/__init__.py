@@ -79,21 +79,32 @@ _COVERED_NESTED_API = {
     "msm.get.last_deployment_version": "msm.get_last_deployment_version",
     "msm.get.sql_content_from_section": "msm.get_section_sql_content",
     "msm.get.deployment_script_versions": "msm.get_deployment_script_versions",
-    "msm.get.online_alter_defaults": "msm.get_online_alter_defaults",
-    "msm.get.online_alter_settings": "msm.get_online_alter_settings",
     "msm.get.schema_diagrams": "msm.get_schema_diagrams",
-    "msm.get.schema_diagram_image": "msm.get_schema_diagram_image",
-    "msm.get.object_templates": "msm.get_object_templates",
     "msm.set.development_version": "msm.set_development_version",
     "msm.set.section_sql_content": "msm.set_section_sql_content",
-    "msm.set.project_settings": "msm.set_project_settings",
     "msm.set.schema_diagram": "msm.set_schema_diagram",
     "msm.set.schema_statements": "msm.set_schema_statements",
     "msm.set.rest_statements": "msm.set_rest_statements",
 }
 
-# The groups _COVERED_NESTED_API names, as <object>.<group>.
-_GROUPS = {path.rsplit(".", 1)[0] for path in _COVERED_NESTED_API}
+# Functions in a group whose MCP tool the server serves to the MariaDB VS Code
+# extension only (--gui), never to an agent. Still denied - the server tells
+# agents to work on MSM projects through the msm.* tools only - but the denial
+# names no tool: the user does it in the extension.
+_EXTENSION_ONLY_NESTED_API = {
+    "msm.get.online_alter_defaults",
+    "msm.get.online_alter_settings",
+    "msm.get.schema_diagram_image",
+    "msm.get.object_templates",
+    "msm.set.project_settings",
+}
+
+_USE_THE_EXTENSION = (
+    "none is served to you for this; ask the user to do it in the MariaDB VS Code extension"
+)
+
+# The groups both lists name, as <object>.<group>.
+_GROUPS = {path.rsplit(".", 1)[0] for path in [*_COVERED_NESTED_API, *_EXTENSION_ONLY_NESTED_API]}
 
 # What runs a command rather than being one, besides VAR=value and -options.
 _WRAPPERS = {
@@ -195,7 +206,10 @@ def _check_shell(name, args):
             return None
         if f"{object_}.{method}" in _GROUPS:
             # A group: the method is the word after it.
-            tool = _COVERED_NESTED_API.get(f"{object_}.{method}.{_snake_case(next_)}") if next_ else None
+            path = f"{object_}.{method}.{_snake_case(next_)}"
+            if next_ and path in _EXTENSION_ONLY_NESTED_API:
+                return (name, _USE_THE_EXTENSION)
+            tool = _COVERED_NESTED_API.get(path) if next_ else None
         else:
             tool = f"{object_}.{_snake_case(method)}"
             tool = tool if tool in _COVERED_API else None

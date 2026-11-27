@@ -73,17 +73,20 @@ msm.get.last_released_version=msm.get_last_released_version \
 msm.get.last_deployment_version=msm.get_last_deployment_version \
 msm.get.sql_content_from_section=msm.get_section_sql_content \
 msm.get.deployment_script_versions=msm.get_deployment_script_versions \
-msm.get.online_alter_defaults=msm.get_online_alter_defaults \
-msm.get.online_alter_settings=msm.get_online_alter_settings \
 msm.get.schema_diagrams=msm.get_schema_diagrams \
-msm.get.schema_diagram_image=msm.get_schema_diagram_image \
-msm.get.object_templates=msm.get_object_templates \
 msm.set.development_version=msm.set_development_version \
 msm.set.section_sql_content=msm.set_section_sql_content \
-msm.set.project_settings=msm.set_project_settings \
 msm.set.schema_diagram=msm.set_schema_diagram \
 msm.set.schema_statements=msm.set_schema_statements \
 msm.set.rest_statements=msm.set_rest_statements "
+
+# Functions in a group whose MCP tool the server serves to the MariaDB VS Code
+# extension only (--gui), never to an agent. Still denied - the server tells
+# agents to work on MSM projects through the msm.* tools only - but the denial
+# names no tool: the user does it in the extension.
+EXTENSION_ONLY_NESTED_API=" msm.get.online_alter_defaults \
+msm.get.online_alter_settings msm.get.schema_diagram_image \
+msm.get.object_templates msm.set.project_settings "
 
 payload=$(cat) || exit 0
 
@@ -142,7 +145,7 @@ check_shell() {
   if [ $api = 1 ]; then
     [ -n "$method" ] || return 0
     local tool=""
-    case $COVERED_NESTED_API in
+    case "$COVERED_NESTED_API$EXTENSION_ONLY_NESTED_API" in
       *" $object.$method."*)
         # A group: the method is the word after it.
         [ -n "$next" ] || return 0
@@ -152,6 +155,12 @@ check_shell() {
           *" $path="*)
             tool=${COVERED_NESTED_API#*" $path="}
             tool=${tool%% *} ;;
+        esac
+        case $EXTENSION_ONLY_NESTED_API in
+          *" $path "*)
+            blocked=$name
+            use="none is served to you for this; ask the user to do it in the MariaDB VS Code extension"
+            return 0 ;;
         esac ;;
       *)
         method=$(snake_case "$method")

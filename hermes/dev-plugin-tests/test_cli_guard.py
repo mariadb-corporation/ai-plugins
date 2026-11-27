@@ -47,6 +47,13 @@ NAMED = [
     for path, tool in CASES["covered_nested_shell_api"].items()
 ]
 CASES["deny"] += [command for command, _ in NAMED]
+# One call per function in a group whose MCP tool only the MariaDB VS Code
+# extension gets: denied, with a denial that names no tool but the extension.
+EXTENSION_ONLY = [
+    f"mariadb-shell -- {' '.join(path.split('.')[:2])} {path.split('.')[2].replace('_', '-')} x"
+    for path in CASES["extension_only_nested_shell_api"]
+]
+CASES["deny"] += EXTENSION_ONLY
 
 
 def _load_guard():
@@ -70,6 +77,14 @@ def test_guard_denies(command: str):
 def test_guard_names_the_tool_of_a_function_in_a_group(command: str, tool: str):
     result = guard._pre_tool_call(tool_name="terminal", args={"command": command})
     assert result is not None and f"call the MCP tool {tool} instead" in result["message"]
+
+
+@pytest.mark.parametrize("command", EXTENSION_ONLY)
+def test_guard_sends_an_extension_only_function_to_the_extension(command: str):
+    result = guard._pre_tool_call(tool_name="terminal", args={"command": command})
+    assert result is not None
+    assert CASES["extension_only_denial"] in result["message"]
+    assert "call the MCP tool" not in result["message"]
 
 
 @pytest.mark.parametrize("command", CASES["allow"])

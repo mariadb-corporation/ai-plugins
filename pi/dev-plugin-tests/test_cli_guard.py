@@ -54,9 +54,19 @@ const named = Object.entries(cases.covered_nested_shell_api).map(([path, tool]) 
   const [object, group, method] = path.split(".");
   return [`mariadb-shell -- ${object} ${group} ${method.replaceAll("_", "-")} x`, tool];
 });
+// A function whose MCP tool only the MariaDB VS Code extension gets: denied,
+// pointing at the extension and naming no tool.
+const extension = cases.extension_only_nested_shell_api.map((path) => {
+  const [object, group, method] = path.split(".");
+  return `mariadb-shell -- ${object} ${group} ${method.replaceAll("_", "-")} x`;
+});
 console.log(JSON.stringify({
   deny: cases.deny.filter((c) => !findClient(c)),
   named: named.filter(([c, tool]) => !findClient(c)?.use.includes(`call the MCP tool ${tool} instead`)),
+  extension: extension.filter((c) => {
+    const use = findClient(c)?.use ?? "";
+    return !use.includes(cases.extension_only_denial) || use.includes("call the MCP tool");
+  }),
   allow: cases.allow.filter((c) => findClient(c)),
   off: guardDisabled({ MARIADB_PLUGIN_ALLOW_CLI: "1" }) && !guardDisabled({}),
 }));
@@ -81,7 +91,7 @@ def test_guard_agrees_with_the_shared_cases():
     )
     assert result.returncode == 0, result.stderr
     outcome = json.loads(result.stdout)
-    assert outcome == {"deny": [], "named": [], "allow": [], "off": True}
+    assert outcome == {"deny": [], "named": [], "extension": [], "allow": [], "off": True}
 
 
 def test_extension_wires_the_guard():

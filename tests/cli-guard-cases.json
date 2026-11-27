@@ -24,18 +24,20 @@
     "msm.get.last_deployment_version": "msm.get_last_deployment_version",
     "msm.get.sql_content_from_section": "msm.get_section_sql_content",
     "msm.get.deployment_script_versions": "msm.get_deployment_script_versions",
-    "msm.get.online_alter_defaults": "msm.get_online_alter_defaults",
-    "msm.get.online_alter_settings": "msm.get_online_alter_settings",
     "msm.get.schema_diagrams": "msm.get_schema_diagrams",
-    "msm.get.schema_diagram_image": "msm.get_schema_diagram_image",
-    "msm.get.object_templates": "msm.get_object_templates",
     "msm.set.development_version": "msm.set_development_version",
     "msm.set.section_sql_content": "msm.set_section_sql_content",
-    "msm.set.project_settings": "msm.set_project_settings",
     "msm.set.schema_diagram": "msm.set_schema_diagram",
     "msm.set.schema_statements": "msm.set_schema_statements",
     "msm.set.rest_statements": "msm.set_rest_statements"
   },
+  "extension_only_nested_shell_api_description": "Functions in a group whose MCP tool the server serves to the MariaDB VS Code extension only (--gui), never to an agent. Every implementation still denies one call per entry, as the server tells agents to work on MSM projects through the msm.* tools only, but its denial names no MCP tool: it contains extension_only_denial instead.",
+  "extension_only_nested_shell_api": [
+    "msm.get.online_alter_defaults", "msm.get.online_alter_settings",
+    "msm.get.schema_diagram_image", "msm.get.object_templates",
+    "msm.set.project_settings"
+  ],
+  "extension_only_denial": "ask the user to do it in the MariaDB VS Code extension",
   "deny": [
     "mariadb -uroot -psecret -h127.0.0.1 -P3411 < x.sql",
     "mariadb",

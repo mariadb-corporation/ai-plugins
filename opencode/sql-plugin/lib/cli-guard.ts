@@ -67,21 +67,33 @@ const COVERED_NESTED_API = new Map([
   ["msm.get.last_deployment_version", "msm.get_last_deployment_version"],
   ["msm.get.sql_content_from_section", "msm.get_section_sql_content"],
   ["msm.get.deployment_script_versions", "msm.get_deployment_script_versions"],
-  ["msm.get.online_alter_defaults", "msm.get_online_alter_defaults"],
-  ["msm.get.online_alter_settings", "msm.get_online_alter_settings"],
   ["msm.get.schema_diagrams", "msm.get_schema_diagrams"],
-  ["msm.get.schema_diagram_image", "msm.get_schema_diagram_image"],
-  ["msm.get.object_templates", "msm.get_object_templates"],
   ["msm.set.development_version", "msm.set_development_version"],
   ["msm.set.section_sql_content", "msm.set_section_sql_content"],
-  ["msm.set.project_settings", "msm.set_project_settings"],
   ["msm.set.schema_diagram", "msm.set_schema_diagram"],
   ["msm.set.schema_statements", "msm.set_schema_statements"],
   ["msm.set.rest_statements", "msm.set_rest_statements"],
 ]);
 
-/** The groups COVERED_NESTED_API names, as <object>.<group>. */
-const GROUPS = new Set([...COVERED_NESTED_API.keys()].map((path) => {
+/**
+ * Functions in a group whose MCP tool the server serves to the MariaDB VS Code
+ * extension only (--gui), never to an agent. Still denied - the server tells
+ * agents to work on MSM projects through the msm.* tools only - but the
+ * denial names no tool: the user does it in the extension.
+ */
+const EXTENSION_ONLY_NESTED_API = new Set([
+  "msm.get.online_alter_defaults",
+  "msm.get.online_alter_settings",
+  "msm.get.schema_diagram_image",
+  "msm.get.object_templates",
+  "msm.set.project_settings",
+]);
+
+const USE_THE_EXTENSION =
+  "none is served to you for this; ask the user to do it in the MariaDB VS Code extension";
+
+/** The groups both lists name, as <object>.<group>. */
+const GROUPS = new Set([...COVERED_NESTED_API.keys(), ...EXTENSION_ONLY_NESTED_API].map((path) => {
   return path.slice(0, path.lastIndexOf("."));
 }));
 
@@ -184,7 +196,9 @@ function checkShell(name: string, args: string[]): Finding | null {
     let tool: string | undefined;
     if (GROUPS.has(`${object}.${method}`)) {
       // A group: the method is the word after it.
-      tool = next ? COVERED_NESTED_API.get(`${object}.${method}.${snakeCase(next)}`) : undefined;
+      const path = `${object}.${method}.${snakeCase(next)}`;
+      if (next && EXTENSION_ONLY_NESTED_API.has(path)) return { client: name, use: USE_THE_EXTENSION };
+      tool = next ? COVERED_NESTED_API.get(path) : undefined;
     } else {
       const flat = `${object}.${snakeCase(method)}`;
       if (COVERED_API.has(flat)) tool = flat;
