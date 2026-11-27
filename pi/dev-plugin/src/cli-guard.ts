@@ -36,22 +36,41 @@
 // root holds the cases every port must agree on. Shared, byte for byte, by the
 // Pi extension and the OpenCode plugin.
 
-/** The `-- <object> <method>` calls an MCP tool wraps, named like the tool. */
-const COVERED_API = new Set([
-  "util.dump_instance", "util.dump_schemas", "util.dump_tables",
-  "util.export_table", "util.load_dump", "util.import_table",
-  "util.copy_instance", "util.copy_schemas", "util.copy_tables",
-  "sandbox.deploy", "sandbox.start", "sandbox.stop", "sandbox.kill",
-  "sandbox.delete",
-  "msm.create_project", "msm.get_project_information",
-  "msm.set_development_version", "msm.get_released_versions",
-  "msm.get_last_released_version", "msm.get_last_deployment_version",
-  "msm.prepare_release", "msm.get_section_sql_content",
-  "msm.set_section_sql_content", "msm.generate_deployment_script",
-  "msm.get_deployment_script_versions", "msm.deploy_schema",
-  "mrs.dump_service", "mrs.load_service", "mrs.dump_service_project",
-  "mrs.load_service_project", "mrs.load_content_set", "mrs.dump_audit_log",
-  "mrs.dump_sdk_service_files",
+/**
+ * The `-- <object> <method>` calls of mariadb-shell / mysqlsh that an MCP tool
+ * wraps: each as <object>.<method> in snake_case, as the shell names it, to
+ * the MCP tool that wraps it.
+ */
+const COVERED_API = new Map([
+  ["util.dump_instance", "util.dump_instance"],
+  ["util.dump_schemas", "util.dump_schemas"],
+  ["util.dump_tables", "util.dump_tables"],
+  ["util.export_table", "util.export_table"],
+  ["util.load_dump", "util.load_dump"],
+  ["util.import_table", "util.import_table"],
+  ["util.copy_instance", "util.copy_instance"],
+  ["util.copy_schemas", "util.copy_schemas"],
+  ["util.copy_tables", "util.copy_tables"],
+  ["sandbox.deploy", "sandbox.deploy"],
+  ["sandbox.start", "sandbox.start"],
+  ["sandbox.stop", "sandbox.stop"],
+  ["sandbox.kill", "sandbox.kill"],
+  ["sandbox.delete", "sandbox.delete"],
+  ["msm.create_new_project_folder", "msm.create_project"],
+  ["msm.list_projects", "msm.list_projects"],
+  ["msm.drop_schema_object", "msm.drop_schema_object"],
+  ["msm.drop_rest_object", "msm.drop_rest_object"],
+  ["msm.prepare_release", "msm.prepare_release"],
+  ["msm.generate_deployment_script", "msm.generate_deployment_script"],
+  ["msm.deploy_schema", "msm.deploy_schema"],
+  ["msm.list_live_schema_objects", "msm.list_live_schema_objects"],
+  ["msm.import_live_schema", "msm.import_live_schema"],
+  ["msm.list_schema_diagrams", "msm.list_schema_diagrams"],
+  ["msm.create_schema_diagram", "msm.create_schema_diagram"],
+  ["msm.layout_schema_diagram", "msm.layout_schema_diagram"],
+  ["msm.rename_schema_diagram", "msm.rename_schema_diagram"],
+  ["msm.remove_schema_diagram", "msm.remove_schema_diagram"],
+  ["rest.version", "rest.version"],
 ]);
 
 /**
@@ -73,15 +92,39 @@ const COVERED_NESTED_API = new Map([
   ["msm.set.schema_diagram", "msm.set_schema_diagram"],
   ["msm.set.schema_statements", "msm.set_schema_statements"],
   ["msm.set.rest_statements", "msm.set_rest_statements"],
+  ["rest.dump.service", "rest.dump_service"],
+  ["rest.dump.service_project", "rest.dump_service_project"],
+  ["rest.dump.sdk_service_files", "rest.dump_sdk_service_files"],
+  ["rest.dump.audit_log", "rest.dump_audit_log"],
+  ["rest.get.sdk_base_classes", "rest.get_sdk_base_classes"],
+  ["rest.get.sdk_options", "rest.get_sdk_options"],
+  ["rest.get.sdk_service_classes", "rest.get_sdk_service_classes"],
+  ["rest.get.runtime_management_code", "rest.get_runtime_management_code"],
+  ["rest.get.file_mrs_script_definitions", "rest.get_file_mrs_script_definitions"],
+  ["rest.get.folder_mrs_script_definitions", "rest.get_folder_mrs_script_definitions"],
+  ["rest.get.folder_mrs_script_language", "rest.get_folder_mrs_script_language"],
+  ["rest.load.service", "rest.load_service"],
+  ["rest.load.service_project", "rest.load_service_project"],
+  ["rest.load.content_set", "rest.load_content_set"],
 ]);
 
 /**
- * Functions in a group whose MCP tool the server serves to the MariaDB VS Code
- * extension only (--gui), never to an agent. Still denied - the server tells
- * agents to work on MSM projects through the msm.* tools only - but the
- * denial names no tool: the user does it in the extension.
+ * Functions, in a group or not, whose MCP tool the server serves to the
+ * MariaDB VS Code extension only (--gui), never to an agent. Still denied -
+ * the server tells agents to work on MSM projects through the msm.* tools
+ * only - but the denial names no tool: the user does it in the extension.
  */
-const EXTENSION_ONLY_NESTED_API = new Set([
+const EXTENSION_ONLY_API = new Set([
+  "msm.add_project",
+  "msm.update_project",
+  "msm.remove_project",
+  "msm.edit_schema",
+  "msm.update_schema_definition",
+  "msm.split_sections",
+  "msm.rename_schema",
+  "msm.online_alter_table",
+  "msm.dump_rest_sdk",
+  "msm.import_workbench_model",
   "msm.get.online_alter_defaults",
   "msm.get.online_alter_settings",
   "msm.get.schema_diagram_image",
@@ -93,7 +136,9 @@ const USE_THE_EXTENSION =
   "none is served to you for this; ask the user to do it in the MariaDB VS Code extension";
 
 /** The groups both lists name, as <object>.<group>. */
-const GROUPS = new Set([...COVERED_NESTED_API.keys(), ...EXTENSION_ONLY_NESTED_API].map((path) => {
+const GROUPS = new Set([...COVERED_NESTED_API.keys(), ...EXTENSION_ONLY_API].filter((path) => {
+  return path.split(".").length === 3;
+}).map((path) => {
   return path.slice(0, path.lastIndexOf("."));
 }));
 
@@ -193,16 +238,19 @@ function checkShell(name: string, args: string[]): Finding | null {
 
   if (api) {
     if (!method) return null;
-    let tool: string | undefined;
+    let path: string;
+    let list: Map<string, string>;
     if (GROUPS.has(`${object}.${method}`)) {
       // A group: the method is the word after it.
-      const path = `${object}.${method}.${snakeCase(next)}`;
-      if (next && EXTENSION_ONLY_NESTED_API.has(path)) return { client: name, use: USE_THE_EXTENSION };
-      tool = next ? COVERED_NESTED_API.get(path) : undefined;
+      if (!next) return null;
+      path = `${object}.${method}.${snakeCase(next)}`;
+      list = COVERED_NESTED_API;
     } else {
-      const flat = `${object}.${snakeCase(method)}`;
-      if (COVERED_API.has(flat)) tool = flat;
+      path = `${object}.${snakeCase(method)}`;
+      list = COVERED_API;
     }
+    if (EXTENSION_ONLY_API.has(path)) return { client: name, use: USE_THE_EXTENSION };
+    const tool = list.get(path);
     return tool ? { client: name, use: `call the MCP tool ${tool} instead` } : null;
   }
 
