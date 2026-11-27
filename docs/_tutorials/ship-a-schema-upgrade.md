@@ -3,13 +3,13 @@ order: 7
 slug: ship-a-schema-upgrade
 title: "Ship a schema upgrade: version 1.1.0 in place"
 description: >-
-  Add notebooks and tags to the Notes App, fill the 1.0.0 → 1.1.0 update script,
+  Add notebooks and tags to the Notes App, complete the 1.0.0 → 1.1.0 update script,
   and upgrade a live install without dropping it. Includes the ordering mistake
   that silently produces a deployment script which cannot upgrade anything.
 level: advanced
 duration: "45 min"
 area: schema-management
-tools: ["msm.set_development_version", "msm.prepare_release", "msm.set_section_sql_content", "msm.generate_deployment_script", "msm.deploy_schema"]
+tools: ["msm.set_schema_statements", "msm.prepare_release", "msm.set_section_sql_content", "msm.generate_deployment_script", "msm.deploy_schema"]
 skills: ["mariadb-schema-management-develop", "mariadb-schema-management-release", "mariadb-schema-management-deploy", "mariadb-alter-table"]
 path_label: "Schema Lifecycle, Step 3"
 prerequisites:
@@ -24,8 +24,10 @@ anything.
 
 <div class="callout callout--warn" markdown="1">
 **The one rule everyone gets wrong.** Preparing a release creates an update
-script that is **empty** but for the statements `msm.edit_schema` kept. It has to be filled in **before** the deployment script is
-generated, because the deployment script *embeds* it.
+script that holds only the statements msm kept for the changes made through
+`msm.set_schema_statements` and `msm.drop_schema_object`. It has to be
+completed **before** the deployment script is generated, because the deployment
+script *embeds* it.
 
 Ask for both in one breath — *"prepare the release and generate the deployment
 script"* — and you get a script that creates the schema perfectly on an empty
@@ -34,15 +36,17 @@ It just does not migrate.
 
 So ask for it in three steps, and stop after the first:
 
-**prepare the release** → **fill the update script** → **generate the deployment
-script**
+**prepare the release** → **complete the update script** → **generate the
+deployment script**
 </div>
 
 ## Develop the next version
 
 The development script `development/notes_app_next.sql` is already on 1.1.0 —
-cutting the 1.0.0 release bumped it. Work in the same sections you used before:
-new tables in **140**, new and changed views in **150**.
+cutting the 1.0.0 release bumped it. The agent hands each `CREATE` statement to
+`msm.set_schema_statements`, which puts new tables in **140** and views in
+**150**. Because the project has a release now, msm also keeps what a 1.0.0
+server needs for each table change, ready for the update script.
 
 <div class="prompt" markdown="1">
 *Develop the next version of the schema on top of 1.0.0: add support for
@@ -50,9 +54,17 @@ notebooks and tags with new `notebook` and `tag` tables, and add a view named
 `notes_details` that joins notes with their notebook and their tags.*
 </div>
 
-Note that section 140 gets the **whole** create story, old tables included. The
+Note that section 140 holds the **whole** create story, old tables included. The
 version script is a full snapshot of how to build the schema from nothing; it is
-not a diff. The diff lives in the update script, which is the next step.
+not a diff. The diff lives in the update script.
+
+<div class="callout callout--warn" markdown="1">
+**Change an existing table the same way:** send its new, complete `CREATE TABLE`
+to `msm.set_schema_statements`, and msm keeps the `ALTER TABLE`. A column or
+table option the statement leaves out is dropped, and a renamed column needs
+`renames` to keep its data. A hand edit of section 140 changes the script but
+keeps no `ALTER`, so upgraded servers would never get it.
+</div>
 
 <div class="callout callout--tip" markdown="1">
 **When a section grows past comfortable, break it out.** MSM supports
@@ -75,14 +87,14 @@ yet.*
 That does three things:
 
 1. Snapshots the development script to `releases/versions/notes_app_1.1.0.sql`.
-2. Creates **`releases/updates/notes_app_1.0.0_to_1.1.0.sql`** — an empty
-   template with the update section banners in it.
+2. Creates **`releases/updates/notes_app_1.0.0_to_1.1.0.sql`** from the
+   template, with what msm kept for the table changes moved into its section 240.
 3. Bumps the development version past 1.1.0.
 
 **Do not generate the deployment script yet.** Step 2 is the thing you have to
-fill in.
+check and complete.
 
-## Fill the update script
+## Complete the update script
 
 This is the actual work of the release: not "how do I build this schema" but
 "how do I get a 1.0.0 database's *tables* to 1.1.0 without losing its data".
@@ -95,26 +107,27 @@ already wrote. The update script has its own section numbering:
 | --- | --- |
 | 230 | Update helper routines (`msm_` prefix) |
 | **240** | **Non-idempotent changes and ALL drops: `ALTER TABLE`, new tables, data backfill, `DROP`s of removed objects and of objects that block a table change** |
-| 250 | Not deployed — leave it empty |
+| 260 | Only `DROP PROCEDURE/FUNCTION IF EXISTS` of removed routines |
 | 270 | Only `REVOKE` / `DROP ROLE` — new grants come from section 170 |
+| 280 | Removal of REST endpoints — written by msm, review only |
 | 290 | Removal of the update helpers |
 
 <div class="prompt" markdown="1">
-*Fill the 1.0.0 → 1.1.0 update script with the table migration: the new
-`notebook` and `tag` tables in the non-idempotent update section.*
+*Check the 1.0.0 → 1.1.0 update script: section 240 must create the new
+`notebook` and `tag` tables. Add what is missing, and any data backfill.*
 </div>
 
-Three things to get right in section 240, all of them MariaDB-specific and all
-of them taught by the `mariadb-alter-table` skill:
+Three things to get right in section 240, taught by the `mariadb-alter-table`
+and `mariadb-schema-management-release` skills:
 
 - **A new `NOT NULL` column on a populated table needs a default, or a
   backfill.** `ADD COLUMN … NOT NULL` with no default fails on a non-empty table
   in strict mode. Add it nullable, backfill, then tighten — three statements, all
   in 240.
-- **Say which algorithm you expect.** `ALGORITHM=INSTANT` on a change that cannot
-  be instant fails loudly, which is exactly what you want in a migration —
-  better than discovering at deploy time that it silently chose `COPY` and locked
-  the table for an hour. `ALGORITHM=NOCOPY` is the useful middle ground.
+- **Write plain `ALTER TABLE`s.** `msm.deploy_schema` runs each top-level
+  `ALTER` of 240 online, trying `INSTANT`, then `NOCOPY`, `INPLACE` and `COPY`
+  without locking, within the project's limits. An `ALTER` with its own
+  `ALGORITHM` or `LOCK` runs as written, possibly blocking the table.
 - **No `DELIMITER` in 240.** Section 240 becomes a stored-procedure body in the
   generated script. Plain `;`-terminated statements, dynamic SQL for anything
   conditional.
@@ -123,11 +136,12 @@ of them taught by the `mariadb-alter-table` skill:
 **Drops go in 240** — including drops whose only purpose is to unblock a table
 change. Removing a view or routine is the one change section 150 can't express,
 because 150 only re-creates what the new version has; the `DROP … IF EXISTS`
-belongs in 240. Section 250 of the update script is never deployed.
+belongs in 240, or in 260 for a procedure or function. `msm.drop_schema_object`
+keeps these drops for you.
 </div>
 
 Read it back and confirm it is not still the template — the generated template
-contains `ToDo` comments, and a script that still has them is one nobody filled:
+contains `ToDo` comments, and a script that still has them is one nobody completed:
 
 <div class="prompt" markdown="1">
 *Show me section 240 of the update script as it stands. Are there any `ToDo`
@@ -137,7 +151,7 @@ comments left in it?*
 ## Now generate the deployment script
 
 <div class="prompt" markdown="1">
-*The update script is filled in. Generate the 1.1.0 deployment script.*
+*The update script is complete. Generate the 1.1.0 deployment script.*
 </div>
 
 The result, `releases/deployment/notes_app_deployment_1.1.0.sql`, contains
@@ -185,7 +199,7 @@ that is otherwise found in production.
 Two releases of one schema, and a deployment script that handles both a fresh
 install and an in-place upgrade — verified on two servers rather than asserted.
 
-The rule worth tattooing somewhere: **prepare the release, then fill the update
+The rule worth tattooing somewhere: **prepare the release, then complete the update
 script, then generate the deployment script** — three separate asks, never one.
 Getting that order wrong produces an artifact that passes every test you would
 think to run and fails on the only server that matters.

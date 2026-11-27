@@ -82,11 +82,9 @@ install is unaffected.
   (default 256 MiB), `nboLock` (`SHARED` or `EXCLUSIVE` to allow a Galera NBO;
   off by default), `maxLockedBytes` (largest table for a step that blocks
   writes; default no limit), `lockWait` (seconds per attempt, default 5),
-  `maxRetries` (default 10), and `tables: {<table>: {the same keys}}`. Read the
-  defaults and what a table gets with `msm.get_online_alter_settings(table=)`
-  (`msm.get_online_alter_defaults` without a project); change them with
-  `msm.set_project_settings({"onlineAlter": {...}})`, which replaces the whole
-  setting.
+  `maxRetries` (default 10), and `tables: {<table>: {the same keys}}`. Read
+  the project's setting with `msm.get_project_information`; it is changed in
+  the MariaDB extension (an agent sets limits per deployment instead).
 - **Per deployment:** `online_alter=` takes the same keys. The most specific
   value wins, and the deployment's over the project's at the same level, so
   `{"enabled": false}` runs every ALTER as written except of the tables the
@@ -97,20 +95,11 @@ install is unaffected.
   of a table over `galeraMaxBytes` that is not INSTANT stops this way unless
   `nboLock` is set, `galeraMaxBytes` raised or online ALTER turned off for it.
 
-`msm.online_alter_table(connection_id, schema, table, spec, options=None)`
-runs one such ALTER on a live table outside any deployment (`spec` is
-everything after `ALTER TABLE <table>`, without `ALGORITHM`/`LOCK`). It starts
-a task: follow it with `task.get` (a stage per step; `skipped` for refused or
-limited steps), stop it with `task.cancel`. Its result's `method` is the step
-that applied, or `NEEDS_EXTERNAL` with `applied: false` and nothing changed.
-A change made this way is not in the project: an MSM-managed schema still
-needs it in the development script and the next update script.
-
 ## Guidelines
 
 - Deploy the **generated** script only; never a hand-edited deployment file.
 - Use `backup=True` for production upgrades so a failure is recoverable.
-- On large tables or Galera, check `msm.get_online_alter_settings` before an
+- On large tables or Galera, check the project's `onlineAlter` before an
   upgrade; set the limits that depend on the environment with `online_alter=`.
 - Upgrades are only possible along the released-version chain — if a server is on
   a version with no update script leading toward the target, the deployment will
