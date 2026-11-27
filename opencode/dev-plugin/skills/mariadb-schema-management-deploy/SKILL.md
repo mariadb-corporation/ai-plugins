@@ -1,6 +1,6 @@
 ---
 name: mariadb-schema-management-deploy
-description: "Deploy a MariaDB Schema Management (MSM) schema version onto a live server with msm.deploy_schema — running the generated deployment script over an open db.connect connection to create the schema fresh or upgrade any prior released version to the target, optionally taking a backup first. Use when installing or upgrading an MSM-managed schema on a MariaDB server, applying a schema deployment/migration, or checking which versions are deployable. Read mariadb-schema-management first for the section model."
+description: "Deploy a MariaDB Schema Management (MSM) schema version onto a live server with msm.deploy_schema — running the generated deployment script over an open db.connect connection to create the schema fresh or upgrade any prior released version to the target, optionally taking a backup first, with the ALTER TABLE statements of an upgrade run online within the project's onlineAlter limits. Use when installing or upgrading an MSM-managed schema on a MariaDB server, applying a schema deployment/migration, tuning online ALTER TABLE for a deployment, or checking which versions are deployable. Read mariadb-schema-management first for the section model."
 ---
 
 # MSM — Deploying a Schema Version
@@ -28,6 +28,7 @@ prepared, its update script filled, and the deployment script generated — see
        version="1.1.0",        # optional; defaults to the latest generated script
        backup=True,            # optional; dump an existing schema before upgrading
        backup_directory="...", # optional; where the backup is written
+       online_alter={...},     # optional; this deployment's online ALTER limits
    )
 ```
 
@@ -42,9 +43,10 @@ The deployment script decides what to do from the target schema's state:
 
 - **Empty / absent schema →** created fresh at the target version.
 - **Existing MSM schema at an older released version →** upgraded by running each
-  `msm_update_<from>_to_<to>()` in sequence up to the target, then applying the
-  target's idempotent objects (150), authorization (the 270 steps, then 170) and
-  REST endpoints (180).
+  update step (the update scripts' 240) in sequence up to the target, then
+  dropping the routines the update scripts' 260 remove, then applying the
+  target's idempotent objects (150), authorization (the 270 steps, then 170),
+  the REST drops (280), then REST endpoints (180).
 - **Already at the target version →** nothing to change.
 
 The `msm_schema_version` view is the source of truth for the installed version;
@@ -63,10 +65,42 @@ Inspect the project with `msm.get_last_released_version` /
 server. To see what a server has, query the view through the connection:
 ``db.execute_sql(connection_id=conn, sql="SELECT * FROM `<schema>`.`msm_schema_version`")``.
 
+## Online ALTER TABLE
+
+For an upgrade, `msm.deploy_schema` runs the update steps itself and each
+top-level `ALTER TABLE` of a 240 the least disruptive way the server accepts:
+`ALGORITHM=INSTANT`, then `NOCOPY`, `INPLACE` and `COPY` with `LOCK=NONE`, then
+a Galera NBO where allowed, then `LOCK=SHARED` and `LOCK=EXCLUSIVE`. A step the
+server refuses changes nothing; lock wait timeouts are retried. The scripts
+keep plain ALTERs, so the same deployment script run without msm (e.g. the
+`mariadb` client) runs them as plain, possibly blocking ALTERs, and a fresh
+install is unaffected.
+
+- **On by default.** The limits come from `onlineAlter` in `msm.project.json`
+  — `enabled`, `maxRebuildBytes` (largest table for an INPLACE or COPY
+  rebuild; default 10 GiB, `0` = never, `null` = no limit), `galeraMaxBytes`
+  (default 256 MiB), `nboLock` (`SHARED` or `EXCLUSIVE` to allow a Galera NBO;
+  off by default), `maxLockedBytes` (largest table for a step that blocks
+  writes; default no limit), `lockWait` (seconds per attempt, default 5),
+  `maxRetries` (default 10), and `tables: {<table>: {the same keys}}`. Read
+  the project's setting with `msm.get_project_information`; it is changed in
+  the MariaDB extension (an agent sets limits per deployment instead).
+- **Per deployment:** `online_alter=` takes the same keys. The most specific
+  value wins, and the deployment's over the project's at the same level, so
+  `{"enabled": false}` runs every ALTER as written except of the tables the
+  project's `tables` entries turn on.
+- **When no allowed step can run an ALTER**, the deployment stops with
+  `NeedsExternalToolError`: the statements before it have run and the schema
+  stays at `0.0.0`. Use `backup=True` so it can be restored. On Galera an ALTER
+  of a table over `galeraMaxBytes` that is not INSTANT stops this way unless
+  `nboLock` is set, `galeraMaxBytes` raised or online ALTER turned off for it.
+
 ## Guidelines
 
 - Deploy the **generated** script only; never a hand-edited deployment file.
 - Use `backup=True` for production upgrades so a failure is recoverable.
+- On large tables or Galera, check the project's `onlineAlter` before an
+  upgrade; set the limits that depend on the environment with `online_alter=`.
 - Upgrades are only possible along the released-version chain — if a server is on
   a version with no update script leading toward the target, the deployment will
   refuse it. Ensure every release was prepared with its update script filled.

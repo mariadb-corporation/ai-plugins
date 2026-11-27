@@ -18,10 +18,11 @@
 # set-plugin-version.sh — set the plugin package version across every plugin in
 # this repo.
 #
-# Updates the "version" field in each plugin manifest (.claude-plugin/plugin.json
-# and .codex-plugin/plugin.json) and the "Version **x.y.z**" line in each
-# plugin README, for the dev-*, sql-* and contributor-* plugins across claude/,
-# codex/, opencode/ and pi/, plus the repo-root package.json.
+# Updates the "version" field in each plugin manifest (.claude-plugin/plugin.json,
+# .codex-plugin/plugin.json, Hermes' plugin.json and plugin.yaml) and the "Version **x.y.z**"
+# line in each plugin README, for the dev-*, sql-* and contributor-* plugins
+# across claude/, codex/, opencode/, pi/ and hermes/, plus the repo-root
+# package.json and `plugin_version` in docs/_config.yml.
 #
 # Not every plugin carries both: OpenCode has no manifest version field, so only
 # its README is updated, and pi has no per-plugin manifest at all — the repo-root
@@ -51,11 +52,12 @@ Arguments:
   <version>   The plugin package version to set, e.g. 26.8.1.
 
 Updates, for the dev-*, sql-* and contributor-* plugins across claude/, codex/,
-opencode/ and pi/:
+opencode/, pi/ and hermes/:
   - the "version" field in each plugin manifest (.claude-plugin/plugin.json,
-    .codex-plugin/plugin.json)
+    .codex-plugin/plugin.json, hermes/*-plugin/plugin.json and plugin.yaml)
   - the "Version **x.y.z**" line in each plugin README
   - the repo-root package.json
+  - plugin_version in docs/_config.yml (the DevHub's download links)
 
 Not every plugin carries both: OpenCode has no manifest version field, so only
 its README is updated, and pi has no per-plugin manifest at all — the repo-root
@@ -81,7 +83,7 @@ if [ -z "$VERSION" ]; then
   exit 1
 fi
 
-# Reject anything that is not version-shaped rather than writing it into 17
+# Reject anything that is not version-shaped rather than writing it into 23
 # files. A mistyped flag used to be accepted as the version and substituted
 # everywhere, which is a tedious thing to undo.
 case "$VERSION" in
@@ -108,15 +110,23 @@ while IFS= read -r f; do files+=("$f"); done < <(
        "$REPO_ROOT"/codex/*-plugin \
        "$REPO_ROOT"/opencode/*-plugin \
        "$REPO_ROOT"/pi/*-plugin \
-       -type f \( -name 'plugin.json' -o -name 'README.md' \) | sort
+       "$REPO_ROOT"/hermes/*-plugin \
+       -type f \( -name 'plugin.json' -o -name 'plugin.yaml' -o -name 'README.md' \) | sort
 )
 files+=("$REPO_ROOT/package.json")
 
+# The DevHub's offline installation page builds its download links for the
+# release archives from this key, so it moves with every release.
+DOCS_CONFIG="$REPO_ROOT/docs/_config.yml"
+[ -f "$DOCS_CONFIG" ] && files+=("$DOCS_CONFIG")
+
 [ "${#files[@]}" -gt 0 ] || { echo "error: no plugin files found under $REPO_ROOT" >&2; exit 1; }
 
-# Two shapes the version appears in:
+# Four shapes the version appears in:
 #   plugin manifest JSON:  "version": "<v>"
+#   Hermes plugin.yaml:    version: "<v>"
 #   README header line:    Version **<v>**
+#   docs/_config.yml:      plugin_version: "<v>"
 #
 # The JSON substitution is anchored to the start of a line so it can only ever
 # hit a "version" key that stands on its own — package.json also carries
@@ -124,9 +134,11 @@ files+=("$REPO_ROOT/package.json")
 V="$VERSION" perl -i -pe '
   my $v = $ENV{V};
   s/^(\s*"version"\s*:\s*")[^"]*(")/${1}${v}${2}/;
+  s/^(version:\s*")[^"]*(")/${1}${v}${2}/;
   s/^(Version \*\*)[^*]*(\*\*)$/${1}${v}${2}/;
+  s/^(plugin_version:\s*")[^"]*(")/${1}${v}${2}/;
 ' "${files[@]}"
 
 echo "Set plugin version -> $VERSION in ${#files[@]} file(s):"
-grep -rnE "\"version\": \"${VERSION}\"|^Version \*\*${VERSION}\*\*" "${files[@]}" \
+grep -rnE "\"version\": \"${VERSION}\"|^(plugin_)?version: \"${VERSION}\"|^Version \*\*${VERSION}\*\*" "${files[@]}" \
   | sed 's/^/  /'

@@ -22,7 +22,7 @@ Installing a plugin gives you three things:
 > **New to MCP?** The Model Context Protocol is a standardized interface for
 > AI agents to call tools — here, the tools that talk to MariaDB.
 
-Works with [Claude Code](https://claude.com/claude-code), [Codex](https://openai.com/codex), [OpenCode](https://opencode.ai), [Pi](https://pi.dev) and [GitHub Copilot in VS Code](https://code.visualstudio.com/docs/copilot/overview) — see [Installation](#installation).
+Works with [Claude Code](https://claude.com/claude-code), [Codex](https://openai.com/codex), [OpenCode](https://opencode.ai), [Pi](https://pi.dev), [Hermes Agent](https://hermes-agent.nousresearch.com/) and [Cursor](https://cursor.com) — see [Installation](#installation).
 
 > **Prefer a guided start?** The **[DevHub](https://mariadb.github.io/ai-plugins/)**
 > has the same installation steps plus hands-on tutorials — building a schema and
@@ -92,27 +92,52 @@ That registers the server with pi; configuring what it may access is a separate
 step — see [Configure the MCP server](#configure-the-mcp-server-all-harnesses)
 below.
 
-### VS Code (GitHub Copilot)
+### Hermes Agent
 
-Copilot gets the plugin from the **MariaDB extension for VS Code**
-(`MariaDB.mariadb-dev`), not from this repo directly. The extension contributes
-the `dev` skills of the newest release here to Copilot, and offers Copilot the
-`mariadb-shell` MCP server as **MariaDB** in VS Code's MCP server list — no
-configuration files to edit:
+`mariadb-dev` and its companion `mariadb-guard` are listed in the
+[Hermes plugin catalog](https://hermes-agent.nousresearch.com/docs/plugins/mariadb-dev),
+so Hermes installs them by name (in Hermes Desktop: **Capabilities → Plugins →
+Browse**, search for "mariadb"):
 
 ```sh
-code --install-extension MariaDB.mariadb-dev
+hermes plugins install mariadb-dev --enable
+hermes plugins install mariadb-guard --enable
 ```
 
-The first time Copilot starts the server, the extension installs MariaDB Shell
-if there is none. Each extension build picks up the skills of the newest
-ai-plugins release, so a release here reaches Copilot with the next extension
-release. The `mariadb.copilot.enabled` setting turns both off.
+The second package, `mariadb-guard`, stops the agent from using the MariaDB command-line
+clients for what the MCP tools do (see
+[below](#database-access-goes-through-the-mcp-server)). It is a separate package
+because Hermes runs hooks only from a Python plugin.
 
-The extension's **Connections** view can stand in for `mcp setup`: tick **Allow
-MCP access to this connection** on a connection to let the agent open it.
-Otherwise configure the
-server as for the other harnesses — see
+Then start a new Hermes session; MCP servers connect at session start.
+`--enable` is needed because Hermes installs portable packages disabled. On native Windows the MCP server needs an entry in Hermes'
+`config.yaml`. Full steps in
+[hermes/dev-plugin/README.md](hermes/dev-plugin/README.md).
+
+A catalog install checks out the release the catalog pins, and
+`hermes plugins update` moves it to the next one. To install from this repo
+instead (the `main` branch, or the `sql` and `contributor` plugins, which are
+not in the catalog), give the plugin's folder — each one is a portable Agent Plugins v1
+package:
+
+```sh
+hermes plugins install mariadb/ai-plugins#hermes/dev-plugin --enable
+hermes plugins install mariadb/ai-plugins#hermes/guard-plugin --enable
+```
+
+Then configure the MCP server — see
+[Configure the MCP server](#configure-the-mcp-server-all-harnesses) below.
+
+### Cursor
+
+Cursor installs the Claude Code plugins from this repo's marketplace into its
+own directory, so Claude Code does not need to be installed. In Cursor:
+
+1. Click **Customize**, then **+ Add Marketplace**.
+2. Paste the marketplace URL `https://github.com/mariadb/ai-plugins` and confirm.
+3. Click **Add** on the `dev` plugin (or `sql` / `contributor`).
+
+Then configure the MCP server — see
 [Configure the MCP server](#configure-the-mcp-server-all-harnesses) below.
 
 ## Configure the MCP server (all harnesses)
@@ -154,6 +179,37 @@ for the full reference:
   and extracts it into `~/.local/share/mariadb-migrator/<version>`.
   See [Migration tooling](https://github.com/mariadb-corporation/mariadb-shell-plugins/blob/main/mcp_plugin/README.md#migration-tooling).
 
+### Database access goes through the MCP server
+
+Once the plugins are installed, the agent uses the MCP server's tools, not
+`mariadb`, `mariadb-shell`, `mariadb-dump` or another command-line client run
+from its shell, for anything those tools do. Such a client needs the password on
+its command line or in its environment, where it lands in the process list, in
+logs, and in the conversation the model provider sees. The MCP server reads each
+password from the secret store, so the agent never sees one. Configure the
+servers the agent may use with `mariadb-shell -- mcp setup` or its
+[command-line options](https://mariadb.com/docs/tools/community/mariadb-shell/mcp-server/automated-setup),
+and let it deploy sandboxes for local testing.
+
+Two layers keep it that way:
+
+- **The MCP server's instructions**, which a harness puts in the system prompt,
+  and its tool descriptions say so, and ask the agent to deploy sandboxes with a
+  random password.
+- **A guard** blocks a shell command that uses `mariadb` or `mysql` to run SQL,
+  `mariadb-shell` or `mysqlsh` in SQL mode or for an API call a tool wraps
+  (`-- util dump-schemas`, or `-- msm get schema-diagrams` for a function in
+  a group), or `mariadb-dump` piped into another client, and
+  tells the model which tool to use instead. Everything the tools do not cover
+  still runs, so the agent keeps the clients' other features. The guard is a
+  `PreToolUse` hook in the Claude Code and Codex plugins, the Pi extension
+  itself, an OpenCode plugin, and the separate `mariadb-guard` package for
+  Hermes. Codex runs it only after you have trusted the plugin's hooks once in
+  an interactive session.
+
+To let the agent run the clients regardless, start it with
+`MARIADB_PLUGIN_ALLOW_CLI=1` in its environment.
+
 ## What you can ask for
 
 **With skills alone**, no database connection needed:
@@ -193,13 +249,16 @@ Four things to know regarding sandbox instances:
 - A `root@'%'` account is created and the sandbox listens on all interfaces,
   which is worth changing outside a trusted network.
 
-The MCP server provides 28 tools in three groups:
+The MCP server provides 59 tools in six groups:
 
 | Group | Tools | What they do |
 | ----- | ----- | ------------ |
 | `db.*` | 8 | list connections and schemas, describe objects, run SQL |
-| `msm.*` | 12 | MariaDB Schema Management — versioned schema projects, releases, deployments |
-| `sandbox.*` | 8 | list deployable server versions; deploy, start, stop and delete local throwaway instances |
+| `msm.*` | 26 | MariaDB Schema Management — versioned schema projects, releases, deployments |
+| `sandbox.*` | 9 | list deployable server versions and local instances; deploy, start, stop and delete local throwaway instances |
+| `util.*` | 10 | dump, load, export, import and copy data between servers, as background tasks; inspect a dump |
+| `task.*` | 3 | follow, list and cancel those background tasks |
+| `sql.*` | 3 | check, outline and format SQL text with MariaDB's grammar, no server needed (mariadb-shell 26.10.3+, needs `mariadb-lsp`) |
 
 ## Plugin variants
 
@@ -213,9 +272,7 @@ Each agent ships the plugin variants below — all built by the same
 | `contributor` | skills for **contributing to MariaDB tooling** | no | [`mariadb-shell`](https://github.com/mariadb-corporation/mariadb-shell) `.claude/skills/` |
 
 The folders are `<agent>/{dev,sql,contributor}-plugin/` for each of `claude/`,
-`codex/`, and `opencode/`; `pi/` ships `dev` only for now. VS Code has no folder
-here: the MariaDB extension vendors `claude/dev-plugin/skills` of the newest
-release when it is built. Skills are baseline
+`codex/`, `opencode/` and `hermes/`; `pi/` ships `dev` only for now. Skills are baseline
 **MariaDB 11.8 LTS**; the `dev` and `sql` plugins share the same auto-downloading
 `mariadb-shell` MCP server, while `contributor` is skills-only for now.
 
@@ -226,6 +283,11 @@ a `package.json` carrying a `pi` field, so the **repo-root
 [pi/dev-plugin/](pi/dev-plugin)) and the whole repo installs as one pi package.
 The package's extension registers the MCP server with Pi's built-in MCP support
 (Pi 1.0+). See [pi/README.md](pi/README.md).
+
+Hermes Agent installs each plugin folder on its own as a portable **Agent
+Plugins v1** package — a root `plugin.json`, `skills/` and, for `dev` and `sql`,
+a root `mcp.json` — so it needs no marketplace file either. Its plugin names are
+`mariadb-dev`, `mariadb-sql` and `mariadb-contributor`.
 
 ## Documentation site
 

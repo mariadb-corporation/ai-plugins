@@ -1,13 +1,24 @@
 {
   "$schema": "https://opencode.ai/config.json",
+  "plugin": ["{env:MARIADB_DEV_PLUGIN}/plugins/mariadb-guard.ts"],
   "mcp": {
     "mariadb": {
       "type": "local",
-      "command": ["{env:MARIADB_DEV_PLUGIN}/scripts/mariadb-mcp-launcher.sh"],
+      "command": ["{env:MARIADB_DEV_PLUGIN}/scripts/mariadb-mcp-launcher"],
       "environment": {
-        "MARIADB_SHELL_VERSION": "26.10.1"
+        "MARIADB_SHELL_VERSION": "26.11.2",
+        "MARIADB_RESTD_VERSION": "26.11.0"
       },
       "enabled": true
+    }
+  },
+  "lsp": {
+    "mariadb": {
+      "command": ["{env:MARIADB_DEV_PLUGIN}/scripts/mariadb-lsp-launcher"],
+      "extensions": [".sql"],
+      "env": {
+        "MARIADB_SHELL_VERSION": "26.11.2"
+      }
     }
   }
 }

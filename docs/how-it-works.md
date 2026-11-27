@@ -18,7 +18,7 @@ which is which explains most of what happens when something does not work.
 | Part | What it is | Needs |
 | --- | --- | --- |
 | **Skills** | {{ site.skill_count }} Markdown documents vendored into the plugin. The agent reads the ones whose `description` matches what you asked. | Nothing. They work on a fresh install, offline. |
-| **MCP server** | {{ site.tool_count }} tools that talk to a real MariaDB server, in three groups: `db.*`, `msm.*`, `sandbox.*`. | A one-time `mcp setup`, and a server to talk to. |
+| **MCP server** | {{ site.tool_count }} tools that talk to a real MariaDB server, in six groups: `db.*`, `msm.*`, `sandbox.*`, `util.*`, `task.*`, `sql.*`. | A one-time `mcp setup`, and a server to talk to. |
 | **`mariadb-shell`** | MariaDB's command-line shell (a port of MySQL Shell). The MCP server runs **inside** it as a plugin. | Installed automatically on first use. |
 
 </div>
@@ -71,6 +71,31 @@ The launcher writes every message it produces to **stderr**, because stdout *is*
 the MCP JSON-RPC transport. A single stray byte on stdout breaks the protocol,
 which is why the installer's output is redirected too.
 
+## The SQL language server
+
+From `mariadb-shell` 26.10.3 on, the shell's package also carries `mariadb-lsp`,
+a language server that parses `.sql` files with the MariaDB server's own
+grammar. Where the harness supports language servers, the `dev` and `sql`
+plugins wire it up, and the agent sees MariaDB's syntax errors right after it
+writes a SQL file — before it runs anything:
+
+<div class="table-wrap" markdown="1">
+
+| Harness | How it is registered |
+| --- | --- |
+| Claude Code | Automatically, by the plugin's `.lsp.json`. Set `ENABLE_LSP_TOOL=1` to also give the agent the `LSP` tool (symbols, hover, definitions, references). |
+| OpenCode | The `lsp` block of the plugin's `opencode.json`, merged into yours. |
+| Hermes Agent | An `lsp.servers` entry you add to `config.yaml` — plugins cannot register one. |
+| Codex, Pi | No language server — neither runs one. The agent gets the same checks through the MCP server's [`sql.*` tools](../mcp-tools/#sql--check-outline-and-format-sql) instead. |
+
+</div>
+
+It has a launcher of its own, `mariadb-lsp-launcher.sh`, with one rule: it
+**never installs anything**. It finds the shell the MCP launcher would use and
+runs the `mariadb-lsp` next to it. On a first start it simply waits for the MCP
+launcher's download to finish, so starting both servers at once still fetches
+the package exactly once.
+
 ## The security model
 
 The MCP server refuses everything it has not been told about. There are two
@@ -83,10 +108,10 @@ The agent cannot invent a host. `db.connect` checks its argument against the
 configured connections, and `db.list_connections` is what an agent calls first
 to find out what exists.
 
-The matching normalizes equivalent spellings — a `mariadb://` or `mysql://`
-scheme, host case, the default port, an inline password — so all of those open
-the stored connection. What is refused is a URI asking for **more** than was
-configured:
+The matching normalizes equivalent spellings — a `mariadb://` scheme, host case,
+the default port, an inline password — so all of those open the stored
+connection. A `mysql://` scheme is not accepted. What is also refused is a URI
+asking for **more** than was configured:
 
 ```text
 root@127.0.0.1:3310/notes_app        → refused (a default schema)
@@ -125,7 +150,7 @@ agent just created.
 
 ## The plugin variants
 
-There are three variants, all built by the same
+Each harness ships the same three variants, all built by the same
 [`scripts/sync-skills.sh`]({{ site.repo }}/blob/main/scripts/sync-skills.sh):
 
 <div class="table-wrap" markdown="1">
@@ -139,8 +164,7 @@ There are three variants, all built by the same
 </div>
 
 The folders are `<harness>/{dev,sql,contributor}-plugin/` for `claude/`,
-`codex/` and `opencode/`. `pi/` ships `dev` only. VS Code has no folder at all —
-see below.
+`codex/`, `opencode/` and `hermes/`. `pi/` ships `dev` only.
 
 ## How the harnesses differ
 
@@ -148,6 +172,9 @@ The content is identical; the packaging is not.
 
 - **Claude Code** and **Codex** both read a marketplace manifest and install a
   plugin directory. Codex reads `.agents/plugins/marketplace.json`.
+- **Cursor** reads the Claude Code marketplace and installs the very same
+  `claude/` plugins into its own directory. There is no Cursor-specific
+  packaging.
 - **OpenCode** has no marketplace, so its plugin is wired up by hand: one `mcp`
   block merged into your config, an env var, and a symlink for the skills.
 - **Pi** has no marketplace. A pi package is any directory with a `pi` field in
@@ -155,12 +182,17 @@ The content is identical; the packaging is not.
   whole repository installs as one package. Its extension registers the MCP
   server with Pi's built-in MCP support (Pi 1.0+), which exposes the tools
   through codemode by default.
-- **VS Code** (GitHub Copilot) gets the plugin from the **MariaDB extension for
-  VS Code**, not from this repository. When the extension is built, it copies
-  `claude/dev-plugin/skills` from the newest ai-plugins release and contributes
-  those skills to Copilot. At run time it registers the `mariadb-shell` MCP
-  server with VS Code itself, so there is no launcher script and no config file
-  — and it installs MariaDB Shell the first time Copilot starts the server.
+- **Hermes Agent** installs `dev` and the guard from its own **plugin catalog**:
+  a reviewed entry in the hermes-agent repository per plugin, pinned to the exact commit of an
+  ai-plugins release (`hermes plugins install mariadb-dev`). Each entry points at
+  a plugin folder that is a portable **Agent Plugins v1** package — a root
+  `plugin.json`, `skills/` and, for `dev` and `sql`, an `mcp.json` declaring the
+  server — which Hermes can also install straight from the repository with
+  `hermes plugins install …#hermes/dev-plugin`, the way to `sql` and
+  `contributor`, which are not in the catalog. The
+  tools reach the model as `mcp__mariadb__<tool>`, and the skills sit under a
+  namespace Hermes derives from the plugin. `mcp.json` cannot branch per OS, so
+  native Windows points Hermes' `config.yaml` at the `.cmd` launcher instead.
 
 ## Why the skills are vendored
 

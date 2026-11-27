@@ -13,8 +13,9 @@ getting-started site. This folder is the reference.
 | --- | --- |
 | `content/` | **The GitBook source.** Markdown plus GitBook blocks, laid out as a GitBook space. This is what gets ported. |
 | `content/SUMMARY.md` | GitBook's navigation. The preview's sidebar is generated from it, so it is the only place the page tree is defined. |
-| `content/README.md` | A stand-in for the Enterprise Tools space landing page. Only its `## MariaDB AI Plugins` section is meant for porting. |
-| `content/mariadb-ai-plugins/` | The product docs. |
+| `content/README.md` | A stand-in for the Enterprise Tools space landing page. Only its `### MariaDB AI Plugins` section (under `## Community Tools`) is meant for porting. |
+| `content/community/README.md` | A stand-in for the Community Tools landing page. Only its `## MariaDB AI Plugins` section is meant for porting. |
+| `content/community/mariadb-ai-plugins/` | The product docs. |
 | `content/.gitbook/assets/` | Images, as GitBook stores them. Reference them as `.gitbook/assets/<file>` (with the right `../` depth). |
 | `docusaurus.config.js`, `sidebars.js`, `src/`, `static/` | The preview site only. Never ported. |
 | `scripts/generate-skill-pages.py` | Generates the Skills Reference pages. |
@@ -24,15 +25,16 @@ getting-started site. This folder is the reference.
 ```sh
 cd docs-ref
 npm ci            # once
-npm start         # live reload  → http://localhost:3000/docs/tools/mariadb-ai-plugins
+npm start         # live reload  → http://localhost:3000/docs/tools/community/mariadb-ai-plugins
 npm run build     # static build → build/, then: npm run serve
 ```
 
 From the repository root: `npm run docs-ref`, `npm run docs-ref:build`,
 `npm run docs-ref:serve`.
 
-The build fails on a broken link or a missing `content-ref` target, so a clean
-build is a useful check before porting.
+The build fails on a broken link, a missing `content-ref` target, a link to a
+heading anchor that GitBook doesn't publish, or a `description` over 200
+characters, so a clean build is a useful check before porting.
 
 ## Publishing the preview on a web server
 
@@ -58,7 +60,7 @@ rsync -a --delete build/ user@host:/var/www/html/docs/
 ```
 
 Apache's defaults do the rest: `mod_dir` serves `index.html` and redirects
-`/docs/tools/mariadb-ai-plugins` to the trailing-slash URL. For `.htaccess` to
+`/docs/tools/community/mariadb-ai-plugins` to the trailing-slash URL. For `.htaccess` to
 take effect, the directory needs `AllowOverride FileInfo` (or `All`). Without
 it, everything still works except that unknown URLs get Apache's own 404 page.
 
@@ -80,7 +82,7 @@ unchanged. The canonical guides live in the `mariadb-docs` repository:
 
 ### Generated pages
 
-The pages under `content/mariadb-ai-plugins/skills-reference/` — all but its
+The pages under `content/community/mariadb-ai-plugins/skills-reference/` — all but its
 `README.md` — are **generated** from the skills the plugins ship. Don't edit
 them by hand; after `scripts/sync-skills.sh`, run:
 
@@ -103,6 +105,18 @@ fills three gaps, without patching the package:
 - **The `description`** is rendered as the lead paragraph, and **directory
   links** (`[x](dir/)`) are resolved to the directory's `README.md`.
 
+[`src/remark/gitbook-heading-ids.js`](src/remark/gitbook-heading-ids.js)
+makes the preview's checks match GitBook's:
+
+- **Heading ids** follow GitBook's rules, not Docusaurus's. GitBook keeps dots
+  and underscores (`## db.connect` → `#db.connect`, where Docusaurus makes
+  `#dbconnect`), numbers duplicates in one namespace with `{% tab %}` titles,
+  and gives h5 and h6 no id. With `onBrokenAnchors: 'throw'`, a link to an
+  anchor that GitBook doesn't publish fails the build. The rules are a port of
+  the fragment checker in mariadb-docs (`.claude/hooks/fragcheck.py`).
+- **A `description` over 200 characters** fails the build, because GitBook
+  cuts it there, mid-word.
+
 [`src/theme/Navbar`](src/theme/Navbar/index.js) adds the space-tab row of the
 mariadb.com/docs header, and [`src/css/mariadb-gitbook.css`](src/css/mariadb-gitbook.css)
 carries the theme, with the colour scales copied from the live site in both
@@ -113,19 +127,23 @@ Awesome page icons in the sidebar, and GitBook's search.
 
 ## Porting to mariadb-docs
 
-The target is the **Enterprise Tools** space (`tools/` in
-`mariadb-corporation/mariadb-docs`, published at
-`https://mariadb.com/docs/tools/`), next to MariaDB Enterprise MCP Server and
-MariaDB AI RAG. The preview uses the same URL layout.
+The target is the **Community Tools** section of the Enterprise Tools space
+(`tools/community/` in `mariadb-corporation/mariadb-docs`, published at
+`https://mariadb.com/docs/tools/community/`), next to the MySQL to MariaDB
+Migrator. The preview uses the same URL layout.
 
-1. Copy `content/mariadb-ai-plugins/` to `tools/mariadb-ai-plugins/`, and any
-   images from `content/.gitbook/assets/` to `tools/.gitbook/assets/`.
-2. Add the `* [MariaDB AI Plugins](mariadb-ai-plugins/README.md)` subtree from
-   `content/SUMMARY.md` to `tools/SUMMARY.md`.
-3. Add the `## MariaDB AI Plugins` section of `content/README.md` to
-   `tools/README.md`.
-4. Rewrite links to other spaces as link aliases, e.g.
-   `https://mariadb.com/docs/server/security/cve` → `{server}/security/cve`
-   (see `dev-docs/link-aliases.md` there). The preview keeps absolute URLs
-   because it cannot resolve aliases.
+1. Copy `content/community/mariadb-ai-plugins/` to
+   `tools/community/mariadb-ai-plugins/`, and any images from
+   `content/.gitbook/assets/` to `tools/.gitbook/assets/`.
+2. Add the `* [MariaDB AI Plugins](community/mariadb-ai-plugins/README.md)`
+   subtree from `content/SUMMARY.md` under `* [Community Tools]` in
+   `tools/SUMMARY.md`.
+3. Add the `## MariaDB AI Plugins` section of `content/community/README.md` to
+   `tools/community/README.md`, and the `### MariaDB AI Plugins` section of
+   `content/README.md` under `## Community Tools` in `tools/README.md`.
+4. Copy the files unchanged. Keep links to other spaces as absolute URLs
+   (`https://mariadb.com/docs/server/security/cve`), not link aliases. In
+   mariadb-docs, a bot rewrites aliases on every PR, and the synced files must
+   stay identical to these, so that a contributor's edit to a synced page in
+   mariadb-docs can be applied here as a PR.
 5. Run `docs-check` in mariadb-docs before opening the PR.

@@ -1,6 +1,6 @@
 # MariaDB SQL plugin for Codex
 
-Version **26.10.2**
+Version **26.11.0**
 
 This plugin gives [OpenAI Codex](https://developers.openai.com/codex/) first-class
 MariaDB SQL support through two parts:
@@ -51,7 +51,7 @@ Declared in [.mcp.json](.mcp.json):
       "command": "./scripts/mariadb-mcp-launcher",
       "cwd": ".",
       "args": [],
-      "env": { "MARIADB_SHELL_VERSION": "26.10.1" }
+      "env": { "MARIADB_SHELL_VERSION": "26.11.2" }
     }
   }
 }
@@ -92,7 +92,9 @@ that entry takes precedence over the plugin's.
 
 The real launcher ([scripts/mariadb-mcp-launcher.sh](scripts/mariadb-mcp-launcher.sh)), which the shim execs:
 
-- Resolves the minimum version from `MARIADB_SHELL_VERSION` (default `26.10.1`).
+- Resolves the minimum version from `MARIADB_SHELL_VERSION` (default `26.11.2`).
+
+- Passes `MARIADB_RESTD_VERSION` (default `26.11.0`) on to the MCP server: the lowest MariaDB REST Daemon (mariadb-restd) it accepts when it sets one up.
 - Runs the first `mariadb-shell` that meets it: `$MARIADB_SHELL_BIN`, then one on
   `PATH`, then a local install at `~/.local/bin/mariadb-shell`
   (`%LOCALAPPDATA%\Programs\mariadb-shell\bin\mariadb-shell.cmd` on Windows).
@@ -133,6 +135,43 @@ If `mariadb-shell` isn't on your `PATH`, use the copy the launcher installed —
 installer only prints a `PATH` hint; it never edits your shell profile. That copy
 appears the first time this plugin starts the MCP server, so either let the agent
 run once first, or install the shell yourself before configuring it.
+
+### Database access goes through the MCP server
+
+The agent uses the MCP server's tools, not a command-line client, for anything
+those tools do. A client run from the agent's shell needs the password on its
+command line (`-p<password>`) or in its environment. From there it reaches the
+process list, logs, and the conversation the model provider sees. A connection
+opened through the MCP server reads its password from the secret store, so the
+agent never sees one. To give the agent a server, configure it yourself with
+`mariadb-shell -- mcp setup` (see above) or its
+[command-line options](https://mariadb.com/docs/tools/community/mariadb-shell/mcp-server/automated-setup).
+For a local test server the agent deploys a sandbox, with a random root
+password it generates; the password is stored with the sandbox's connection.
+
+This plugin enforces that with a `PreToolUse` hook on the shell tool
+([hooks/hooks.json](hooks/hooks.json), [hooks/mariadb-cli-guard.sh](hooks/mariadb-cli-guard.sh)).
+**Codex runs a plugin's hooks only once you have trusted them.** Start an
+interactive `codex` session after installing; it asks you to review the new
+hooks, and approving them is a one-time step. Until then Codex skips the hook
+without a word, and `codex exec` never asks.
+
+It looks at only five clients, and each only where an MCP tool does the job:
+
+| Client | Blocked when | Use instead |
+| --- | --- | --- |
+| `mariadb`, `mysql` | it runs SQL | `db.execute_sql`, `db.execute_sql_script` |
+| `mariadb-shell`, `mysqlsh` | it runs SQL (SQL mode) | `db.execute_sql`, `db.execute_sql_script` |
+| `mariadb-shell`, `mysqlsh` | it calls `-- <object> <method>` that a tool wraps, such as `-- util dump-schemas` | the matching tool, here `util.dump_schemas` |
+| `mariadb-shell`, `mysqlsh` | it calls an msm function whose tool only the MariaDB VS Code extension gets, such as `-- msm edit-schema` | none: the model is told to ask the user to do it in the extension |
+| `mariadb-dump` | its output is piped into another client | `util.copy_instance`, `util.copy_schemas`, `util.copy_tables` |
+
+Everything else runs: `--version` and `--help`, Python or JavaScript mode, a dump
+written to a file, `mariadb-shell -- mcp setup`, an API call no tool wraps, and
+every other client. A client is caught behind a path, `env`, a pipe, `&&`,
+`sh -c "..."` or `$(...)`. The model is told which tool to use instead. To let
+the agent run the clients regardless, start it with `MARIADB_PLUGIN_ALLOW_CLI=1`
+in its environment; the model cannot set that itself.
 
 ## Skills
 

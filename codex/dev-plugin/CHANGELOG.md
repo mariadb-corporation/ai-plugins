@@ -4,6 +4,168 @@ All notable changes to the MariaDB Codex plugin are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 project adheres to [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Fixed
+
+- On macOS and Linux, a launcher whose install failed because another install
+  into the same folder was running now waits for that install and starts the
+  shell it put in place, instead of the old shell. A launcher also gives back
+  only its own install lock: it reads the lock again just before installing,
+  and waits for its turn again when the lock names another launcher. Taking and
+  giving back the lock is now logged with the PIDs involved.
+
+## [26.11.0] - 2026-11-14
+
+### Added
+
+- The MCP server is given `MARIADB_RESTD_VERSION` (26.11.0): the lowest MariaDB
+  REST Daemon it accepts when an agent sets one up without naming a version. It
+  moves with the newest rest-daemon release, as `MARIADB_SHELL_VERSION` does
+  with the shell's (`scripts/set-mariadb-restd-version.sh`).
+
+### Changed
+
+- The `LICENSE` file follows legal's review: MariaDB plc, for its
+  modifications and additions, also grants the additional permission to
+  link with separately licensed software, and the third-party list adds
+  the packages the VS Code extension's notebooks bundle (sucrase and its
+  dependencies, acorn).
+- `MARIADB_SHELL_VERSION`, the *minimum* `mariadb-shell` the launcher accepts,
+  now defaults to `26.11.2`, the newest published `mariadb-shell` release. An
+  install already at or above that version is still used as-is; only a machine
+  below it fetches anything.
+- Skills re-vendored from `mariadb-corporation/mariadb-docs` `agent-skills/` at
+  commit `114a4b7` (synced 2026-11-14). `mariadb-string-functions` adds the two
+  XML functions, `EXTRACTVALUE` and `UPDATEXML`, which query and update XML
+  strings with XPath; the plugin's 85 skills are otherwise unchanged.
+- Version bumped to 26.11.0 to stay in lockstep with the other plugins.
+
+### Fixed
+
+- On macOS and Linux, launchers started at the same time no longer all fail
+  to install `mariadb-shell`. Before, two sessions starting together, or a session and
+  another tool installing `mariadb-shell`, each ran the installer into the same
+  folder, and every one of them failed. Now they take turns through a lock folder
+  in the install prefix, and the ones that waited start the shell the first one
+  installed. After a failed install, the launcher starts a shell that meets
+  `MARIADB_SHELL_VERSION` if one appeared meanwhile, and starts an older one,
+  with a warning, only when there is none. `MARIADB_SHELL_LOCK_WAIT` (default
+  180 s) limits the wait.
+- On Windows, launchers started at the same time no longer fail over the
+  installer script: each downloads it into a temporary folder of its own, where
+  before they could share one file name and all but one failed. Taking turns
+  over the install itself is left to mariadb-shell's `install.ps1`. After
+  installing, the launcher starts any shell that meets
+  `MARIADB_SHELL_VERSION`, whoever installed it, and an older one, with a
+  warning, only when there is none.
+- On Windows, a first install started from PowerShell 7 (a `pwsh` terminal, for
+  instance) no longer fails with "The term 'Get-FileHash' is not recognized":
+  the launcher clears `PSModulePath`, so the Windows PowerShell it runs loads its
+  own modules rather than PowerShell 7's.
+- The launcher reads all of `mariadb-shell --version` for the version, not
+  only its first line, which a build can fill with other messages.
+
+## [26.10.6] - 2026-10-24
+
+### Changed
+
+- The `LICENSE` file names the bundled-packages section's extension by its
+  current name, MariaDB Shell for VS Code.
+- `MARIADB_SHELL_VERSION`, the *minimum* `mariadb-shell` the launcher accepts,
+  now defaults to `26.10.4`, the newest published `mariadb-shell` release. An
+  install already at or above that version is still used as-is; only a machine
+  below it fetches anything.
+- Skills re-vendored from `mariadb-corporation/mariadb-docs` `agent-skills/` at
+  commit `62ef6fe` (synced 2026-10-24). The upstream default branch moved on, but
+  nothing under `agent-skills/` did, so the plugin's 85 vendored
+  skills are unchanged.
+- Version bumped to 26.10.6 to stay in lockstep with the other plugins.
+
+## [26.10.5] - 2026-10-21
+
+### Changed
+
+- When the MCP launcher starts a first install of mariadb-shell, it now says
+  on stderr that the install still finishes if the harness gives up on the
+  server meanwhile (Claude Code waits 30 seconds unless `MCP_TIMEOUT` is
+  raised), and how to reconnect afterwards.
+- The `LICENSE` file is updated to include the licenses of the latest
+  third-party components.
+- `MARIADB_SHELL_VERSION`, the *minimum* `mariadb-shell` the launcher accepts,
+  now defaults to `26.10.3`, the newest published `mariadb-shell` release and
+  the first with `mariadb-lsp`. An install already at or above that version is
+  still used as-is; only a machine below it fetches anything.
+- Skills re-vendored from `mariadb-corporation/mariadb-docs` `agent-skills/` at
+  commit `12d4cd3` (synced 2026-10-21). The upstream default branch moved on, but
+  nothing under `agent-skills/` did, so the vendored skills are unchanged.
+- `mariadb-schema-management-develop`: a `SOURCE` line's slice is now optional
+  (without one the whole file is inlined), and its bounds may be line numbers
+  (`[ln4:]`, `[ln4:ln-4]`) as well as character offsets. Both need a MariaDB
+  Shell newer than 26.10.2; the skill says to keep giving character offsets on
+  26.10.2 or older. The plugin keeps its 85 skills.
+- Version bumped to 26.10.5 to stay in lockstep with the other plugins.
+
+## [26.10.4] - 2026-10-19
+
+### Added
+
+- A guard that stops the agent from using the MariaDB and MySQL command-line
+  clients for what the `mariadb` MCP server's tools do, so no password reaches a
+  command line, the process list, logs or the model: `mariadb`/`mysql` running
+  SQL, `mariadb-shell`/`mysqlsh` in SQL mode or calling an API a tool wraps (`--
+  util dump-schemas`), and `mariadb-dump` piped into another client. Everything
+  the tools do not cover still runs. It is a `PreToolUse` hook on the shell tool
+  (`hooks/hooks.json`, `hooks/mariadb-cli-guard.sh`), which Codex runs once the
+  plugin's hooks are trusted in an interactive session. A blocked command is
+  answered with the tool to use instead. `MARIADB_PLUGIN_ALLOW_CLI=1` turns it
+  off.
+
+### Changed
+
+- `MARIADB_SHELL_VERSION`, the *minimum* `mariadb-shell` the launcher accepts,
+  now defaults to `26.10.2`, the newest published `mariadb-shell` release. An
+  install already at or above that version is still used as-is; only a machine
+  below it fetches anything.
+- Skills re-vendored from `mariadb-corporation/mariadb-docs` `agent-skills/` at
+  commit `a439473` (synced 2026-10-19). The upstream default branch moved on, but
+  nothing under `agent-skills/` did, so this plugin's 85 skills are unchanged.
+- Version bumped to 26.10.4 to stay in lockstep with the other plugins.
+
+## [26.10.3] - 2026-10-15
+
+### Changed
+
+- When the launcher cannot install `mariadb-shell`, its error message now
+  suggests downloading the installer and then running it, rather than piping
+  `curl` into `bash`, so the script can be read before it runs.
+- The five REST Service skills follow the REST SQL that MariaDB Shell now runs
+  in its built-in `mrs` module, with metadata schema 5.0.0: the metadata schema
+  is `mariadb_rest_service` and its roles are `mariadb_rest_service_*` (with an
+  optional prefix or postfix, `CONFIGURE REST METADATA SCHEMA …`), the
+  server-account auth vendor is `MARIADB` (there is no `MYSQL` vendor), and the
+  new `SHOW REST STATUS`, `SHOW REST COLUMNS`, `SHOW REST USERS`,
+  `SHOW REST AUTH VENDORS`, `SHOW REST DAEMONS`, `DROP REST DAEMON` and
+  `FORMAT=JSON` statements are covered.
+- Skills re-vendored from `mariadb-corporation/mariadb-docs` `agent-skills/` at
+  commit `cc8dd40` (synced 2026-10-15). The Connector/C, C++, ODBC and Python
+  install skills and `mariadb-features` no longer run privileged commands: root
+  steps such as package installs and writes under `/usr` are handed to the user,
+  as one command to run or a script to review, and the examples show them without
+  `sudo`. The C, C++ and ODBC skills add a build into `$HOME/.local` that needs no
+  root, the ODBC skill registers the driver and the DSN per user, the Python skill
+  installs into a virtual environment, and `mariadb-connector-cpp-install` names
+  the library directory of the RPM tarballs (`lib64/mariadb`). No skill was added
+  or removed, so the plugin stays at 85 skills.
+- Version bumped to 26.10.3 to stay in lockstep with the other plugins.
+
+### Fixed
+
+- REST Service skill examples that were syntax errors: `ALTER REST VIEW` now uses
+  `CLASS <name>`, request paths such as `/index.html` and wildcards are quoted in
+  backticks, and `SHOW CREATE REST AUTH APP` has no `FROM SERVICE` clause. A REST
+  function's result maps the column `result`.
+
 ## [26.10.2] - 2026-10-09
 
 ### Changed

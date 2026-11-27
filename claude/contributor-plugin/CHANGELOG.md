@@ -4,6 +4,79 @@ All notable changes to the MariaDB contributor Claude Code plugin are documented
 The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 project adheres to [Semantic Versioning](https://semver.org/).
 
+## [26.11.0] - 2026-11-14
+
+### Changed
+
+- The `LICENSE` file follows legal's review: MariaDB plc, for its
+  modifications and additions, also grants the additional permission to
+  link with separately licensed software, and the third-party list adds
+  the packages the VS Code extension's notebooks bundle (sucrase and its
+  dependencies, acorn).
+- Skills re-vendored from `mariadb-corporation/mariadb-shell` `.claude/skills/`
+  at commit `fa2ec8a` (synced 2026-11-14). `create-shell-plugin` explains how to
+  offer a plugin function as an MCP tool of the MariaDB MCP Server (`mcp=` on
+  `@plugin_function`), the plugin search paths in order with
+  `MARIADB_SHELL_PLUGINS_PATH` and `MARIADB_SHELL_DISABLE_BUILTIN_PLUGINS`, and
+  `plugin.json` for a plugin that extends an object another plugin creates;
+  `review-shell-change` reworks its review steps. The plugin's 3 skills are
+  otherwise unchanged.
+- Version bumped to 26.11.0 to stay in lockstep with the other plugins. This
+  plugin ships skills only and no MCP server, so the `MARIADB_SHELL_VERSION`
+  floor does not apply here.
+
+## [26.10.6] - 2026-10-24
+
+### Changed
+
+- The `LICENSE` file names the bundled-packages section's extension by its
+  current name, MariaDB Shell for VS Code.
+- Skills re-vendored from `mariadb-corporation/mariadb-shell` `.claude/skills/`
+  at commit `b074605` (synced 2026-10-24). Nothing under `.claude/skills/` changed,
+  so the plugin's 3 skills are unchanged.
+- Version bumped to 26.10.6 to stay in lockstep with the other plugins. This
+  plugin ships skills only and no MCP server, so the `MARIADB_SHELL_VERSION`
+  floor does not apply here.
+
+## [26.10.5] - 2026-10-21
+
+### Changed
+
+- The `LICENSE` file is updated to include the licenses of the latest
+  third-party components.
+- Skills re-vendored from `mariadb-corporation/mariadb-shell` `.claude/skills/`
+  at commit `1413abd` (synced 2026-10-21). Nothing under `.claude/skills/` changed,
+  so the plugin's 3 skills are unchanged.
+- Version bumped to 26.10.5 to stay in lockstep with the other plugins. This
+  plugin ships skills only and no MCP server, so the `MARIADB_SHELL_VERSION`
+  floor does not apply here.
+
+## [26.10.4] - 2026-10-19
+
+### Changed
+
+- Skills re-vendored from `mariadb-corporation/mariadb-shell` `.claude/skills/`
+  at commit `a4352a5` (synced 2026-10-19). `review-shell-change` adds two rules that
+  change verdicts: a scenario the product cannot produce (state only a person
+  can create by hand, such as rows written straight into the REST metadata
+  schema) is not a finding, and a defect outside the change goes to a separate
+  follow-up list rather than into the findings. The plugin keeps its 3 skills.
+- Version bumped to 26.10.4 to stay in lockstep with the other plugins. This
+  plugin ships skills only and no MCP server, so the `MARIADB_SHELL_VERSION`
+  floor does not apply here.
+
+## [26.10.3] - 2026-10-15
+
+### Changed
+
+- Skills re-vendored from `mariadb-corporation/mariadb-shell` `.claude/skills/`
+  at commit `37cb1d3` (synced 2026-10-15). `create-shell-plugin` points at the
+  current line of `Mysql_shell::get_plugins` and no longer mentions the
+  `plugins_path` shell option. The plugin keeps its 3 skills.
+- Version bumped to 26.10.3 to stay in lockstep with the other plugins. This
+  plugin ships skills only and no MCP server, so the `MARIADB_SHELL_VERSION`
+  floor does not apply here.
+
 ## [26.10.2] - 2026-10-09
 
 ### Changed

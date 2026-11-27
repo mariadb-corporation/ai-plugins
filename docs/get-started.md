@@ -4,9 +4,9 @@ title: Get Started
 subtitle: >-
   Install the plugin, tell the MCP server what it may touch, then build a real
   schema on a throwaway server. Fifteen minutes end to end.
-badges: ["Claude Code", "Codex", "OpenCode", "Pi", "VS Code"]
+badges: ["Claude Code", "Codex", "OpenCode", "Pi", "Hermes Agent", "Cursor"]
 permalink: /get-started/
-description: Install the MariaDB AI Plugins into Claude Code, Codex, OpenCode, Pi or VS Code, configure the mariadb-shell MCP server, and run your first working example.
+description: Install the MariaDB AI Plugins into Claude Code, Codex, OpenCode, Pi, Hermes Agent or Cursor, configure the mariadb-shell MCP server, and run your first working example.
 ---
 
 There are three steps, and only the first is mandatory. The **skills** work the
@@ -23,15 +23,22 @@ do not have to understand the protocol to use any of this.
 ## Step 1 — Install the plugin
 {: #step-1-install-the-plugin}
 
-Pick your harness. Claude Code, Codex and OpenCode ship three plugin variants —
-`dev` (the full set), `sql` (a SQL-focused subset) and `contributor` (for
-working on MariaDB tooling itself); Pi and VS Code ship `dev` only. Unless you
-know you want otherwise, install `dev`.
+Pick your harness. Each one ships the same three plugin variants — `dev` (the
+full set), `sql` (a SQL-focused subset) and `contributor` (for working on
+MariaDB tooling itself). Unless you know you want otherwise, install `dev`.
 
 <div class="callout" markdown="1">
 On first start the plugin downloads and extracts the `mariadb-shell` package
 unless a suitable one is already installed. Depending on your connection this
-can take a minute. It only happens once.
+can take a minute. It only happens once. If you are on a corporate network
+that cannot reach GitHub, follow the
+[offline installation]({{ '/offline-install/' | relative_url }}) instead.
+
+Claude Code waits 30 seconds for an MCP server to connect. If the download takes
+longer, `/mcp` shows the `mariadb` server as failed, but the install keeps going
+— reconnect the server from `/mcp` when it is done. To give it more time, set
+`MCP_TIMEOUT` (milliseconds) in `~/.claude/settings.json`:
+`{ "env": { "MCP_TIMEOUT": "120000" } }`.
 </div>
 
 ### Claude Code
@@ -80,23 +87,64 @@ Run `/mcp` inside pi to see the `mariadb` server. If you still have
 and turn the built-in `mcp` back on in `pi config`. The adapter replaces the
 built-in MCP support.
 
-### VS Code (GitHub Copilot)
+### Hermes Agent
 
-In VS Code there is nothing to wire up: install the **MariaDB extension for VS
-Code** and Copilot has the `dev` skills and the MCP server.
+`mariadb-dev` and its companion `mariadb-guard` are in the
+[Hermes plugin catalog](https://hermes-agent.nousresearch.com/docs/plugins/mariadb-dev),
+so Hermes installs them by name — in Hermes Desktop too, under **Capabilities →
+Plugins → Browse**:
 
 ```sh
-code --install-extension MariaDB.mariadb-dev
+hermes plugins install mariadb-dev --enable
+hermes plugins install mariadb-guard --enable
 ```
 
-The server shows up as **MariaDB** under *MCP: List Servers* in the Command
-Palette. The first time Copilot starts it, the extension installs MariaDB Shell
-if there is none. The `mariadb.copilot.enabled` setting switches the skills and
-the server off again, without touching the rest of the extension.
+Then start a new Hermes session — MCP servers connect at session start.
+`--enable` is there because Hermes installs portable packages disabled. Without
+the flag, run `hermes plugins enable mariadb-dev` afterwards.
 
-The skills are the ones from the newest ai-plugins release at the time the
-extension was built, so a new release here reaches Copilot with the next
-extension release.
+`mariadb-guard` keeps the agent from running the MariaDB command-line clients for
+what the MCP tools do, so no password reaches a command line; it is a package of
+its own because Hermes runs hooks only from a Python plugin. Later,
+`hermes plugins update mariadb-dev` updates the plugin to the release the catalog
+pins next, and `hermes plugins remove mariadb-dev` removes it.
+
+**Straight from the repository.** Each plugin folder is a portable Agent Plugins
+v1 package — a `plugin.json`, the skills and an `mcp.json` that declares the MCP
+server — so Hermes can also install one from its folder. That gets the `main`
+branch rather than the catalog's release, and is the way to the `sql` and
+`contributor` plugins, which are not in the catalog:
+
+```sh
+hermes plugins install {{ site.install_org }}/ai-plugins#hermes/dev-plugin --enable
+```
+
+`#hermes/sql-plugin`, `#hermes/contributor-plugin` and `#hermes/guard-plugin`
+install the others.
+
+**On native Windows**, the plugin's `mcp.json` cannot switch to the `.cmd`
+launcher — it names the `.sh` one, which needs a POSIX shell. Add a server of
+the same name to Hermes' `config.yaml` (in `%LOCALAPPDATA%\hermes`); it replaces
+the plugin's entry:
+
+```yaml
+mcp_servers:
+  mariadb:
+    command: "C:\\Users\\<you>\\AppData\\Local\\hermes\\plugins\\mariadb-dev\\scripts\\mariadb-mcp-launcher.cmd"
+    args: []
+```
+
+Full steps are in [`hermes/dev-plugin/README.md`]({{ site.repo }}/blob/main/hermes/dev-plugin/README.md).
+
+### Cursor
+
+Cursor reads the same marketplace as Claude Code and installs its plugins into
+its own directory — Claude Code does not have to be installed. In Cursor:
+
+1. Click **Customize**, then **+ Add Marketplace**.
+2. Paste the marketplace URL, `https://github.com/{{ site.install_org }}/ai-plugins`, and confirm.
+3. Click **Add** on the `dev` plugin for full MariaDB support — or on `sql` or
+   `contributor`.
 
 ### Check that the skills arrived
 
@@ -126,14 +174,6 @@ If `mariadb-shell` is not on your `PATH`, use the copy the launcher installed �
 installer only prints a `PATH` hint; it never edits your shell profile. That
 copy appears the first time an agent starts the MCP server, so either let the
 agent run once first, or install the shell yourself before configuring it.
-
-<div class="callout callout--tip" markdown="1">
-**In VS Code, the Connections view does it for you.** Add or edit a connection
-in the MariaDB extension's **Connections** view and tick **Allow MCP access to
-this connection** — it then goes into the same list `mcp setup` writes, and the
-view marks it `MCP`.
-The password goes into the shell's secret store either way.
-</div>
 
 The walkthrough configures three things:
 
@@ -199,7 +239,8 @@ That is the whole tutorial in one paragraph — but the tutorial walks through
 what the agent does at each step, what to check, and what to do when something
 refuses.
 
-<a class="btn btn--primary" href="{{ '/tutorials/notes-app-sandbox/' | relative_url }}">Start Tutorial 1 &rarr;</a>
+<a class="btn btn--primary"
+   href="{{ '/tutorials/notes-app-sandbox/' | relative_url }}">Start Tutorial 1 &rarr;</a>
 
 ## What to ask for
 
@@ -256,10 +297,14 @@ shell's bundled Python as a workaround:
 **Nothing at all happened.** Check the plugin actually loaded. In Claude Code,
 `/plugin` lists what is installed; in Codex, `/plugins`. In pi, remember that a
 project-local package needs `--approve` at run time or it is configured and
-never loaded. In VS Code, check that the MariaDB extension is installed and
-enabled, and that the `mariadb.copilot.enabled` setting is on.
+never loaded. In Hermes, `hermes plugins list` shows whether the plugin is
+installed *and* enabled. In Cursor, check that the plugin is listed under
+**Customize**.
 
 **In pi, `/mcp` doesn't list the `mariadb` server.** You need Pi 1.0 or later,
 and no `pi-mcp-adapter`: the adapter replaces Pi's built-in MCP, so the server
 the plugin registers never connects. Run `pi remove npm:pi-mcp-adapter`, then
 turn the built-in `mcp` back on in `pi config`.
+
+**Hermes's MCP tools are missing after the install.** Start a new Hermes
+session — servers connect at session start.

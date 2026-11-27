@@ -29,7 +29,13 @@ description: MariaDB skills and a live MariaDB connection for AI coding agents. 
           <span class="hero__badge">Codex</span>
           <span class="hero__badge">OpenCode</span>
           <span class="hero__badge">Pi</span>
-          <span class="hero__badge">VS Code</span>
+          <span class="hero__badge">Hermes Agent</span>
+          <span class="hero__badge">Cursor</span>
+        </div>
+        <div class="hero__version">
+          <a href="{{ site.repo }}/releases/tag/v{{ site.plugin_version }}" rel="noopener">Version {{ site.plugin_version }}</a>
+          <span aria-hidden="true">&middot;</span>
+          MariaDB Shell {{ site.shell_floor }} or newer
         </div>
       </div>
 
@@ -104,7 +110,8 @@ db.<span class="t-fn">list_objects</span>(schema_name=<span class="t-str">"notes
         <p>
           Claude Code and Codex install from the plugin marketplace in two commands.
           OpenCode merges one <code>mcp</code> block; Pi installs the repo as a package;
-          VS Code gets everything from the MariaDB extension.
+          Hermes Agent installs a plugin folder straight from the repo;
+          Cursor adds the same marketplace from its Customize panel.
           The skills are live the moment the plugin loads — no database required.
         </p>
         <a class="step-card__link" href="{{ '/get-started/#step-1-install-the-plugin' | relative_url }}">Install the plugin &rarr;</a>
@@ -235,13 +242,17 @@ CREATE OR REPLACE TABLE `notes_app`.`user` (
         <h3>{{ site.tool_count }} MCP tools</h3>
         <p>
           A live connection to a MariaDB server. The agent can list schemas, describe
-          objects, run SQL and scripts, manage versioned schema projects, and deploy a
-          throwaway server instance to try something dangerous on first.
+          objects, run SQL and scripts, manage versioned schema projects, deploy a
+          throwaway server instance to try something dangerous on first, and dump,
+          load or copy data between servers.
         </p>
         <ul>
           <li><code>db.*</code> — connections, schemas, objects, SQL</li>
           <li><code>msm.*</code> — versioned schema projects and releases</li>
           <li><code>sandbox.*</code> — local throwaway MariaDB instances</li>
+          <li><code>util.*</code> — dumps, loads and copies between servers</li>
+          <li><code>task.*</code> — follow and cancel the long-running jobs</li>
+          <li><code>sql.*</code> — check, outline and format SQL, no server needed</li>
         </ul>
         <a class="btn btn--secondary" href="{{ '/mcp-tools/' | relative_url }}">Tool reference</a>
       </div>

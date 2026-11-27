@@ -7,10 +7,14 @@ description: >-
 
 # Enterprise Tools
 
-## MariaDB AI Plugins
+## Community Tools
 
-MariaDB AI Plugins extend AI coding agents such as Claude Code, Codex, OpenCode, Pi, and GitHub Copilot in VS Code with knowledge about MariaDB and with access to MariaDB databases. A plugin contains agent skills with MariaDB-specific guidance on SQL, client tools, and connectors, and it connects the agent to MariaDB Server through the `mariadb-shell` MCP server.
+[Community Tools](community/README.md) don't require a MariaDB Enterprise Support subscription.
 
-{% content-ref url="mariadb-ai-plugins/" %}
-[mariadb-ai-plugins](mariadb-ai-plugins/)
+### MariaDB AI Plugins
+
+MariaDB AI Plugins extend AI coding agents such as Claude Code, Codex, OpenCode, Pi, Hermes Agent, and Cursor with knowledge about MariaDB and with access to MariaDB databases. A plugin contains agent skills with MariaDB-specific guidance on SQL, client tools, and connectors, and it connects the agent to MariaDB Server through the `mariadb-shell` MCP server.
+
+{% content-ref url="community/mariadb-ai-plugins/" %}
+[mariadb-ai-plugins](community/mariadb-ai-plugins/)
 {% endcontent-ref %}

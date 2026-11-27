@@ -18,17 +18,20 @@ repo-specific policy the built-in cannot know.
 2. **Invoke the built-in `code-review` skill** with those arguments. It owns the
    mechanics: effort levels, the adversarial verification pass, inline comment
    posting, and applying fixes.
-3. **Apply §1–§7 below to the result, before anything is reported or posted.**
-   Drop the findings §1 puts out of scope, re-rate the ones §2 and §4 change,
-   and add anything §3–§5 calls for that the pass missed.
+3. **Apply §1–§8 below to the result, before anything is reported or posted.**
+   Drop the findings §1 puts out of scope, move the ones §8 says are not about
+   the change to the follow-up list, re-rate the ones §2 and §4 change, and add
+   anything §3–§5 calls for that the pass missed.
 
 Step 3 matters most when the review runs in a subagent: that agent never saw
 this policy, so the filtering has to happen here, in the main context, on what
 it hands back. Do not post or report a finding that has not been through it.
 
-Two sections change verdicts rather than adding to them: §1 (a finding the other
-CI already reports is noise) and §4 (a guard that looks wrong is usually
-correct, and a guard that looks correct is sometimes wrong).
+Three sections change verdicts rather than adding to them: §1 (a finding the
+other CI already reports, or a scenario the product cannot produce, is noise),
+§4 (a guard that looks wrong is usually correct, and a guard that looks correct
+is sometimes wrong) and §8 (a defect outside the change is a follow-up, not a
+finding).
 
 ## 1. Out of scope — other jobs already cover these
 
@@ -45,6 +48,33 @@ report wastes the review and trains people to skim it.
 
 Missing tests **are** in scope, but only where the change alters observable
 behaviour and the repo has an obvious home for the test (see §5).
+
+### 1.1 A scenario the product cannot produce is not a bug
+
+A finding needs a path through the product: a shell statement, an API call, a
+plugin command, a daemon action, or the metadata, files and state those
+produce. If reaching the scenario needs state only a person can create by
+hand, it is not a finding, however real the misbehaviour would be once there.
+Typical cases in this repo:
+
+- Rows written straight into the MRS metadata schema (`mariadb_rest_service`)
+  that no REST SQL statement, mrs plugin function, VS Code extension action or
+  daemon code path writes: a role extending a role of another service, a
+  privilege with options, a host-qualified privilege path, group tables that
+  nothing manages yet.
+- A dropped or altered metadata table, a hand-edited sandbox or option file,
+  a server version the build does not target.
+
+Do not propose defensive code for these. The product's own write paths define
+what can exist; when a later change adds a path that can create the state, the
+behaviour becomes that change's problem, and the review of that change is
+where to raise it. If the review happens to notice such a case and it seems
+worth remembering, it goes in the follow-up list of §8, in one line, marked as
+unreachable, not among the findings.
+
+This is deliberate: a finding implies something must be fixed. Reporting an
+unreachable scenario as one leads to patches that handle states the tool never
+produces, and the code grows harder to reason about for nothing.
 
 ## 2. Formatting that misleads is a correctness finding
 
@@ -196,10 +226,48 @@ elsewhere in the tree.
 Do **not** flag naming taste or style. This section is about code that is harder
 to reason about than the problem requires, nothing else.
 
-## 7. Discipline
+## 7. Comments, documentation and messages name nothing outside this repository
 
+Code comments, docstrings, API documentation (help text, `--export-help`
+output and the API reference generated from it) and user-facing strings
+(messages, warnings, errors, prompts) must not reference a component that
+lives in another repository: the VS Code extension, the MCP plugin, the
+dba plugin and its cloud deployments, the REST daemon, or any plugin not under
+`python/plugins/`. This tree is read and shipped on its own: a consumer's name
+in it goes stale the moment the consumer changes, and ties the meaning of an
+API to something a reader of this repository cannot see.
+
+Describe the behaviour in this repository's own terms instead: what the
+function does and what a caller sees, with examples drawn from here (the
+sandbox plugin, `util`, a dump or a load, an abstract `object.function`).
+Where an external consumer is the reason for a design, the place to say so is
+`.claude/context/` (which is expected to describe cross-repo integration), the
+commit message or the PR, not the code.
+
+A new or changed comment, docstring, help text or user-facing string that
+names one of these is a finding. Hunt for it in messages especially: a
+comment is read by a maintainer, a message by every user of the shell, who
+may not have the component it names. Test data is held to the same rule: a
+fixture's task type, kind, title or function name comes from this repository
+(`util`, `sandbox`, a dump) or is abstract (`object.function`), never from an
+external plugin.
+
+## 8. Discipline
+
+- **A finding is about the change.** It concerns lines the diff adds or
+  alters, or behaviour the change introduces or relies on. A defect the review
+  noticed in surrounding code, a pre-existing corner case, a cleanup the change
+  did not cause: these are not findings, even when the diff touches the file.
+  They go in a separate, clearly labelled **follow-up** list at the end, each
+  in one line with a proposed home (a REST or AIPL Jira ticket, a context note,
+  a later change), and are never folded into the patch under review. The patch
+  stays the size of its purpose.
+- **Check what is already tracked.** Before reporting a corner case in MRS
+  code, look for a ticket in the REST project on jira.mariadb.org; a known,
+  deliberately deferred issue (REST-6, REST-7 and REST-8 came out of earlier
+  reviews here) is not reported again, at most referenced in the follow-ups.
 - Read enough surrounding code to be confident. If a finding cannot be verified
   from the code available, say so instead of guessing.
 - No praise padding, no summary of what the change does, no restating the diff.
-  Findings only.
+  Findings only, then the follow-up list if there is one.
 - If there are no findings, say so in one line. Do not invent any.

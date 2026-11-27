@@ -22,8 +22,9 @@ baseurl: ""
 repo: "https://github.com/mariadb/ai-plugins"
 install_org: "mariadb"          # the install-facing org (a tracking fork)
 mariadb_baseline: "11.8 LTS"
-shell_floor: "26.10.1"
-tool_count: 28
+shell_floor: "26.11.2"
+plugin_version: "26.11.0"     # set by scripts/set-plugin-version.sh
+tool_count: 59
 skill_count: 85
 
 # --- Build -----------------------------------------------------------------

@@ -19,13 +19,14 @@
 // The pages in content/ are GitBook source: Markdown plus GitBook blocks,
 // a SUMMARY.md for navigation, and `.gitbook/assets/` for images. They are
 // written to be copied into the Enterprise Tools space of mariadb-docs
-// (`tools/`) unchanged. This site only renders them, styled after
+// (`tools/community/`) unchanged. This site only renders them, styled after
 // https://mariadb.com/docs/, because GitBook itself cannot build offline.
 
 import fs from 'node:fs';
 import { themes as prismThemes } from 'prism-react-renderer';
 import { remarkGitBook, rehypeGitBook } from 'docusaurus-plugin-gitbook';
 import remarkGitBookExtras, { remarkGitBookPrepare } from './src/remark/gitbook-extras.js';
+import remarkGitBookHeadingIds from './src/remark/gitbook-heading-ids.js';
 
 const REPO = 'https://github.com/mariadb/ai-plugins';
 const LIVE_DOCS = 'https://mariadb.com/docs';
@@ -79,7 +80,7 @@ const config = {
   tagline: 'MariaDB AI Plugins reference (offline preview)',
   favicon: 'img/favicon.ico',
 
-  // Mirrors the published layout: https://mariadb.com/docs/tools/<product>/…
+  // Mirrors the published layout: https://mariadb.com/docs/tools/community/<product>/…
   // To host the preview under another path, build with e.g.
   // DOCS_BASE_URL=/ai-plugins-docs/ npm run build.
   url: 'https://mariadb.com',
@@ -89,7 +90,9 @@ const config = {
   trailingSlash: true,
 
   onBrokenLinks: 'throw',
-  onBrokenAnchors: 'warn',
+  // Anchors are GitBook's ids (src/remark/gitbook-heading-ids.js), so a
+  // link that fails here is dead on mariadb.com/docs too.
+  onBrokenAnchors: 'throw',
 
   i18n: { defaultLocale: 'en', locales: ['en'] },
 
@@ -125,7 +128,14 @@ const config = {
           exclude: ['**/SUMMARY.md', '**/.gitbook/**'],
           editUrl: `${REPO}/edit/main/docs-ref/`,
           showLastUpdateTime: false,
-          beforeDefaultRemarkPlugins: [remarkGitBookPrepare, remarkGitBook, remarkGitBookExtras],
+          beforeDefaultRemarkPlugins: [
+            remarkGitBookPrepare,
+            // Before remarkGitBook: it re-parses the body of every GitBook
+            // block, so a heading inside one loses its source position.
+            remarkGitBookHeadingIds,
+            remarkGitBook,
+            remarkGitBookExtras,
+          ],
           rehypePlugins: [rehypeGitBook],
         },
         blog: false,
@@ -151,7 +161,7 @@ const config = {
       announcementBar: {
         id: 'offline-preview',
         content:
-          'Offline preview of the <b>MariaDB AI Plugins</b> reference docs. The published version will live on <a href="https://mariadb.com/docs/tools">mariadb.com/docs</a>.',
+          'Offline preview of the <b>MariaDB AI Plugins</b> reference docs. The published version will live on <a href="https://mariadb.com/docs/tools/community">mariadb.com/docs</a>.',
         isCloseable: true,
       },
       navbar: {
