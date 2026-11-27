@@ -157,6 +157,7 @@ The guard looks at only five clients, and each only where an MCP tool does the j
 | `mariadb`, `mysql` | it runs SQL | `db.execute_sql`, `db.execute_sql_script` |
 | `mariadb-shell`, `mysqlsh` | it runs SQL (SQL mode) | `db.execute_sql`, `db.execute_sql_script` |
 | `mariadb-shell`, `mysqlsh` | it calls `-- <object> <method>` that a tool wraps, such as `-- util dump-schemas` | the matching tool, here `util.dump_schemas` |
+| `mariadb-shell`, `mysqlsh` | it calls an msm function whose tool only the MariaDB VS Code extension gets, such as `-- msm edit-schema` | none: the model is told to ask the user to do it in the extension |
 | `mariadb-dump` | its output is piped into another client | `util.copy_instance`, `util.copy_schemas`, `util.copy_tables` |
 
 Everything else runs: `--version` and `--help`, Python or JavaScript mode, a dump

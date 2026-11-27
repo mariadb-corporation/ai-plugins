@@ -29,8 +29,9 @@ Only five clients are looked at, and each only for what a tool covers:
 - ``mariadb-dump``: piped into another client -> util.copy_*
 
 Everything else - --version and --help, Python or JavaScript mode, a dump
-written to a file, ``-- mcp setup``, an API call no tool wraps - is let
-through, so the agent keeps every feature the tools do not have yet.
+written to a file, ``-- mcp setup``, an API call no tool wraps (but an msm
+one left to the VS Code extension) - is let through, so the agent keeps every
+feature the tools do not have yet.
 
 Two parts: a system-prompt section that says to use the MCP tools, and a
 ``pre_tool_call`` hook that blocks a ``terminal`` call using a client for such a
@@ -50,22 +51,39 @@ import re
 
 ALLOW_ENV = "MARIADB_PLUGIN_ALLOW_CLI"
 
-# The `-- <object> <method>` calls an MCP tool wraps, named like the tool.
+# The `-- <object> <method>` calls of mariadb-shell / mysqlsh that an MCP tool
+# wraps: each as <object>.<method> in snake_case, as the shell names it, to
+# the MCP tool that wraps it.
 _COVERED_API = {
-    "util.dump_instance", "util.dump_schemas", "util.dump_tables",
-    "util.export_table", "util.load_dump", "util.import_table",
-    "util.copy_instance", "util.copy_schemas", "util.copy_tables",
-    "sandbox.deploy", "sandbox.start", "sandbox.stop", "sandbox.kill",
-    "sandbox.delete",
-    "msm.create_project", "msm.get_project_information",
-    "msm.set_development_version", "msm.get_released_versions",
-    "msm.get_last_released_version", "msm.get_last_deployment_version",
-    "msm.prepare_release", "msm.get_section_sql_content",
-    "msm.set_section_sql_content", "msm.generate_deployment_script",
-    "msm.get_deployment_script_versions", "msm.deploy_schema",
-    "mrs.dump_service", "mrs.load_service", "mrs.dump_service_project",
-    "mrs.load_service_project", "mrs.load_content_set", "mrs.dump_audit_log",
-    "mrs.dump_sdk_service_files",
+    "util.dump_instance": "util.dump_instance",
+    "util.dump_schemas": "util.dump_schemas",
+    "util.dump_tables": "util.dump_tables",
+    "util.export_table": "util.export_table",
+    "util.load_dump": "util.load_dump",
+    "util.import_table": "util.import_table",
+    "util.copy_instance": "util.copy_instance",
+    "util.copy_schemas": "util.copy_schemas",
+    "util.copy_tables": "util.copy_tables",
+    "sandbox.deploy": "sandbox.deploy",
+    "sandbox.start": "sandbox.start",
+    "sandbox.stop": "sandbox.stop",
+    "sandbox.kill": "sandbox.kill",
+    "sandbox.delete": "sandbox.delete",
+    "msm.create_new_project_folder": "msm.create_project",
+    "msm.list_projects": "msm.list_projects",
+    "msm.drop_schema_object": "msm.drop_schema_object",
+    "msm.drop_rest_object": "msm.drop_rest_object",
+    "msm.prepare_release": "msm.prepare_release",
+    "msm.generate_deployment_script": "msm.generate_deployment_script",
+    "msm.deploy_schema": "msm.deploy_schema",
+    "msm.list_live_schema_objects": "msm.list_live_schema_objects",
+    "msm.import_live_schema": "msm.import_live_schema",
+    "msm.list_schema_diagrams": "msm.list_schema_diagrams",
+    "msm.create_schema_diagram": "msm.create_schema_diagram",
+    "msm.layout_schema_diagram": "msm.layout_schema_diagram",
+    "msm.rename_schema_diagram": "msm.rename_schema_diagram",
+    "msm.remove_schema_diagram": "msm.remove_schema_diagram",
+    "rest.version": "rest.version",
 }
 
 # The calls of functions that live in a group of an object, as
@@ -79,21 +97,60 @@ _COVERED_NESTED_API = {
     "msm.get.last_deployment_version": "msm.get_last_deployment_version",
     "msm.get.sql_content_from_section": "msm.get_section_sql_content",
     "msm.get.deployment_script_versions": "msm.get_deployment_script_versions",
-    "msm.get.online_alter_defaults": "msm.get_online_alter_defaults",
-    "msm.get.online_alter_settings": "msm.get_online_alter_settings",
     "msm.get.schema_diagrams": "msm.get_schema_diagrams",
-    "msm.get.schema_diagram_image": "msm.get_schema_diagram_image",
-    "msm.get.object_templates": "msm.get_object_templates",
     "msm.set.development_version": "msm.set_development_version",
     "msm.set.section_sql_content": "msm.set_section_sql_content",
-    "msm.set.project_settings": "msm.set_project_settings",
     "msm.set.schema_diagram": "msm.set_schema_diagram",
     "msm.set.schema_statements": "msm.set_schema_statements",
     "msm.set.rest_statements": "msm.set_rest_statements",
+    "rest.dump.service": "rest.dump_service",
+    "rest.dump.service_project": "rest.dump_service_project",
+    "rest.dump.sdk_service_files": "rest.dump_sdk_service_files",
+    "rest.dump.audit_log": "rest.dump_audit_log",
+    "rest.get.sdk_base_classes": "rest.get_sdk_base_classes",
+    "rest.get.sdk_options": "rest.get_sdk_options",
+    "rest.get.sdk_service_classes": "rest.get_sdk_service_classes",
+    "rest.get.runtime_management_code": "rest.get_runtime_management_code",
+    "rest.get.file_mrs_script_definitions": "rest.get_file_mrs_script_definitions",
+    "rest.get.folder_mrs_script_definitions": "rest.get_folder_mrs_script_definitions",
+    "rest.get.folder_mrs_script_language": "rest.get_folder_mrs_script_language",
+    "rest.load.service": "rest.load_service",
+    "rest.load.service_project": "rest.load_service_project",
+    "rest.load.content_set": "rest.load_content_set",
 }
 
-# The groups _COVERED_NESTED_API names, as <object>.<group>.
-_GROUPS = {path.rsplit(".", 1)[0] for path in _COVERED_NESTED_API}
+# Functions, in a group or not, whose MCP tool the server serves to the
+# MariaDB VS Code extension only (--gui), never to an agent. Still denied -
+# the server tells agents to work on MSM projects through the msm.* tools
+# only - but the denial names no tool: the user does it in the extension.
+_EXTENSION_ONLY_API = {
+    "msm.add_project",
+    "msm.update_project",
+    "msm.remove_project",
+    "msm.edit_schema",
+    "msm.update_schema_definition",
+    "msm.split_sections",
+    "msm.rename_schema",
+    "msm.online_alter_table",
+    "msm.dump_rest_sdk",
+    "msm.import_workbench_model",
+    "msm.get.online_alter_defaults",
+    "msm.get.online_alter_settings",
+    "msm.get.schema_diagram_image",
+    "msm.get.object_templates",
+    "msm.set.project_settings",
+}
+
+_USE_THE_EXTENSION = (
+    "none is served to you for this; ask the user to do it in the MariaDB VS Code extension"
+)
+
+# The groups both lists name, as <object>.<group>.
+_GROUPS = {
+    path.rsplit(".", 1)[0]
+    for path in [*_COVERED_NESTED_API, *_EXTENSION_ONLY_API]
+    if path.count(".") == 2
+}
 
 # What runs a command rather than being one, besides VAR=value and -options.
 _WRAPPERS = {
@@ -144,7 +201,8 @@ def block_reason(finding):
         f"MCP tools: {use}. Never ask for or pass a database password: open a "
         "server with db.connect, and if it is not in db.list_connections, ask "
         "the user to add it with `mariadb-shell -- mcp setup`. What no MCP tool "
-        "covers is not blocked. If the user wants you to run the clients "
+        "covers is not blocked, apart from the msm functions left to the MariaDB "
+        "VS Code extension. If the user wants you to run the clients "
         f"anyway, they can start the agent with {ALLOW_ENV}=1."
     )
 
@@ -195,10 +253,16 @@ def _check_shell(name, args):
             return None
         if f"{object_}.{method}" in _GROUPS:
             # A group: the method is the word after it.
-            tool = _COVERED_NESTED_API.get(f"{object_}.{method}.{_snake_case(next_)}") if next_ else None
+            if not next_:
+                return None
+            path = f"{object_}.{method}.{_snake_case(next_)}"
+            table = _COVERED_NESTED_API
         else:
-            tool = f"{object_}.{_snake_case(method)}"
-            tool = tool if tool in _COVERED_API else None
+            path = f"{object_}.{_snake_case(method)}"
+            table = _COVERED_API
+        if path in _EXTENSION_ONLY_API:
+            return (name, _USE_THE_EXTENSION)
+        tool = table.get(path)
         if tool:
             return (name, f"call the MCP tool {tool} instead")
         return None

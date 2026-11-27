@@ -44,18 +44,28 @@ pytestmark = pytest.mark.static
 HARNESS_DIR = TESTS_ROOT.parent
 CANONICAL = REPO_ROOT / "claude" / "dev-plugin" / "hooks"
 CASES = json.loads((REPO_ROOT / "tests" / "cli-guard-cases.json").read_text())
-# One `mariadb-shell -- <object> <method>` call per API an MCP tool covers.
-CASES["deny"] += [
-    f"mariadb-shell -- {api.split('.')[0]} {api.split('.')[1].replace('_', '-')} x"
-    for api in CASES["covered_shell_api"]
-]
-# One `mariadb-shell -- <object> <group> <method>` call per function in a
-# group, with the MCP tool its denial has to name.
+
+
+def _call(path: str) -> str:
+    """The `mariadb-shell -- <object> [<group>] <method> x` call of a function."""
+    *words, method = path.split(".")
+    return f"mariadb-shell -- {' '.join(words)} {method.replace('_', '-')} x"
+
+
+# One call per function an MCP tool covers, in a group or not, with the MCP
+# tool its denial has to name.
 NAMED = [
-    (f"mariadb-shell -- {' '.join(path.split('.')[:2])} {path.split('.')[2].replace('_', '-')} x", tool)
-    for path, tool in CASES["covered_nested_shell_api"].items()
+    (_call(path), tool)
+    for path, tool in [*CASES["covered_shell_api"].items(), *CASES["covered_nested_shell_api"].items()]
 ]
 CASES["deny"] += [command for command, _ in NAMED]
+# One call per function whose MCP tool only the MariaDB VS Code
+# extension gets: denied, with a denial that names no tool but the extension.
+EXTENSION_ONLY = [
+    _call(path)
+    for path in [*CASES["extension_only_shell_api"], *CASES["extension_only_nested_shell_api"]]
+]
+CASES["deny"] += EXTENSION_ONLY
 
 # The plugins that carry the mariadb MCP server, and so the guard.
 GUARDED = sorted(p for p in HARNESS_DIR.glob("*-plugin") if (p / ".mcp.json").is_file())
@@ -130,10 +140,19 @@ def test_guard_denies(command: str):
 
 @pytest.mark.skipif(BASH is None, reason="bash is not installed")
 @pytest.mark.parametrize("command, tool", NAMED)
-def test_guard_names_the_tool_of_a_function_in_a_group(command: str, tool: str):
+def test_guard_names_the_tool_of_a_covered_function(command: str, tool: str):
     decision, reason = _output(CANONICAL / "mariadb-cli-guard.sh", command)
     assert decision == "deny"
     assert f"call the MCP tool {tool} instead" in reason
+
+
+@pytest.mark.skipif(BASH is None, reason="bash is not installed")
+@pytest.mark.parametrize("command", EXTENSION_ONLY)
+def test_guard_sends_an_extension_only_function_to_the_extension(command: str):
+    decision, reason = _output(CANONICAL / "mariadb-cli-guard.sh", command)
+    assert decision == "deny"
+    assert CASES["extension_only_denial"] in reason
+    assert "call the MCP tool" not in reason
 
 
 @pytest.mark.skipif(BASH is None, reason="bash is not installed")

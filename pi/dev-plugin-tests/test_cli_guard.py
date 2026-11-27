@@ -45,18 +45,30 @@ _RUNNER = """
 import { readFileSync } from "node:fs";
 const { findClient, guardDisabled } = await import(process.argv[1]);
 const cases = JSON.parse(readFileSync(process.argv[2], "utf8"));
-for (const api of cases.covered_shell_api) {
-  const [object, method] = api.split(".");
-  cases.deny.push(`mariadb-shell -- ${object} ${method.replaceAll("_", "-")} x`);
-}
-// A function in a group: denied, naming the MCP tool that wraps it.
-const named = Object.entries(cases.covered_nested_shell_api).map(([path, tool]) => {
-  const [object, group, method] = path.split(".");
-  return [`mariadb-shell -- ${object} ${group} ${method.replaceAll("_", "-")} x`, tool];
-});
+// The `mariadb-shell -- <object> [<group>] <method> x` call of a function.
+const call = (path) => {
+  const words = path.split(".");
+  const method = words.pop();
+  return `mariadb-shell -- ${words.join(" ")} ${method.replaceAll("_", "-")} x`;
+};
+// A function an MCP tool covers, in a group or not: denied, naming that tool.
+const named = [
+  ...Object.entries(cases.covered_shell_api),
+  ...Object.entries(cases.covered_nested_shell_api),
+].map(([path, tool]) => [call(path), tool]);
+// A function whose MCP tool only the MariaDB VS Code extension gets: denied,
+// pointing at the extension and naming no tool.
+const extension = [
+  ...cases.extension_only_shell_api,
+  ...cases.extension_only_nested_shell_api,
+].map(call);
 console.log(JSON.stringify({
   deny: cases.deny.filter((c) => !findClient(c)),
   named: named.filter(([c, tool]) => !findClient(c)?.use.includes(`call the MCP tool ${tool} instead`)),
+  extension: extension.filter((c) => {
+    const use = findClient(c)?.use ?? "";
+    return !use.includes(cases.extension_only_denial) || use.includes("call the MCP tool");
+  }),
   allow: cases.allow.filter((c) => findClient(c)),
   off: guardDisabled({ MARIADB_PLUGIN_ALLOW_CLI: "1" }) && !guardDisabled({}),
 }));
@@ -81,7 +93,7 @@ def test_guard_agrees_with_the_shared_cases():
     )
     assert result.returncode == 0, result.stderr
     outcome = json.loads(result.stdout)
-    assert outcome == {"deny": [], "named": [], "allow": [], "off": True}
+    assert outcome == {"deny": [], "named": [], "extension": [], "allow": [], "off": True}
 
 
 def test_extension_wires_the_guard():

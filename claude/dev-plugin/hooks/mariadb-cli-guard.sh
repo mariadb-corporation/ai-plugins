@@ -31,7 +31,7 @@
 #                           `-- <object> <method>` calls   -> the matching tool
 #   mariadb-dump            piped into another client      -> util.copy_*
 # Everything else - --version and --help, Python or JavaScript mode, a dump
-# written to a file, `-- mcp setup`, an API call no tool wraps - is let through,
+# written to a file, `-- mcp setup`, an API call no tool wraps (but an msm one left to the VS Code extension) - is let through,
 # so the agent keeps every feature the tools do not have yet.
 #
 # Reads the hook payload (JSON) on stdin; prints a deny decision on stdout, or
@@ -49,41 +49,72 @@
 [ "${MARIADB_PLUGIN_ALLOW_CLI:-}" = "1" ] && exit 0
 
 # The `-- <object> <method>` calls of mariadb-shell / mysqlsh that an MCP tool
-# wraps, as <object>.<method> in snake_case - the MCP tool's own name.
-COVERED_API=" util.dump_instance util.dump_schemas util.dump_tables \
-util.export_table util.load_dump util.import_table util.copy_instance \
-util.copy_schemas util.copy_tables sandbox.deploy sandbox.start sandbox.stop \
-sandbox.kill sandbox.delete msm.create_project msm.get_project_information \
-msm.set_development_version msm.get_released_versions \
-msm.get_last_released_version msm.get_last_deployment_version \
-msm.prepare_release msm.get_section_sql_content \
-msm.set_section_sql_content msm.generate_deployment_script \
-msm.get_deployment_script_versions msm.deploy_schema mrs.dump_service \
-mrs.load_service mrs.dump_service_project mrs.load_service_project \
-mrs.load_content_set mrs.dump_audit_log mrs.dump_sdk_service_files "
+# wraps: each as <object>.<method> in snake_case, as the shell names it, then
+# the MCP tool that wraps it.
+COVERED_API=" util.dump_instance=util.dump_instance util.dump_schemas=util.dump_schemas \
+util.dump_tables=util.dump_tables util.export_table=util.export_table \
+util.load_dump=util.load_dump util.import_table=util.import_table \
+util.copy_instance=util.copy_instance util.copy_schemas=util.copy_schemas \
+util.copy_tables=util.copy_tables sandbox.deploy=sandbox.deploy \
+sandbox.start=sandbox.start sandbox.stop=sandbox.stop \
+sandbox.kill=sandbox.kill sandbox.delete=sandbox.delete \
+msm.create_new_project_folder=msm.create_project \
+msm.list_projects=msm.list_projects \
+msm.drop_schema_object=msm.drop_schema_object \
+msm.drop_rest_object=msm.drop_rest_object \
+msm.prepare_release=msm.prepare_release \
+msm.generate_deployment_script=msm.generate_deployment_script \
+msm.deploy_schema=msm.deploy_schema \
+msm.list_live_schema_objects=msm.list_live_schema_objects \
+msm.import_live_schema=msm.import_live_schema \
+msm.list_schema_diagrams=msm.list_schema_diagrams \
+msm.create_schema_diagram=msm.create_schema_diagram \
+msm.layout_schema_diagram=msm.layout_schema_diagram \
+msm.rename_schema_diagram=msm.rename_schema_diagram \
+msm.remove_schema_diagram=msm.remove_schema_diagram \
+rest.version=rest.version "
 
 # The calls of functions that live in a group of an object, as
 # `-- <object> <group> <method>` (`msm get schema-diagrams`): each as
 # <object>.<group>.<method> in snake_case, then the MCP tool that wraps it.
 # A word after the object is a group when an entry starts with it.
-COVERED_NESTED_API=" \
-msm.get.project_information=msm.get_project_information \
+COVERED_NESTED_API=" msm.get.project_information=msm.get_project_information \
 msm.get.released_versions=msm.get_released_versions \
 msm.get.last_released_version=msm.get_last_released_version \
 msm.get.last_deployment_version=msm.get_last_deployment_version \
 msm.get.sql_content_from_section=msm.get_section_sql_content \
 msm.get.deployment_script_versions=msm.get_deployment_script_versions \
-msm.get.online_alter_defaults=msm.get_online_alter_defaults \
-msm.get.online_alter_settings=msm.get_online_alter_settings \
 msm.get.schema_diagrams=msm.get_schema_diagrams \
-msm.get.schema_diagram_image=msm.get_schema_diagram_image \
-msm.get.object_templates=msm.get_object_templates \
 msm.set.development_version=msm.set_development_version \
 msm.set.section_sql_content=msm.set_section_sql_content \
-msm.set.project_settings=msm.set_project_settings \
 msm.set.schema_diagram=msm.set_schema_diagram \
 msm.set.schema_statements=msm.set_schema_statements \
-msm.set.rest_statements=msm.set_rest_statements "
+msm.set.rest_statements=msm.set_rest_statements \
+rest.dump.service=rest.dump_service \
+rest.dump.service_project=rest.dump_service_project \
+rest.dump.sdk_service_files=rest.dump_sdk_service_files \
+rest.dump.audit_log=rest.dump_audit_log \
+rest.get.sdk_base_classes=rest.get_sdk_base_classes \
+rest.get.sdk_options=rest.get_sdk_options \
+rest.get.sdk_service_classes=rest.get_sdk_service_classes \
+rest.get.runtime_management_code=rest.get_runtime_management_code \
+rest.get.file_mrs_script_definitions=rest.get_file_mrs_script_definitions \
+rest.get.folder_mrs_script_definitions=rest.get_folder_mrs_script_definitions \
+rest.get.folder_mrs_script_language=rest.get_folder_mrs_script_language \
+rest.load.service=rest.load_service \
+rest.load.service_project=rest.load_service_project \
+rest.load.content_set=rest.load_content_set "
+
+# Functions, in a group or not, whose MCP tool the server serves to the
+# MariaDB VS Code extension only (--gui), never to an agent. Still denied -
+# the server tells agents to work on MSM projects through the msm.* tools
+# only - but the denial names no tool: the user does it in the extension.
+EXTENSION_ONLY_API=" msm.add_project msm.update_project msm.remove_project msm.edit_schema \
+msm.update_schema_definition msm.split_sections msm.rename_schema \
+msm.online_alter_table msm.dump_rest_sdk msm.import_workbench_model \
+msm.get.online_alter_defaults msm.get.online_alter_settings \
+msm.get.schema_diagram_image msm.get.object_templates \
+msm.set.project_settings "
 
 payload=$(cat) || exit 0
 
@@ -142,22 +173,27 @@ check_shell() {
   if [ $api = 1 ]; then
     [ -n "$method" ] || return 0
     local tool=""
-    case $COVERED_NESTED_API in
+    local path list
+    case " $COVERED_NESTED_API $EXTENSION_ONLY_API " in
       *" $object.$method."*)
         # A group: the method is the word after it.
         [ -n "$next" ] || return 0
-        local path
         path=$object.$method.$(snake_case "$next")
-        case $COVERED_NESTED_API in
-          *" $path="*)
-            tool=${COVERED_NESTED_API#*" $path="}
-            tool=${tool%% *} ;;
-        esac ;;
+        list=$COVERED_NESTED_API ;;
       *)
-        method=$(snake_case "$method")
-        case $COVERED_API in
-          *" $object.$method "*) tool=$object.$method ;;
-        esac ;;
+        path=$object.$(snake_case "$method")
+        list=$COVERED_API ;;
+    esac
+    case $EXTENSION_ONLY_API in
+      *" $path "*)
+        blocked=$name
+        use="none is served to you for this; ask the user to do it in the MariaDB VS Code extension"
+        return 0 ;;
+    esac
+    case $list in
+      *" $path="*)
+        tool=${list#*" $path="}
+        tool=${tool%% *} ;;
     esac
     if [ -n "$tool" ]; then
       blocked=$name
@@ -319,7 +355,7 @@ and a client run from a shell puts database credentials on a command line, in \
 the process list, in logs and in this conversation. Use the MCP tools: ${use}. \
 Never ask for or pass a database password: open a server with db.connect, and \
 if it is not in db.list_connections, ask the user to add it with \
-\`mariadb-shell -- mcp setup\`. What no MCP tool covers is not blocked. If the \
+\`mariadb-shell -- mcp setup\`. What no MCP tool covers is not blocked, apart from the msm functions left to the MariaDB VS Code extension. If the \
 user wants you to run the clients anyway, they can start the agent with \
 MARIADB_PLUGIN_ALLOW_CLI=1."
 
