@@ -150,7 +150,7 @@ agent just created.
 
 ## The plugin variants
 
-Each harness ships the same three variants, all built by the same
+There are three variants, all built by the same
 [`scripts/sync-skills.sh`]({{ site.repo }}/blob/main/scripts/sync-skills.sh):
 
 <div class="table-wrap" markdown="1">
@@ -164,7 +164,8 @@ Each harness ships the same three variants, all built by the same
 </div>
 
 The folders are `<harness>/{dev,sql,contributor}-plugin/` for `claude/`,
-`codex/`, `opencode/` and `hermes/`. `pi/` ships `dev` only.
+`codex/`, `opencode/` and `hermes/`. `pi/` ships `dev` only. VS Code has no
+folder at all — see below.
 
 ## How the harnesses differ
 
@@ -193,6 +194,13 @@ The content is identical; the packaging is not.
   tools reach the model as `mcp__mariadb__<tool>`, and the skills sit under a
   namespace Hermes derives from the plugin. `mcp.json` cannot branch per OS, so
   native Windows points Hermes' `config.yaml` at the `.cmd` launcher instead.
+- **VS Code** (GitHub Copilot) gets the plugin from the **MariaDB Shell
+  extension for VS Code**, not from this repository. Each extension release
+  pins one ai-plugins release; its build copies that release's
+  `claude/dev-plugin/skills` and contributes them to Copilot. At run time the
+  extension registers the `mariadb-shell` MCP server with VS Code itself, so
+  there is no launcher script and no config file — and it installs MariaDB
+  Shell the first time Copilot starts the server.
 
 ## Why the skills are vendored
 

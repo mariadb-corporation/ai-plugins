@@ -18,6 +18,17 @@ Everything below is for people working **on** the plugins rather than with them.
 | [Pi](https://pi.dev) | [`pi`](pi) | [`pi/dev-plugin-tests`](pi/dev-plugin-tests) | [pi-test.yml](.github/workflows/pi-test.yml) |
 | [Hermes Agent](https://hermes-agent.nousresearch.com/) | [`hermes`](hermes) | [`hermes/dev-plugin-tests`](hermes/dev-plugin-tests) | [hermes-test.yml](.github/workflows/hermes-test.yml) |
 
+**VS Code (GitHub Copilot)** has no folder in this repo. The MariaDB Shell
+extension for VS Code
+([mariadb-corporation/vscode-extension](https://github.com/mariadb-corporation/vscode-extension))
+pins one release of this repo (`aiPlugins.release` in its `package.json`),
+copies that release's `claude/dev-plugin/skills` when it is built
+(`npm run sync:skills`) and contributes them to Copilot; it starts the MCP
+server itself, without the launcher scripts. So `claude/dev-plugin/skills` is a
+published interface: keep it flat, with every folder named after its skill's
+`name`, as VS Code requires — and a skill change reaches Copilot only once it
+is released here *and* an extension release pins that release.
+
 ### How the plugins are built
 
 1. **Skills** — MariaDB agent skills (`SKILL.md` docs) covering SQL statements,

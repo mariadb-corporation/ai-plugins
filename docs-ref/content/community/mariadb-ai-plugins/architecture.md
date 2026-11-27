@@ -26,7 +26,7 @@ _A plugin is installed from GitHub (1 and 2), and downloads the native tools pac
 
 ### Coding Agent
 
-The coding agent, which this documentation calls the _harness_, is the AI tool you work with: Claude Code, Codex, OpenCode, Pi, Hermes Agent, or Cursor. Each coding agent has its own way of installing and loading extensions, so there is a separate MariaDB plugin for each of them.
+The coding agent, which this documentation calls the _harness_, is the AI tool you work with: Claude Code, Codex, OpenCode, Pi, Hermes Agent, Cursor, or GitHub Copilot in VS Code. Each coding agent has its own way of installing and loading extensions, so there is a separate MariaDB plugin for each of them.
 
 You install the plugin with the commands of your coding agent (1). In Claude Code, for example, you add the MariaDB marketplace and install the plugin with these commands:
 
@@ -105,6 +105,7 @@ All harnesses get the same skills and the same MCP server, but the plugins are p
 
 * **Claude Code** and **Codex** read a marketplace manifest and install a plugin directory.
 * **Cursor** reads the Claude Code marketplace manifest and installs the Claude Code plugins into its own directory. Claude Code doesn't need to be installed.
+* **VS Code** has no plugin in this repository. The MariaDB Shell extension for VS Code contains the skills of the `dev` plugin, copied from the MariaDB AI Plugins release that the extension's build pins, and contributes them to GitHub Copilot. The extension registers the MCP server with VS Code and starts MariaDB Shell itself, without the launcher scripts.
 * **OpenCode** has no marketplace. You merge an `mcp` block into your configuration, set an environment variable, and link the skills directory.
 * **Pi** has no marketplace. The repository-root `package.json` is the Pi package manifest, and the extension in the package registers the MCP server with Pi 1.0 or later.
 * **Hermes Agent** installs the `dev` plugin and the guard plugin from the Hermes plugin catalog. Each catalog entry pins the exact commit of an ai-plugins release and points at a plugin folder. Each plugin folder is a portable Agent Plugins v1 package with a root `plugin.json`, a `skills/` directory, and, for the `dev` and `sql` plugins, an `mcp.json` that declares the MCP server. Hermes can also install the folder directly from the repository, which is how the `sql` and `contributor` plugins are installed.
