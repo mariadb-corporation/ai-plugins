@@ -33,6 +33,7 @@ In most cases, install the `dev` plugin.
 | Pi | Yes | No | No |
 | Hermes Agent | Yes | Yes | Yes |
 | Cursor | Yes | Yes | Yes |
+| VS Code | Yes | No | No |
 
 ## Skill Counts
 

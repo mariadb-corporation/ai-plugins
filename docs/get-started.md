@@ -4,9 +4,9 @@ title: Get Started
 subtitle: >-
   Install the plugin, tell the MCP server what it may touch, then build a real
   schema on a throwaway server. Fifteen minutes end to end.
-badges: ["Claude Code", "Codex", "OpenCode", "Pi", "Hermes Agent", "Cursor"]
+badges: ["Claude Code", "Codex", "OpenCode", "Pi", "Hermes Agent", "Cursor", "VS Code"]
 permalink: /get-started/
-description: Install the MariaDB AI Plugins into Claude Code, Codex, OpenCode, Pi, Hermes Agent or Cursor, configure the mariadb-shell MCP server, and run your first working example.
+description: Install the MariaDB AI Plugins into Claude Code, Codex, OpenCode, Pi, Hermes Agent, Cursor or VS Code, configure the mariadb-shell MCP server, and run your first working example.
 ---
 
 There are three steps, and only the first is mandatory. The **skills** work the
@@ -23,9 +23,10 @@ do not have to understand the protocol to use any of this.
 ## Step 1 — Install the plugin
 {: #step-1-install-the-plugin}
 
-Pick your harness. Each one ships the same three plugin variants — `dev` (the
-full set), `sql` (a SQL-focused subset) and `contributor` (for working on
-MariaDB tooling itself). Unless you know you want otherwise, install `dev`.
+Pick your harness. Most ship the same three plugin variants — `dev` (the full
+set), `sql` (a SQL-focused subset) and `contributor` (for working on MariaDB
+tooling itself); Pi and VS Code ship `dev` only. Unless you know you want
+otherwise, install `dev`.
 
 <div class="callout" markdown="1">
 On first start the plugin downloads and extracts the `mariadb-shell` package
@@ -146,6 +147,25 @@ its own directory — Claude Code does not have to be installed. In Cursor:
 3. Click **Add** on the `dev` plugin for full MariaDB support — or on `sql` or
    `contributor`.
 
+### VS Code (GitHub Copilot)
+
+In VS Code there is nothing to wire up: install the **MariaDB Shell extension
+for VS Code** and Copilot has the `dev` skills and the MCP server.
+
+```sh
+code --install-extension MariaDB.mariadb-shell
+```
+
+The server shows up as **MariaDB** under *MCP: List Servers* in the Command
+Palette. The first time Copilot starts it, the extension installs MariaDB Shell
+unless a new enough one is on the `PATH`. The `mariadb.copilot.enabled` setting
+switches the skills and the server off again, without touching the rest of the
+extension.
+
+Each extension release carries the skills of one ai-plugins release, pinned
+when it is built, so a new release here reaches Copilot with the next extension
+release that pins it.
+
 ### Check that the skills arrived
 
 Ask for something only a skill knows. If the answer uses the native `UUID` type
@@ -174,6 +194,15 @@ If `mariadb-shell` is not on your `PATH`, use the copy the launcher installed �
 installer only prints a `PATH` hint; it never edits your shell profile. That
 copy appears the first time an agent starts the MCP server, so either let the
 agent run once first, or install the shell yourself before configuring it.
+
+<div class="callout callout--tip" markdown="1">
+**In VS Code, the extension's views do it for you.** Add or edit a connection in
+the MariaDB Shell extension's **Connections** view and tick **Allow MCP access to
+this connection** — it then goes into the same list `mcp setup` writes, and the
+view marks it `MCP`. The password goes into the shell's secret store either way.
+For schema management, tick **Allow MCP Access** on an MSM project so the agent
+may work on it.
+</div>
 
 The walkthrough configures three things:
 
@@ -299,7 +328,8 @@ shell's bundled Python as a workaround:
 project-local package needs `--approve` at run time or it is configured and
 never loaded. In Hermes, `hermes plugins list` shows whether the plugin is
 installed *and* enabled. In Cursor, check that the plugin is listed under
-**Customize**.
+**Customize**. In VS Code, check that the MariaDB Shell extension is installed
+and enabled, and that the `mariadb.copilot.enabled` setting is on.
 
 **In pi, `/mcp` doesn't list the `mariadb` server.** You need Pi 1.0 or later,
 and no `pi-mcp-adapter`: the adapter replaces Pi's built-in MCP, so the server

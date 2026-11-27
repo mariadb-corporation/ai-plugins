@@ -60,6 +60,14 @@ The launcher scripts of the SQL language server, `mariadb-lsp-launcher.sh` and `
 | `MARIADB_DEV_PLUGIN` | OpenCode | The plugin directory, referenced by the `mcp` block in `opencode.json`. |
 | `MCP_TIMEOUT` | Claude Code | How long Claude Code waits for an MCP server to connect, in milliseconds. The default is `30000`. Raise it when the first start downloads MariaDB Shell over a slow connection. Set it in the environment or in the `env` block of `~/.claude/settings.json`; a plugin can't set it. |
 
+## VS Code Settings
+
+In VS Code, the MariaDB Shell extension for VS Code starts MariaDB Shell itself, so the launcher environment variables don't apply. The extension uses a MariaDB Shell on the `PATH` when it is new enough. Otherwise it reads `MARIADB_SHELL_PREFIX` to decide where it looks for an installed MariaDB Shell and where it installs one.
+
+| Setting | Default | Description |
+| --- | --- | --- |
+| `mariadb.copilot.enabled` | `true` | Whether GitHub Copilot, and any other chat in VS Code, gets the skills and the MCP server. |
+
 ## File Locations
 
 | What | Linux and macOS | Windows |
@@ -80,6 +88,7 @@ The launcher scripts of the SQL language server, `mariadb-lsp-launcher.sh` and `
 | Cursor | The Claude Code plugin's `.mcp.json`, installed with the plugin. |
 | OpenCode | The `mcp` block you merge into `opencode.json`. |
 | Pi | None. The extension registers the server when it loads. A `mariadb` entry in `~/.pi/agent/mcp.json` or `.pi/mcp.json` overrides it. |
+| VS Code | None. The MariaDB Shell extension for VS Code registers the server as **MariaDB** through the VS Code API. |
 | Hermes Agent | The plugin's `mcp.json`, installed with the plugin. A `mariadb` entry under `mcp_servers` in the Hermes `config.yaml` overrides it; native Windows requires such an entry. |
 
 ## LSP Registration Files
