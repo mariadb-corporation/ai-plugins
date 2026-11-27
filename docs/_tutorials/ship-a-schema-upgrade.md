@@ -126,8 +126,9 @@ and `mariadb-schema-management-release` skills:
   in 240.
 - **Write plain `ALTER TABLE`s.** `msm.deploy_schema` runs each top-level
   `ALTER` of 240 online, trying `INSTANT`, then `NOCOPY`, `INPLACE` and `COPY`
-  without locking, within the project's limits. An `ALTER` with its own
-  `ALGORITHM` or `LOCK` runs as written, possibly blocking the table.
+  without locking, and then with a lock, within the project's limits. An
+  `ALTER` with its own `ALGORITHM` or `LOCK` runs as written, possibly
+  blocking the table.
 - **No `DELIMITER` in 240.** Section 240 becomes a stored-procedure body in the
   generated script. Plain `;`-terminated statements, dynamic SQL for anything
   conditional.

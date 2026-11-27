@@ -194,7 +194,9 @@ An MCP server serves an agent these 26 `msm.*` tools:
 
 The other msm tools (project settings and the project list's management,
 schema rename, section splitting, structured edits, object templates, online
-`ALTER TABLE`, diagram pictures, the REST SDK, the MySQL Workbench import)
+`ALTER TABLE` and its settings, the snapshot refresh
+(`msm.update_schema_definition`), diagram pictures, the REST SDK, the MySQL
+Workbench import)
 serve the MariaDB VS Code extension and are not served to agents. Work on MSM
 projects through the `msm.*` tools, never by running `mariadb-shell -- msm ...`
 from a shell or by editing `msm.project.json` or section 160 by hand: the
