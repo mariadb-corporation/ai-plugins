@@ -156,6 +156,7 @@ SYNC_WARNING = """<!--
   GitBook editor is overwritten by the next sync.
 -->"""
 LICENSE_FOOTER = "<sub>_This page is licensed: GPLv2_</sub>"
+FEEDBACK_FORM = '{% @marketo/form formId="4316" %}'
 
 
 def page(title, desc, intro, body):
@@ -167,7 +168,8 @@ def page(title, desc, intro, body):
         f"{SYNC_WARNING}\n\n"
         f"{intro}\n\n"
         f"{body.rstrip()}\n\n"
-        f"{LICENSE_FOOTER}\n"
+        f"{LICENSE_FOOTER}\n\n"
+        f"{FEEDBACK_FORM}\n"
     )
 
 

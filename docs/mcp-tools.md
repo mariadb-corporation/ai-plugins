@@ -5,10 +5,10 @@ subtitle: >-
   Every tool the mariadb-shell MCP server exposes, what it takes, and the
   behaviour that is not obvious from the name.
 permalink: /mcp-tools/
-description: Reference for the mariadb-shell MCP server tools — db.*, msm.*, sandbox.*, util.*, sql.* and the optional migrator.* group.
+description: Reference for the mariadb-shell MCP server tools — db.*, msm.*, sandbox.*, util.*, task.*, sql.* and the optional migrator.* group.
 ---
 
-The server exposes **{{ site.tool_count }} tools in five groups**, plus an optional sixth
+The server exposes **{{ site.tool_count }} tools in six groups**, plus an optional seventh
 that only appears when the migration tooling is installed.
 
 <div class="table-wrap" markdown="1">
@@ -16,9 +16,10 @@ that only appears when the migration tooling is installed.
 | Group | Tools | What they do |
 | --- | --- | --- |
 | [`db.*`](#db--connections-and-sql) | 8 | List connections and schemas, describe objects, run SQL |
-| [`msm.*`](#msm--schema-management) | 12 | Versioned schema projects, releases, deployments |
-| [`sandbox.*`](#sandbox--throwaway-servers) | 8 | List deployable server versions; deploy, start, stop and delete local instances |
-| [`util.*`](#util--dumps-loads-and-copies) | 12 | Dump, load, export, import and copy data between servers, as background tasks |
+| [`msm.*`](#msm--schema-management) | 26 | Versioned schema projects, releases, deployments |
+| [`sandbox.*`](#sandbox--throwaway-servers) | 9 | List deployable server versions; deploy, start, stop and delete local instances |
+| [`util.*`](#util--dumps-loads-and-copies) | 10 | Dump, load, export, import and copy data between servers, as background tasks; inspect a dump |
+| [`task.*`](#util--dumps-loads-and-copies) | 3 | Follow, list and cancel those background tasks |
 | [`sql.*`](#sql--check-outline-and-format-sql) | 3 | Check, outline and format SQL text with MariaDB's grammar — no server needed |
 | [`migrator.*`](#migrator--mysql-to-mariadb) | 4 | MySQL-to-MariaDB migration — **optional, not counted above** |
 
@@ -74,13 +75,17 @@ variables, the current schema, an open transaction — is gone.
 
 MariaDB Schema Management. See
 [Tutorial 6]({{ '/tutorials/versioned-schema-with-msm/' | relative_url }}) for the
-workflow and the section model.
+workflow and the section model. These are the 26 tools an agent gets; msm's
+other tools (project settings, schema rename, online `ALTER TABLE`, structured
+edits, …) serve the MariaDB VS Code extension only, which keeps clients with a tool limit (GitHub
+Copilot takes 128) within it.
 
 <div class="table-wrap" markdown="1">
 
 | Tool | Arguments | Notes |
 | --- | --- | --- |
-| `msm.create_project` | `schema_name`, `target_path`, `copyright_holder`, `license`, `overwrite_existing`, … | Scaffolds `<schema>.msm.project/`. An unrecognized `license` name is rejected — omit it or pass your own text. |
+| `msm.create_project` | `schema_name`, `target_path`, `copyright_holder`, `license`, `overwrite_existing`, … | Scaffolds `<schema>.msm.project/` and adds it to the project list. An unrecognized `license` name is rejected. |
+| `msm.list_projects` | — | The projects of the project list an agent may work on, with each one's `development_version` and `last_released_version`. |
 | `msm.get_project_information` | `schema_project_path` | Project metadata. |
 | `msm.set_development_version` | `version`, `schema_project_path` | Sets the version in section 910 of the development script. |
 | `msm.get_released_versions` | `schema_project_path` | Every released version. |
@@ -88,17 +93,32 @@ workflow and the section model.
 | `msm.get_last_deployment_version` | `schema_project_path` | The most recent generated deployment script. |
 | `msm.get_deployment_script_versions` | `schema_project_path` | All generated deployment scripts. |
 | `msm.get_section_sql_content` | `file_path`, `section_id` | Read one section. |
-| `msm.set_section_sql_content` | `file_path`, `section_id`, `sql_content` | Write one section. **Always edit sections through these two** so the banners are never corrupted. |
-| `msm.prepare_release` | `version`, `next_version`, `schema_project_path`, … | Snapshots the development script and creates the update script, empty except for the statements `msm.edit_schema` kept. |
-| `msm.generate_deployment_script` | `version`, `schema_project_path`, `overwrite_existing` | Composes the create-or-upgrade artifact. Run **after** filling the update script. |
-| `msm.deploy_schema` | `connection_id`, `version`, `schema_project_path`, `backup`, `backup_directory` | Applies a version to a live server. Needs an open `db.connect` connection. |
+| `msm.set_section_sql_content` | `file_path`, `section_id`, `sql_content` | Write one section. **Always edit sections through these two** so the banners are never corrupted — but change tables with `set_schema_statements`: a hand edit of section 140 after a release gets no `ALTER`. |
+| `msm.set_schema_statements` | `statements`, `renames`, `dropped_columns`, `expect`, `base_hash`, `schema_project_path` | Adds, replaces or **changes** tables, sequences, views, routines, triggers and events from their `CREATE` statements, each in the right section. A changed `CREATE TABLE` must be complete (a left-out column is dropped, a left-out table option removed; `AUTO_INCREMENT=n` is kept); after a release its `ALTER TABLE` is kept for the next update script. `renames` (`{table: {old: new}}`) keeps a renamed column's data; a drop that looks like a rename is refused until `renames` or `dropped_columns` (`{table: [column]}`) says which it is. `base_hash` is optional. An existing sequence is refused. |
+| `msm.drop_schema_object` | `kind`, `name`, `base_hash`, `schema_project_path` | Removes an object; after a release its `DROP` is kept for the next update script. Refused for an object another one needs. |
+| `msm.set_rest_statements` | `statements`, `replaces`, `base_hash`, `schema_project_path` | Writes REST services, schemas and objects into section 180 as `CREATE OR REPLACE`, replacing an item where it stands. `replaces` renames a REST object. |
+| `msm.drop_rest_object` | `kind`, `service`, `schema`, `object`, `base_hash`, `schema_project_path` | Removes a REST item and everything on it from 180; the next release's section 280 drops it on servers. |
+| `msm.list_schema_diagrams` | `schema_project_path` | The diagrams, and whether the schema snapshot is current. |
+| `msm.get_schema_diagrams` | `schema_project_path`, `diagram` | The snapshot (with `source_hash`) and the diagram documents. |
+| `msm.create_schema_diagram` | `diagram`, `tables`, `views`, `sequences`, `routines`, `events`, … | A new diagram, laid out: all tables by default, other objects when named. |
+| `msm.layout_schema_diagram` | `diagram`, `tables`, …, `keep_placed=True` | Adds objects to a diagram and lays out the unplaced figures (`keep_placed=False`: all). |
+| `msm.set_schema_diagram` | `document`, `schema_project_path` | Adds or replaces a diagram from an `msm-diagram/1` document. |
+| `msm.rename_schema_diagram` | `diagram`, `new_name`, `schema_project_path` | Renames a diagram. |
+| `msm.remove_schema_diagram` | `diagram`, `schema_project_path` | Removes a diagram. |
+| `msm.prepare_release` | `version`, `next_version`, `schema_project_path`, … | Snapshots the development script and creates the update script, holding the statements `set_schema_statements` and `drop_schema_object` kept, plus the REST removals in section 280. |
+| `msm.generate_deployment_script` | `version`, `schema_project_path`, `overwrite_existing` | Composes the create-or-upgrade artifact. Run **after** completing the update script. |
+| `msm.deploy_schema` | `connection_id`, `version`, `schema_project_path`, `backup`, `backup_directory`, `online_alter` | Applies a version to a live server, running each upgrade `ALTER TABLE` online where the server allows. Needs an open `db.connect` connection. |
+| `msm.list_live_schema_objects` | `connection_id`, `schema` | The objects of a schema on a server that `import_live_schema` can import, and the version msm deployed there. |
+| `msm.import_live_schema` | `connection_id`, `schema`, `target_path`, `objects`, … | Creates a project from a schema on a server (no data, users or grants), as a background task — follow it with `task.get`. |
 
 </div>
 
 <div class="callout callout--warn" markdown="1">
-**The ordering rule.** `prepare_release` → **fill the update script (section
-240, and 270 for revoked privileges)** → `generate_deployment_script`. Generating before filling
-produces a script that creates the schema perfectly on an empty server and
+**The ordering rule.** `prepare_release` → **complete the update script** (hand
+edits and data backfills in section 240, removed routines in 260, revoked
+privileges in 270; msm has already put in what `set_schema_statements` and
+`drop_schema_object` kept) → `generate_deployment_script`. Generating before
+that produces a script that creates the schema perfectly on an empty server and
 **silently fails to upgrade** an existing install.
 </div>
 
@@ -110,23 +130,25 @@ produces a script that creates the schema perfectly on an empty server and
 | --- | --- | --- |
 | 130 | 230 | Helper routines, names prefixed `msm_` |
 | **140** | **240** | **Non-idempotent: tables, base data — and in an update, all `ALTER`s, backfills and drops of removed objects** |
-| **150** | 250 | **Idempotent: views, procedures, functions, triggers, events.** 250 is not deployed — leave it empty |
+| **150** | 260 | **Idempotent: views, procedures, functions, triggers, events.** 260: only `DROP PROCEDURE/FUNCTION IF EXISTS` of removed routines |
+| 160 | — | Schema snapshot and diagrams — written by msm, never by hand |
 | 170 | 270 | Authorization — 170: `CREATE ROLE IF NOT EXISTS`, `GRANT`; 270: only `REVOKE`, `DROP ROLE` |
-| 180 | — | Optional MariaDB REST Service endpoints (`CREATE OR REPLACE REST …`) |
+| 180 | 280 | Optional MariaDB REST Service endpoints (`CREATE OR REPLACE REST …`); 280 removes dropped ones and is filled by `prepare_release` |
 | 190 | 290 | Removal of the `msm_` helpers |
 
 </div>
 
 Sections **140, 240, 170, 270** become the body of a stored procedure in the
 generated script: plain `;`-terminated statements, **no `DELIMITER`**, dynamic SQL
-for conditional DDL. Sections **130, 150, 180, 230, 190, 290** are emitted at top
-level and use `DELIMITER %%`.
+for conditional DDL. Sections **130, 150, 160, 180, 230, 260, 280, 190, 290** are
+emitted at top level and use `DELIMITER %%` for routine bodies.
 
 The deployment script runs the target version's **150, 170 and 180 in full on
 every deployment**, after the table changes, so new and changed views, routines,
 roles, grants and endpoints reach upgraded schemas on their own. The update
-script only carries what those can't express: table changes and drops (240), and
-`REVOKE` / `DROP ROLE` (270). Never `GRANT` in 270 — on an upgrade it runs before
+script only carries what those can't express: table changes and drops (240),
+removed routines (260), and `REVOKE` / `DROP ROLE` (270). Update scripts from an
+older msm still have a 250; it is not deployed — leave it empty. Never `GRANT` in 270 — on an upgrade it runs before
 170 creates a new role, and the deployment fails.
 
 ## `sandbox.*` — throwaway servers
@@ -139,8 +161,9 @@ See [Tutorial 4]({{ '/tutorials/sandbox-lifecycle/' | relative_url }}).
 | --- | --- | --- |
 | `sandbox.list_available_versions` | `series` | Versions `deploy` can be asked for. No argument: the newest patch of each series. `series="11.8"` or `"11"`: every release below it. Only packages built for this platform are listed, and anything listed can be deployed. |
 | `sandbox.deploy` | `port`, `password`, `sandbox_dir`, `allow_root_from`, `server_id`, `ssl=False`, `server_version`, `mariadbd_path`, `mariadbd_options`, `timeout` | Creates and starts an instance, and **registers its connection with the MCP server**. Resolves a server from the `PATH`, then already-downloaded versions, then the published index — **no MariaDB Server need be installed**. `server_version` accepts `11.8.9`, `11.8` or `11`, and is refused together with `mariadbd_path`. |
+| `sandbox.list_instances` | `port` | The instances in the default sandbox location, with `version` and `status` (`running` or `stopped`). Pass a `port` to check one instance cheaply. |
 | `sandbox.start` | `port`, `sandbox_dir`, `mariadbd_path`, `timeout` | Restarts an existing instance with its data intact. |
-| `sandbox.stop` | `port`, `sandbox_dir`, `password`, `timeout` | Graceful shutdown. **Needs the root password.** |
+| `sandbox.stop` | `port`, `sandbox_dir`, `password`, `timeout` | Graceful shutdown. Leave `password` empty: the root password stored at deploy time is used. |
 | `sandbox.kill` | `port`, `sandbox_dir` | Forceful. The fallback when `stop` will not. |
 | `sandbox.delete` | `port`, `sandbox_dir` | Removes the instance. **Refuses a running one** — stop or kill first. |
 | `sandbox.vendor` | `port`, `sandbox_dir`, `mariadbd_path` | `MariaDB` or `MySQL`. The sandbox machinery can stand up either. |
@@ -182,23 +205,24 @@ every one of them works on a connection from `db.connect`.
 
 | Tool | Arguments | Notes |
 | --- | --- | --- |
-| `util.dump_instance` | `connection_id`, `output_url`, `options=None` | The whole server. `output_url` must not exist or be empty. |
+| `util.dump_instance` | `connection_id`, `output_url`, `options=None` | The whole server. `output_url` is a directory that must not exist or be empty — or a file ending in `.mariadb.dump.zip`, for the dump as one ZIP file. |
 | `util.dump_schemas` | `connection_id`, `schemas`, `output_url`, `options=None` | The named schemas. |
 | `util.dump_tables` | `connection_id`, `schema`, `tables`, `output_url`, `options=None` | Tables and views of one schema. `tables=[]` with `{"all": true}` dumps every one. |
 | `util.export_table` | `connection_id`, `table`, `output_url`, `options=None` | One table's rows to one file. `table` is `t` or `schema.t`. |
-| `util.load_dump` | `connection_id`, `url`, `options=None` | Loads a dump made by any of the three dump tools. **The server needs `local_infile` on.** |
+| `util.load_dump` | `connection_id`, `url`, `options=None`, `extraction_budget_mb` | Loads a dump made by any of the three dump tools, a directory or a `.mariadb.dump.zip`. **The server needs `local_infile` on.** |
+| `util.inspect_dump` | `url`, `schema=None` | What a dump holds — kind, completeness, source, schemas and objects — without loading it. Local dumps only; answers directly, no task. |
 | `util.import_table` | `connection_id`, `urls`, `options=None` | A file, or a list of files, into a table that **must already exist**. Wildcards `*` and `?` work. Needs `local_infile`. |
 | `util.copy_instance` | `connection_id`, `target_connection_id`, `options=None` | Dumps from the source and loads into the target at once, **no files written**. The target must be another server with `local_infile` on. |
 | `util.copy_schemas` | `connection_id`, `schemas`, `target_connection_id`, `options=None` | The same, for the named schemas. |
 | `util.copy_tables` | `connection_id`, `schema`, `tables`, `target_connection_id`, `options=None` | The same, for tables of one schema. `{"schema": "other"}` loads them into another schema. |
-| `util.get_task` | `task_id`, `since=0`, `wait_ms=0` | A task's `status`, stages, current `progress` (with `percent`, `throughput`, `eta_seconds`), the messages after `since`, `next_since`, and its `result` or `error` once it ended. `wait_ms` (at most 30000) waits for news instead of answering at once. |
-| `util.list_tasks` | — | This client's tasks, without their messages. |
-| `util.cancel_task` | `task_id` | Interrupts the utility as Ctrl+C would; the task ends `cancelled`. |
+| `task.get` | `task_id`, `since=0`, `wait_ms=0` | A task's `status`, stages, current `progress` (with `percent`, `throughput`, `eta_seconds`), the messages after `since`, `next_since`, and its `result` or `error` once it ended. `wait_ms` (at most 30000) waits for news instead of answering at once. |
+| `task.list` | `task_type=None` | This client's tasks, oldest first, without their messages. |
+| `task.cancel` | `task_id` | Interrupts the utility as Ctrl+C would; the task ends `cancelled`. |
 
 </div>
 
 **Every utility runs as a background task.** The tool returns a `task_id` at
-once, with `status` `pending` or `running`; follow it with `util.get_task`,
+once, with `status` `pending` or `running`; follow it with `task.get`,
 passing the last `next_since` back as `since` to get only new messages, and
 `wait_ms` to avoid a tight polling loop. A task ends `completed`, `failed` or
 `cancelled`, and is kept for an hour after that (at most 100 of them). A client
@@ -216,7 +240,7 @@ URI and stored password of the `db.connect` connection. The password goes to
 the process on stdin, never on its command line. The connection itself is not
 locked, so the agent can keep running SQL on it while a dump runs. A load whose
 process crashes is **resumed from its progress file**, up to three more times;
-`cancel_task` on a load leaves that file too, so loading the same dump again
+`task.cancel` on a load leaves that file too, so loading the same dump again
 picks up where it stopped. Tasks are stopped when the MCP server ends.
 </div>
 
@@ -300,7 +324,7 @@ pass it only to `resume`, and check that every step says `DONE` — never trust
 | No `sql.*` tools at all | The server found no `mariadb-lsp`, runs in multi-tenant mode, or is older than 26.10.3. | Use a shell from the release packages, or point `mcp setup --lspPath` at a `mariadb-lsp`. |
 | No `util.*` tools at all | The server does not serve the `db.*` group, or runs in multi-tenant mode. | Serve `db` too; a multi-tenant server never offers them. |
 | *The MariaDB Shell binary to run the utility in was not found* | A `util.*` tool could not find `mariadb-shell` to run the task in. | Put `mariadb-shell` on the `PATH`. |
-| *Already 4 tasks are running* | The client's limit of running `util.*` tasks. | Wait for one with `util.get_task`, or `util.cancel_task` one. |
+| *Already 4 tasks are running* | The client's limit of running `util.*` tasks. | Wait for one with `task.get`, or `task.cancel` one. |
 | A load or copy fails on `local_infile` | The target server has `local_infile` off. | `SET GLOBAL local_infile = ON` on the target. |
 | No `migrator.*` tools at all | The migration tooling is not installed, or the server has not been restarted since it was. | `mcp setup --installMigrator`, then restart. |
 | *No module named 'pywintypes'* (Windows) | The Windows shell packages do not yet bundle pywin32. | `pip install pywin32` into the shell's bundled Python. |

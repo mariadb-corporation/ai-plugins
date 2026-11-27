@@ -1,6 +1,6 @@
 ---
 name: mariadb-schema-management-create
-description: "Scaffold a MariaDB Schema Management (MSM) project and author the initial schema in the development folder — create the project with msm.create_project, or import it from a MySQL Workbench model (msm.import_workbench_model) or a schema on a live server (msm.import_live_schema), write the first version's tables, objects and grants into the MSM sections of <schema>_next.sql, add a laid-out schema diagram of all objects, and end with a link that opens the project in the MariaDB extension. Use when starting a new versioned/maintainable MariaDB schema, creating an MSM schema project, bringing an existing schema under MSM, or authoring the initial development script. Read mariadb-schema-management first for the section model."
+description: "Scaffold a MariaDB Schema Management (MSM) project and author the initial schema in the development folder — create the project with msm.create_project, or import it from a schema on a live server (msm.import_live_schema), write the first version's tables, objects and grants into the MSM sections of <schema>_next.sql with msm.set_schema_statements and by section, add a laid-out schema diagram of all objects, and end with a link that opens the project and its diagram in the MariaDB extension. Use when starting a new versioned/maintainable MariaDB schema, creating an MSM schema project, bringing an existing schema under MSM, or authoring the initial development script. Read mariadb-schema-management first for the section model."
 ---
 
 # MSM — Creating the Initial Schema
@@ -28,40 +28,17 @@ This creates `<schema>.msm.project/` with `msm.project.json`, the
 adds the project to the project list (`msm.list_projects`). Several holders go
 in `copyrights=[{holder, yearOfCreation, yearOfLastUpdate, tracksUpdates}]`
 instead of `copyright_holder`. `msm.get_project_information` returns the schema
-name, versions, paths and settings; change settings later (a `CUSTOM` license,
-`maxInlineSectionSize`, ...) with `msm.set_project_settings`, never by editing
-`msm.project.json`.
+name, versions, paths and settings. Settings (a `CUSTOM` license,
+`maxInlineSectionSize`, ...) are changed later in the MariaDB extension, never
+by editing `msm.project.json`.
 
 ### Or import an existing schema
 
-Both imports create a **new** project (like `msm.create_project`, same
-`target_path`, copyright and license arguments), write the CREATE statements
-into sections 140/150 (breakout files where a section is large) and make the
-schema snapshot, so they need `mariadb-lsp`.
-
-#### From a MySQL Workbench model
-
-```text
-msm.import_workbench_model(
-    model_path="<path>/shop.mwb",
-    target_path="<parent dir>",
-    schema="shop",            # only needed when the model has several schemas
-    copyright_holder="...",   # optional, as for msm.create_project
-    license="MIT",            # optional
-)
-```
-
-- There is no re-import into an existing project.
-- Tables, keys and the model's rows go to section 140, the other objects to
-  150, roles and grants to 170 (as breakout files where a section is large);
-  the model's EER diagrams become the project's diagrams (section 160).
-- SQL scripts attached to the model are listed in `scripts_not_imported`, never
-  run or copied: read them and move what belongs into the right sections.
-
-Read `warnings` in the result, then review the generated sections as if you had
-written them (step 2's rules apply). A Workbench model is a MySQL model: check
-collations (such as `utf8mb4_0900_ai_ci`), engines and defaults against the
-target MariaDB version.
+The import creates a **new** project (like `msm.create_project`, same
+`target_path`, copyright and license arguments), writes the CREATE statements
+into sections 140/150 (breakout files where a section is large) and makes the
+schema snapshot, so it needs `mariadb-lsp`. There is no re-import into an
+existing project.
 
 #### From a schema on a server
 
@@ -161,12 +138,12 @@ deploys it:
 - **Sections 130 / 190 — creation helpers.** Optional routines whose names must
   start `msm_`, defined in 130 and dropped in 190; use them for logic needed only while building the schema.
 
-Instead of writing a section by hand, `msm.set_schema_statements` takes the
-CREATE statements of tables, sequences, views, routines, triggers and events
-and puts each in the right section, in the form that section needs
-(`msm.get_object_templates` has a starting point for each kind but tables).
-`msm.edit_schema` makes structured changes. See
-`mariadb-schema-management-develop` for both.
+Instead of writing sections 140 and 150 by hand, prefer
+`msm.set_schema_statements`: it takes the CREATE statements of tables,
+sequences, views, routines, triggers and events and puts each in the right
+section, in the form that section needs. Later changes to a table go through
+it too, so that the update script gets its `ALTER TABLE` once the project has
+a release. See `mariadb-schema-management-develop`.
 
 ## 3. Set the initial version
 
@@ -203,9 +180,6 @@ below them. If objects were left out or added afterwards, add them with
 events=)`, which lays out the new figures. Call it with `keep_placed=False` to
 lay the whole diagram out again.
 
-- A Workbench import brings the model's EER diagrams. Keep them, and add the
-  objects they leave out with `msm.layout_schema_diagram`. Create a diagram
-  only if the model had none.
 - A project imported from a server has no diagram: create one as above.
 
 ## 5. Hand the project back
@@ -224,7 +198,7 @@ End the answer, after the summary of what you built, with the review link of
   breaks the deployment script's create/upgrade split.
 - Idempotent objects (150) must use `CREATE OR REPLACE` / `DROP IF EXISTS`.
 - Keep object definitions grouped and commented; once the file grows, split
-  sections into SOURCE breakout files with `msm.split_sections` (see
+  sections into SOURCE breakout files (see
   `mariadb-schema-management-develop`).
 - Don't finish without the diagram (step 4) and the review link (step 5).
 - When the first version is ready, prepare a release

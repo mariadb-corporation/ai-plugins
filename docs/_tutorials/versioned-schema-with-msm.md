@@ -43,7 +43,7 @@ notes_app.msm.project/
 │   └── sections/           # optional SOURCE breakout files
 └── releases/
     ├── versions/    notes_app_1.0.0.sql                # full snapshot per release
-    ├── updates/     notes_app_1.0.0_to_1.1.0.sql       # migration — you fill this
+    ├── updates/     notes_app_1.0.0_to_1.1.0.sql       # migration — you complete this
     └── deployment/  notes_app_deployment_1.0.0.sql     # generated; never edit
 ```
 
@@ -116,7 +116,7 @@ numbers works too.
 **The delimiter rule, and why it exists.** In the generated deployment script,
 sections **140, 240, 170 and 270** become the *body of a stored procedure*. Write
 them as plain `;`-terminated statements with **no `DELIMITER`**, and use dynamic
-SQL for conditional DDL. Sections **130, 150, 230, 250, 190 and 290** are emitted
+SQL for conditional DDL. Sections **130, 150, 160, 180, 230, 260, 280, 190 and 290** are emitted
 at top level and use `DELIMITER %%` for routine bodies.
 
 Getting this backwards produces a deployment script that fails to parse, with an

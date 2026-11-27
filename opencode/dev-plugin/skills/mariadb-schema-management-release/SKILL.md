@@ -31,10 +31,11 @@ This:
 - Inlines any `SOURCE` breakout files and writes the full snapshot
   `releases/versions/<schema>_1.1.0.sql`.
 - If a previous release exists, creates the update script
-  `releases/updates/<schema>_<prev>_to_1.1.0.sql` from the template, **empty**
-  except for what `msm.edit_schema` / `msm.drop_schema_object` kept in the
+  `releases/updates/<schema>_<prev>_to_1.1.0.sql` from the template, holding
+  what `msm.set_schema_statements` / `msm.drop_schema_object` kept in the
   pending `development/<schema>_update_next.sql` (moved in; the pending script
-  starts over).
+  starts over): the `ALTER TABLE`s of the tables they changed and the `DROP`s
+  of what they removed.
 - Fills the update script's section 280 with the drops of the REST endpoints,
   schemas, auth app links and services the previous release's section 180
   created and this one's does not. A REST schema moved to another database gets
@@ -50,8 +51,10 @@ script.
 ## 2. FILL the update script — the step everyone forgets
 
 `prepare_release` only creates the update script; it does **not** know how to
-migrate data/structure. Even where `msm.edit_schema` filled it, check it: it
-holds only the changes made through msm, never hand edits or data backfills.
+migrate data. Even where msm filled it, check it: it holds only the changes
+made through `msm.set_schema_statements` and `msm.drop_schema_object`, never
+hand edits (base data, a changed sequence, an edit of section 140) or data
+backfills.
 Write the migration from the previous release to this one into its sections,
 using `msm.set_section_sql_content(file_path, section_id, sql_content)`.
 Statements already in 240/260 came from msm (each under a

@@ -1,6 +1,6 @@
 ---
 name: mariadb-schema-management
-description: "Overview of managing a MariaDB database schema across its whole lifecycle with the MariaDB Schema Management (MSM) plugin via the mariadb-shell MCP server — the versioned schema project, the MSM section model, and the create → develop → release → deploy workflow. Use when asked to create a maintainable/versioned MariaDB schema, put an existing schema or MySQL Workbench model under version control, manage schema migrations/upgrades/releases, or deploy/update a schema on a server; then read the focused sub-skill for the specific step."
+description: "Overview of managing a MariaDB database schema across its whole lifecycle with the MariaDB Schema Management (MSM) plugin via the mariadb-shell MCP server — the versioned schema project, the MSM section model, and the create → develop → release → deploy workflow. Use when asked to create a maintainable/versioned MariaDB schema, put an existing schema under version control, manage schema migrations/upgrades/releases, or deploy/update a schema on a server; then read the focused sub-skill for the specific step."
 ---
 
 # MariaDB Schema Management (MSM) — Overview
@@ -20,7 +20,7 @@ focused sub-skill for the step you are on.
 
 ```text
 create project + author initial schema   →  mariadb-schema-management-create
-  (or import a Workbench model / a live schema)
+  (or import a schema from a server)
         │
         ▼
 develop the next version in _next.sql     →  mariadb-schema-management-develop
@@ -36,11 +36,13 @@ deploy vX (create fresh OR upgrade)        →  mariadb-schema-management-deploy
 ```
 
 > **The one rule everyone gets wrong:** `prepare_release` creates the update
-> script (`releases/updates/<schema>_<prev>_to_<vX>.sql`) empty, holding only
-> what `msm.edit_schema` kept. You MUST fill its table-migration section 240
-> (260 for removed procedures/functions, 270 for revoked privileges) **before**
-> generating the deployment script — the deployment script embeds them to
-> upgrade existing installs. See `mariadb-schema-management-release`.
+> script (`releases/updates/<schema>_<prev>_to_<vX>.sql`) holding only what
+> `msm.set_schema_statements` and `msm.drop_schema_object` kept (the `ALTER`s
+> and `DROP`s of the changes made through them). You MUST complete it — data
+> backfills, every change made by hand, 260 for removed procedures/functions,
+> 270 for revoked privileges — **before** generating the deployment script:
+> the deployment script embeds it to upgrade existing installs. See
+> `mariadb-schema-management-release`.
 
 ## Project layout
 
@@ -51,7 +53,7 @@ deploy vX (create fresh OR upgrade)        →  mariadb-schema-management-deploy
 ├── msm.project.json     # settings (below)
 ├── development/
 │   ├── <schema>_next.sql            # the working script; version lives in section 910
-│   ├── <schema>_update_next.sql     # pending update script: msm.edit_schema's migration
+│   ├── <schema>_update_next.sql     # pending update script: the migration msm keeps
 │   └── sections/                    # optional SOURCE breakout files (see -develop)
 └── releases/
     ├── versions/    <schema>_<x.y.z>.sql              # full CREATE snapshot per release
@@ -63,11 +65,10 @@ deploy vX (create fresh OR upgrade)        →  mariadb-schema-management-deploy
 `yearOfCreation`, `yearOfLastUpdate`, `tracksUpdates`), `license` (`BSD`,
 `GPL-2.0`, `MIT`, `None` or `CUSTOM` with a `customLicense` text),
 `onlineAlter` (see `-deploy`), `maxInlineSectionSize`, `substitutions` and
-`schemaDependencies`. Read them with `msm.get_project_information`; change them
-**only** with `msm.set_project_settings(settings)`: only the keys given change,
-each value replaces the stored one whole (`null` removes an optional key),
-nothing is written when a value is refused, and the notices and license blocks
-of the development files follow (released files stay as released).
+`schemaDependencies`. Read them with `msm.get_project_information`. They are
+changed in the MariaDB extension (its `msm.set_project_settings` tool is not
+served to agents), which also updates the notices and license blocks of the
+development files; never edit `msm.project.json` by hand.
 
 Versions use **semantic versioning** (`major.minor.patch`). The development file
 carries the `_next` suffix (no version in the name); the version is stored in the
@@ -146,11 +147,13 @@ routine DROPs such scripts keep in 290).
 a snapshot of the schema objects the CREATE statements define, as the MariaDB SQL
 language server (`mariadb-lsp`) outlines them; and one row per EER diagram
 (format `msm-diagram/1`: layers, figures, connections). **The CREATE statements
-are the source of truth** — never edit the snapshot; change the SQL and run
-`msm.update_schema_definition`, or use `msm.edit_schema` (see `-develop`).
-`msm.prepare_release` makes the snapshot again
-itself and **fails without `mariadb-lsp`, or when a statement of the
-development script cannot be parsed** (the snapshot would miss its objects). Once
+are the source of truth** — never edit section 160.
+`msm.set_schema_statements` and `msm.drop_schema_object` make the snapshot
+again (first, too, when the script was edited by hand), and so does
+`msm.prepare_release`, which **fails without `mariadb-lsp`, or when a
+statement of the development script cannot be parsed** (the snapshot would
+miss its objects). The diagrams are made and changed with the diagram tools
+(see `-develop`), which make the snapshot again first where the script changed. Once
 the VIEW is larger than the project's `maxInlineSectionSize` (default 16 KB, in
 `msm.project.json`) msm keeps it in `development/sections/160_schema_diagrams.sql`,
 included with SOURCE.
@@ -164,41 +167,46 @@ script, sections **140, 240, 170, 270** become the *body of a stored procedure*
 
 ## The `msm.*` MCP tools
 
-- **Project:** `msm.create_project`, `msm.import_workbench_model` (from a MySQL
-  Workbench `.mwb`), `msm.get_project_information`, `msm.set_project_settings`,
-  `msm.rename_schema` (only before the first release).
-- **Project list:** `msm.list_projects` (with each project's
-  `development_version` and `last_released_version`), `msm.add_project`,
-  `msm.update_project`, `msm.remove_project` (the list only; folders stay).
-- **Sections:** `msm.get_section_sql_content`, `msm.set_section_sql_content`,
-  `msm.split_sections` (into breakout files).
+An MCP server serves an agent these 26 `msm.*` tools:
+
+- **Project:** `msm.create_project`, `msm.list_projects` (with each project's
+  `development_version` and `last_released_version`),
+  `msm.get_project_information`.
+- **Sections:** `msm.get_section_sql_content`, `msm.set_section_sql_content`.
 - **Objects:** `msm.set_schema_statements` (add a table, sequence, view,
-  routine, trigger or event from its CREATE statement, or replace a view,
-  routine, trigger or event), `msm.drop_schema_object`, `msm.edit_schema`
-  (structured edits: renames, columns, indexes, keys, table options),
-  `msm.get_object_templates`.
+  routine, trigger or event from its CREATE statement, replace a view,
+  routine, trigger or event, or change a table, keeping the `ALTER TABLE` for
+  the next update script), `msm.drop_schema_object`.
 - **REST (section 180):** `msm.set_rest_statements` (add or replace a REST
   service, schema or object), `msm.drop_rest_object`.
+- **Diagrams:** `msm.list_schema_diagrams`, `msm.get_schema_diagrams`,
+  `msm.create_schema_diagram`, `msm.layout_schema_diagram`,
+  `msm.set_schema_diagram`, `msm.rename_schema_diagram`,
+  `msm.remove_schema_diagram`.
 - **Versions:** `msm.set_development_version`, `msm.get_released_versions`,
   `msm.get_last_released_version`, `msm.get_last_deployment_version`,
   `msm.get_deployment_script_versions`.
-- **Diagrams:** `msm.list_schema_diagrams`, `msm.get_schema_diagrams`,
-  `msm.get_schema_diagram_image`, `msm.update_schema_definition` (after
-  changing CREATE statements), `msm.create_schema_diagram`,
-  `msm.layout_schema_diagram`, `msm.set_schema_diagram`,
-  `msm.rename_schema_diagram`, `msm.remove_schema_diagram`.
 - **Release:** `msm.prepare_release`, `msm.generate_deployment_script`.
-- **Online ALTER TABLE settings:** `msm.get_online_alter_settings`,
-  `msm.get_online_alter_defaults`.
 - **Need an open `db.connect` connection** (served only with the `db` group):
-  `msm.deploy_schema`, `msm.online_alter_table`, `msm.list_live_schema_objects`,
-  `msm.import_live_schema`. `msm.online_alter_table` and
-  `msm.import_live_schema` start a task: follow it with `task.get`, stop it
-  with `task.cancel`.
+  `msm.deploy_schema`, `msm.list_live_schema_objects`,
+  `msm.import_live_schema`. `msm.import_live_schema` starts a task: follow it
+  with `task.get`, stop it with `task.cancel`.
 
-Every tool that reads the structure of the SQL — the snapshot, diagram creation
-and layout, `edit_schema`, `split_sections`, the Workbench import and
-`prepare_release` — needs the MariaDB SQL language server's binary
+The other msm tools (project settings and the project list's management,
+schema rename, section splitting, structured edits, object templates, online
+`ALTER TABLE` and its settings, the snapshot refresh
+(`msm.update_schema_definition`), diagram pictures, the REST SDK, the MySQL
+Workbench import)
+serve the MariaDB VS Code extension and are not served to agents. Work on MSM
+projects through the `msm.*` tools, never by running `mariadb-shell -- msm ...`
+from a shell or by editing `msm.project.json` or section 160 by hand: the
+shell commands skip the check on which projects the user lets LLMs work on,
+and the tools keep the schema snapshot, the diagrams and the next update
+script in step.
+
+Every tool that reads the structure of the SQL — `msm.set_schema_statements`,
+`msm.drop_schema_object`, the REST and diagram tools, the live-schema import
+and `msm.prepare_release` — needs the MariaDB SQL language server's binary
 `mariadb-lsp`, installed with the MariaDB Shell; without it the call fails.
 
 ## Handing the project back: the review link
