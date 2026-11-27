@@ -28,7 +28,7 @@
 //                           `-- <object> <method>` calls   -> the matching tool
 //   mariadb-dump            piped into another client      -> util.copy_*
 // Everything else - --version and --help, Python or JavaScript mode, a dump
-// written to a file, `-- mcp setup`, an API call no tool wraps - is let through,
+// written to a file, `-- mcp setup`, an API call no tool wraps (but an msm one left to the VS Code extension) - is let through,
 // so the agent keeps every feature the tools do not have yet.
 //
 // A port of the bash hook the Claude Code and Codex plugins ship
@@ -176,7 +176,7 @@ export function blockReason(finding: Finding): string {
     `${finding.use}. ` +
     "Never ask for or pass a database password: open a server with db.connect, and " +
     "if it is not in db.list_connections, ask the user to add it with " +
-    "`mariadb-shell -- mcp setup`. What no MCP tool covers is not blocked. If the " +
+    "`mariadb-shell -- mcp setup`. What no MCP tool covers is not blocked, apart from the msm functions left to the MariaDB VS Code extension. If the " +
     "user wants you to run the clients anyway, they can start the agent with " +
     `${ALLOW_ENV}=1.`
   );
