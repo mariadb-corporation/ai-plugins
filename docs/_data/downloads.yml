@@ -4,10 +4,12 @@
 #   plugin_version  the ai-plugins release (scripts/set-plugin-version.sh)
 #   shell_floor     the mariadb-shell release (scripts/set-mariadb-shell-version.sh)
 #
-# `sandbox` is the one part no script sets: the newest mariadb-shell release
-# that carries MariaDB Server sandbox packages (*-sandbox.tar.gz), and the
-# server versions it carries. Shell releases do not all ship them — 26.10.1 to
-# 26.10.3 ship none, and their index points back at v26.10.0. /release checks it.
+# `sandbox` is the one part no script sets: the MariaDB Server sandbox packages
+# (*-sandbox.tar.gz) the shell at shell_floor downloads, each with the
+# mariadb-shell release that carries it. The shell's own index
+# (mcp_plugin/lib/sandbox_server_versions.json) is the authority, and it can mix
+# releases: 26.11.3 ships only 13.2.1 and takes 11.8.10 and 12.3.4 from v26.11.2;
+# 26.10.1 to 26.10.3 shipped none. /release checks it.
 
 # Platforms the mariadb-shell and sandbox packages are built for, in the order
 # the tables list them. `token` is the platform part of a package's file name.
@@ -26,8 +28,9 @@ platforms:
     token: windows-arm-64bit
 
 sandbox:
-  release: v26.11.2
-  versions:
-    - 11.8.10
-    - 12.3.4
-    - 13.1.1
+  - version: 11.8.10
+    release: v26.11.2
+  - version: 12.3.4
+    release: v26.11.2
+  - version: 13.2.1
+    release: v26.11.3

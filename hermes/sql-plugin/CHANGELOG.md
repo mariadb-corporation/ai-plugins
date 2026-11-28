@@ -4,7 +4,21 @@ All notable changes to the MariaDB SQL Hermes Agent plugin are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 project adheres to [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [26.11.1] - 2026-11-28
+
+### Changed
+
+- `MARIADB_SHELL_VERSION`, the *minimum* `mariadb-shell` the launcher accepts,
+  now defaults to `26.11.3`, the newest published `mariadb-shell` release. An
+  install already at or above that version is still used as-is; only a machine
+  below it fetches anything.
+- The launchers' committed checksum file moves with the floor, to
+  `scripts/mariadb-shell-v26.11.3.SHA256SUMS`.
+- Skills re-vendored from `mariadb-corporation/mariadb-docs` `agent-skills/`
+  at commit `279e733` (synced 2026-11-28). `mariadb-features` and
+  `mysql-to-mariadb` link to the MariaDB vs MySQL pages at their new
+  mariadb.com/docs addresses; this plugin's 47 skills are otherwise unchanged.
+- Version bumped to 26.11.1 to stay in lockstep with the other plugins.
 
 ### Fixed
 

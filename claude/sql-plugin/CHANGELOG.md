@@ -4,7 +4,26 @@ All notable changes to the MariaDB SQL Claude Code plugin are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 project adheres to [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [26.11.1] - 2026-11-28
+
+### Changed
+
+- `MARIADB_SHELL_VERSION`, the *minimum* `mariadb-shell` the launcher accepts,
+  now defaults to `26.11.3`, the newest published `mariadb-shell` release. An
+  install already at or above that version is still used as-is; only a machine
+  below it fetches anything.
+- Skills re-vendored from `mariadb-corporation/mariadb-docs` `agent-skills/`
+  at commit `279e733` (synced 2026-11-28). `mariadb-features` and
+  `mysql-to-mariadb` link to the MariaDB vs MySQL pages at their new
+  mariadb.com/docs addresses; this plugin's 47 skills are otherwise unchanged.
+- The CLI guard reads the shell's grouped functions, such as `mariadb-shell --
+  msm get sql-content-from-section` or `-- rest dump service`, which it let
+  through before, and maps every msm and rest shell function an agent has a
+  tool for to that tool, naming the tool in the denial. Calls to the 15 msm
+  functions whose tools only the MariaDB VS Code extension gets are denied
+  too, with a message to ask the user to do it in the extension rather than a
+  tool name. The stale `mrs.*` entries are gone.
+- Version bumped to 26.11.1 to stay in lockstep with the other plugins.
 
 ### Fixed
 
