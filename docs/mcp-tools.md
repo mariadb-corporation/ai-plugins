@@ -16,7 +16,7 @@ that only appears when the migration tooling is installed.
 | Group | Tools | What they do |
 | --- | --- | --- |
 | [`db.*`](#db--connections-and-sql) | 8 | List connections and schemas, describe objects, run SQL |
-| [`msm.*`](#msm--schema-management) | 26 | Versioned schema projects, releases, deployments |
+| [`msm.*`](#msm--schema-management) | 23 | Versioned schema projects, releases, deployments |
 | [`sandbox.*`](#sandbox--throwaway-servers) | 9 | List deployable server versions; deploy, start, stop and delete local instances |
 | [`util.*`](#util--dumps-loads-and-copies) | 10 | Dump, load, export, import and copy data between servers, as background tasks; inspect a dump |
 | [`task.*`](#util--dumps-loads-and-copies) | 3 | Follow, list and cancel those background tasks |
@@ -75,7 +75,7 @@ variables, the current schema, an open transaction — is gone.
 
 MariaDB Schema Management. See
 [Tutorial 6]({{ '/tutorials/versioned-schema-with-msm/' | relative_url }}) for the
-workflow and the section model. These are the 26 tools an agent gets; msm's
+workflow and the section model. These are the 23 tools an agent gets; msm's
 other tools (project settings, schema rename, online `ALTER TABLE`, structured
 edits, …) serve the MariaDB VS Code extension only, which keeps clients with a tool limit (GitHub
 Copilot takes 128) within it.
@@ -94,10 +94,7 @@ Copilot takes 128) within it.
 | `msm.get_deployment_script_versions` | `schema_project_path` | All generated deployment scripts. |
 | `msm.get_section_sql_content` | `file_path`, `section_id` | Read one section. |
 | `msm.set_section_sql_content` | `file_path`, `section_id`, `sql_content` | Write one section. **Always edit sections through these two** so the banners are never corrupted — but change tables with `set_schema_statements`: a hand edit of section 140 after a release gets no `ALTER`. |
-| `msm.set_schema_statements` | `statements`, `renames`, `dropped_columns`, `expect`, `base_hash`, `schema_project_path` | Adds, replaces or **changes** tables, sequences, views, routines, triggers and events from their `CREATE` statements, each in the right section. A changed `CREATE TABLE` must be complete (a left-out column is dropped, a left-out table option removed; `AUTO_INCREMENT=n` is kept); after a release its `ALTER TABLE` is kept for the next update script. `renames` (`{table: {old: new}}`) keeps a renamed column's data; a drop that looks like a rename is refused until `renames` or `dropped_columns` (`{table: [column]}`) says which it is. `base_hash` is optional. An existing sequence is refused. |
-| `msm.drop_schema_object` | `kind`, `name`, `base_hash`, `schema_project_path` | Removes an object; after a release its `DROP` is kept for the next update script. Refused for an object another one needs. |
-| `msm.set_rest_statements` | `statements`, `replaces`, `base_hash`, `schema_project_path` | Writes REST services, schemas and objects into section 180 as `CREATE OR REPLACE`, replacing an item where it stands. `replaces` renames a REST object. |
-| `msm.drop_rest_object` | `kind`, `service`, `schema`, `object`, `base_hash`, `schema_project_path` | Removes a REST item and everything on it from 180; the next release's section 280 drops it on servers. |
+| `msm.set_schema_statements` | `statements`, `renames`, `dropped_columns`, `expect`, `replaces`, `base_hash`, `schema_project_path` | Takes plain SQL, one statement per item, no `DELIMITER` lines: `CREATE` and `DROP` of tables, sequences, views, routines, triggers and events (named without the schema) and of REST services, schemas, views, procedures and functions, mixed in one call and written all or nothing. `ALTER` and `RENAME` are refused. Adds, replaces or **changes** objects, each in the right section. A changed `CREATE TABLE` must be complete (a left-out column is dropped, a left-out table option removed; `AUTO_INCREMENT=n` is kept); after a release its `ALTER TABLE` is kept for the next update script. `renames` (`{table: {old: new}}`) keeps a renamed column's data; a drop that looks like a rename is refused until `renames` or `dropped_columns` (`{table: [column]}`) says which it is. `base_hash` is optional. An existing sequence is refused. A `DROP` (`DROP TABLE t, u` drops both; `IF EXISTS` skips what the project lacks) is kept for the next update script after a release; it is refused for an object another one needs. REST statements go into section 180 as `CREATE OR REPLACE` (`IF NOT EXISTS` is refused) and must name their service and schema (`ON SERVICE /svc SCHEMA /p`, `FROM SERVICE /svc SCHEMA /p`; relying on `USE REST` is refused); a REST `DROP` removes the item and what is on it, and the next release's section 280 drops it on servers. `replaces` renames a REST object. Each entry of the answer's `statements` has an `action`: `added`, `replaced`, `unchanged`, `dropped` or `skipped`; a refusal names the statement (`Statement 2 ...`). |
 | `msm.list_schema_diagrams` | `schema_project_path` | The diagrams, and whether the schema snapshot is current. |
 | `msm.get_schema_diagrams` | `schema_project_path`, `diagram` | The snapshot (with `source_hash`) and the diagram documents. |
 | `msm.create_schema_diagram` | `diagram`, `tables`, `views`, `sequences`, `routines`, `events`, … | A new diagram, laid out: all tables by default, other objects when named. |
@@ -105,7 +102,7 @@ Copilot takes 128) within it.
 | `msm.set_schema_diagram` | `document`, `schema_project_path` | Adds or replaces a diagram from an `msm-diagram/1` document. |
 | `msm.rename_schema_diagram` | `diagram`, `new_name`, `schema_project_path` | Renames a diagram. |
 | `msm.remove_schema_diagram` | `diagram`, `schema_project_path` | Removes a diagram. |
-| `msm.prepare_release` | `version`, `next_version`, `schema_project_path`, … | Snapshots the development script and creates the update script, holding the statements `set_schema_statements` and `drop_schema_object` kept, plus the REST removals in section 280. |
+| `msm.prepare_release` | `version`, `next_version`, `schema_project_path`, … | Snapshots the development script and creates the update script, holding the statements `set_schema_statements` kept, plus the REST removals in section 280. |
 | `msm.generate_deployment_script` | `version`, `schema_project_path`, `overwrite_existing` | Composes the create-or-upgrade artifact. Run **after** completing the update script. |
 | `msm.deploy_schema` | `connection_id`, `version`, `schema_project_path`, `backup`, `backup_directory`, `online_alter` | Applies a version to a live server, running each upgrade `ALTER TABLE` online where the server allows. Needs an open `db.connect` connection. |
 | `msm.list_live_schema_objects` | `connection_id`, `schema` | The objects of a schema on a server that `import_live_schema` can import, and the version msm deployed there. |
@@ -116,8 +113,8 @@ Copilot takes 128) within it.
 <div class="callout callout--warn" markdown="1">
 **The ordering rule.** `prepare_release` → **complete the update script** (hand
 edits and data backfills in section 240, removed routines in 260, revoked
-privileges in 270; msm has already put in what `set_schema_statements` and
-`drop_schema_object` kept) → `generate_deployment_script`. Generating before
+privileges in 270; msm has already put in what `set_schema_statements`
+kept) → `generate_deployment_script`. Generating before
 that produces a script that creates the schema perfectly on an empty server and
 **silently fails to upgrade** an existing install.
 </div>

@@ -33,15 +33,15 @@ Ask the agent to create a schema project. It calls `msm.create_project`, which c
 
 ## Develop the Schema
 
-The agent adds, replaces, and changes tables, sequences, views, routines, triggers, and events with `msm.set_schema_statements`, which takes their `CREATE` statements and puts each into the right section of the development script. It removes them with `msm.drop_schema_object`. Once the project has a release, both tools keep the `ALTER TABLE` and `DROP` statements that a deployed server needs for the next update script. A changed `CREATE TABLE` must be the complete definition of the table, and a renamed column is named in the `renames` argument so that its data is kept.
+The agent adds, replaces, changes, and drops tables, sequences, views, routines, triggers, and events with `msm.set_schema_statements`, which takes plain `CREATE` and `DROP` statements and puts each into the right section of the development script. Once the project has a release, the tool keeps the `ALTER TABLE` and `DROP` statements that a deployed server needs for the next update script. A changed `CREATE TABLE` must be the complete definition of the table, and a renamed column is named in the `renames` argument so that its data is kept.
 
-The agent writes MariaDB REST Service endpoints into section 180 with `msm.set_rest_statements` and removes them with `msm.drop_rest_object`. It adds a laid-out schema diagram with `msm.create_schema_diagram`, and keeps it current with `msm.layout_schema_diagram`.
+The agent writes MariaDB REST Service endpoints into section 180 with the same tool, from `CREATE REST` and `DROP REST` statements that name their service and schema. It adds a laid-out schema diagram with `msm.create_schema_diagram`, and keeps it current with `msm.layout_schema_diagram`.
 
 The agent edits the other sections, such as base data and grants, one section at a time with `msm.get_section_sql_content` and `msm.set_section_sql_content`. See [Script Sections](../mcp-tool-reference/msm-tools.md#script-sections) for what belongs in each section.
 
 ## Release a Version
 
-1. `msm.prepare_release` takes a snapshot of the development script and creates the update script, with the statements that `msm.set_schema_statements` and `msm.drop_schema_object` kept.
+1. `msm.prepare_release` takes a snapshot of the development script and creates the update script, with the statements that `msm.set_schema_statements` kept.
 2. The agent completes the update script with the changes made by hand and the data backfills, in section 240, with the removed procedures and functions, in section 260, and with revoked privileges, in section 270. New and changed views, routines, roles, grants, and REST endpoints stay in the development script, because the deployment script runs them in full on every deployment.
 3. `msm.generate_deployment_script` generates the deployment script.
 

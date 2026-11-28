@@ -272,12 +272,12 @@ Four things to know regarding sandbox instances:
 - A `root@'%'` account is created and the sandbox listens on all interfaces,
   which is worth changing outside a trusted network.
 
-The MCP server provides 59 tools in six groups:
+The MCP server provides 56 tools in six groups:
 
 | Group | Tools | What they do |
 | ----- | ----- | ------------ |
 | `db.*` | 8 | list connections and schemas, describe objects, run SQL |
-| `msm.*` | 26 | MariaDB Schema Management — versioned schema projects, releases, deployments |
+| `msm.*` | 23 | MariaDB Schema Management — versioned schema projects, releases, deployments |
 | `sandbox.*` | 9 | list deployable server versions and local instances; deploy, start, stop and delete local throwaway instances |
 | `util.*` | 10 | dump, load, export, import and copy data between servers, as background tasks; inspect a dump |
 | `task.*` | 3 | follow, list and cancel those background tasks |

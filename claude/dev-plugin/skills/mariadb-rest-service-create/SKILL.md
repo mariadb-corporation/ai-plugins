@@ -20,8 +20,9 @@ told otherwise. Comment each REST object you create to describe its purpose.
 > **Only when the endpoints belong to an MSM project** (a
 > `<schema>.msm.project` folder, see `mariadb-schema-management`): write them
 > into the project, not onto a server, unless the user asks for that; add
-> services, schemas and endpoints to its section 180 with
-> `msm.set_rest_statements`. Outside MSM projects, run the statements on the
+> services, schemas and endpoints to its section 180 by sending their `CREATE
+> REST ...` statements to `msm.set_schema_statements`, each naming its service
+> (and schema), as `USE REST` is refused. Outside MSM projects, run the statements on the
 > server as this skill shows. See "REST endpoints in an MSM project" in
 > `mariadb-schema-management-develop`.
 

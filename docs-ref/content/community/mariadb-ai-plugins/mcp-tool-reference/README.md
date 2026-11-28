@@ -13,12 +13,12 @@ description: >-
   GitBook editor is overwritten by the next sync.
 -->
 
-The `mariadb-shell` MCP server provides 59 tools in six groups. A seventh, optional group is available when the migration tooling is installed.
+The `mariadb-shell` MCP server provides 56 tools in six groups. A seventh, optional group is available when the migration tooling is installed.
 
 | Group | Tools | What they do |
 | --- | --- | --- |
 | [`db.*`](db-tools.md) | 8 | List connections and schemas, describe objects, and run SQL. |
-| [`msm.*`](msm-tools.md) | 26 | Versioned schema projects, releases, and deployments with MariaDB Schema Management. |
+| [`msm.*`](msm-tools.md) | 23 | Versioned schema projects, releases, and deployments with MariaDB Schema Management. |
 | [`sandbox.*`](sandbox-tools.md) | 9 | List deployable server versions and local instances; deploy, start, stop, and delete local instances. |
 | [`util.*`](util-tools.md) | 10 | Dump, load, export, import, and copy data between servers, as background tasks, and inspect dumps. Requires MariaDB Shell 26.10.2 or later. |
 | [`task.*`](util-tools.md#task-tools) | 3 | Follow, list, and cancel the background tasks of the `util.*` tools. |
