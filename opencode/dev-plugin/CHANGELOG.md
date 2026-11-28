@@ -4,7 +4,43 @@ All notable changes to the MariaDB OpenCode plugin are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 project adheres to [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [26.11.1] - 2026-11-28
+
+### Changed
+
+- `MARIADB_SHELL_VERSION`, the *minimum* `mariadb-shell` the launcher accepts,
+  now defaults to `26.11.3`, the newest published `mariadb-shell` release. An
+  install already at or above that version is still used as-is; only a machine
+  below it fetches anything.
+- Skills re-vendored from `mariadb-corporation/mariadb-docs` `agent-skills/`
+  at commit `279e733` (synced 2026-11-28). `mariadb-features` and
+  `mysql-to-mariadb` link to the MariaDB vs MySQL pages at their new
+  mariadb.com/docs addresses; the plugin's 85 skills are otherwise unchanged.
+- The Schema Management skills follow the msm tools of MariaDB Shell 26.11.3.
+  An agent's MCP server serves 26 of the 41 msm tools, and the skills list
+  those and drop the guidance for the ones only the MariaDB VS Code extension
+  gets (editing the schema definition, splitting sections, online ALTER
+  settings, diagram images, Workbench import and others).
+  `msm.set_schema_statements` is now the way to change a table: given the
+  complete `CREATE TABLE`, it changes the existing table and, once the project
+  has a release, keeps the `ALTER TABLE` for the next update script; a column
+  named in `renames` keeps its data. `msm.get_sql_content_from_section` is now
+  `msm.get_section_sql_content`, and the diagram tools take `diagram` for the
+  diagram's name, also in `mariadb-rest-service-show`.
+- `mariadb-laravel-vector` adds advice measured with Laravel: `vectorIndex()`
+  always writes `M=6`, so how to build an `M=16` index and set
+  `mhnsw_ef_search` per query; a normal index on every column that filters a
+  vector search, and `ignoreIndex()` for very selective filters; a workaround
+  for MDEV-42201, the query vector sent as text and converted again for every
+  row; and loading in bulk before adding the vector index.
+- The CLI guard reads the shell's grouped functions, such as `mariadb-shell --
+  msm get sql-content-from-section` or `-- rest dump service`, which it let
+  through before, and maps every msm and rest shell function an agent has a
+  tool for to that tool, naming the tool in the denial. Calls to the 15 msm
+  functions whose tools only the MariaDB VS Code extension gets are denied
+  too, with a message to ask the user to do it in the extension rather than a
+  tool name. The stale `mrs.*` entries are gone.
+- Version bumped to 26.11.1 to stay in lockstep with the other plugins.
 
 ### Fixed
 
