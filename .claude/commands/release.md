@@ -187,8 +187,9 @@ files this release ships, built from three places:
 - `shell_floor` in `docs/_config.yml`: the mariadb-shell packages and
   `SHA256SUMS` of `v<floor>`. Set in step 3 by `set-mariadb-shell-version.sh`
   when the floor moved.
-- `sandbox` in `docs/_data/downloads.yml`: the MariaDB Server sandbox packages
-  (`release` and `versions`). No script sets it — check it here.
+- `sandbox` in `docs/_data/downloads.yml`: the MariaDB Server sandbox packages,
+  one entry per server `version` with the mariadb-shell `release` that carries
+  it. No script sets it — check it here.
 
 Check that both `_config.yml` keys hold this release's values:
 
@@ -196,47 +197,38 @@ Check that both `_config.yml` keys hold this release's values:
 grep -nE '^(plugin_version|shell_floor):' docs/_config.yml
 ```
 
-**The sandbox packages.** Not every mariadb-shell release ships them (26.10.1
-to 26.10.3 ship none; the shell's own index then points back at the newest one
-that does). Find the newest release at or below the floor that carries
-`*-sandbox.tar.gz` assets, and the server versions in it:
+**The sandbox packages.** The shell's own index,
+`mcp_plugin/lib/sandbox_server_versions.json` inside the shell package, is the
+authority on what the shell at the floor downloads, and it can take packages from
+more than one release: 26.10.1 to 26.10.3 shipped none and pointed back at
+v26.10.0; 26.11.3 ships only 13.2.1 and takes 11.8.10 and 12.3.4 from v26.11.2.
+Read it from the floor's package (from the local install when the floor is
+installed, `~/.local/share/mariadb-shell/<floor>/lib/mariadb-shell/...`):
 
 ```bash
-for t in $(gh release list --repo mariadb-corporation/mariadb-shell --exclude-drafts --limit 30 \
-             --json tagName -q '.[].tagName' | sort -rV); do
-  printf '%s\n%s\n' "${t#v}" "<floor>" | sort -CV || continue    # skip releases above the floor
-  names=$(gh release view "$t" --repo mariadb-corporation/mariadb-shell --json assets \
-            -q '.assets[].name | select(endswith("-sandbox.tar.gz"))')
-  [ -n "$names" ] || continue
-  echo "$t"; echo "$names" | sed -E 's/^mariadb-([0-9.]+)-.*/\1/' | sort -uV
-  break
-done
+cd <scratch> && gh release download v<floor> --repo mariadb-corporation/mariadb-shell \
+  -p 'mariadb-shell-<floor>-macos26-arm-64bit.tar.gz' --clobber
+tar -xzf mariadb-shell-<floor>-macos26-arm-64bit.tar.gz --include='*mcp_plugin/lib/sandbox_server_versions.json'
+grep -oE 'releases/download/[^"]+' $(find . -name sandbox_server_versions.json) \
+  | sed -E 's#releases/download/([^/]+)/mariadb-([0-9.]+)-.*#\1 \2#' | sort -u
 ```
 
-Compare the result with `sandbox.release` and `sandbox.versions` in
-`docs/_data/downloads.yml`:
+Each line is a release and a server version. Compare them with the `sandbox`
+entries (`version` + `release`) in `docs/_data/downloads.yml`:
 
 - **The same** → nothing to change; say so in the PR body.
-- **Different** → update both keys and report old → new (for example "sandbox
-  packages v26.10.0 → v26.11.0: 11.8.9, 12.3.3, 13.1.1 → 11.8.10, 12.3.4,
-  13.1.2").
+- **Different** → replace the entries and report old → new (for example
+  "sandbox packages 11.8.10, 12.3.4, 13.1.1 (v26.11.2) → 11.8.10, 12.3.4
+  (v26.11.2), 13.2.1 (v26.11.3)").
 - **A platform missing**: every `platforms[].token` in `downloads.yml` must
-  have a package for every version, and a `mariadb-shell-<floor>-<token>.tar.gz`
-  in `v<floor>`. If an asset is missing, or the release carries a platform
-  `downloads.yml` does not list, stop and report it — the table would link to a
-  file that does not exist, or leave a platform out.
+  have a package for every version in its release, and a
+  `mariadb-shell-<floor>-<token>.tar.gz` in `v<floor>`. If an asset is missing,
+  or a release carries a platform `downloads.yml` does not list, stop and report
+  it — the table would link to a file that does not exist, or leave a platform
+  out. The link check below catches a missing package.
 
-If the shell is installed locally at the floor, its index is the authority on
-what it downloads; when it disagrees with the release listing, stop and report
-it:
-
-```bash
-grep -oE 'releases/download/[^/]+' \
-  ~/.local/share/mariadb-shell/<floor>/lib/mariadb-shell/plugins/mcp_plugin/lib/sandbox_server_versions.json | sort -u
-```
-
-Then build the site and check every GitHub link on the page. The archive links
-for `v<version>` answer 404 until step 10 pushes the tag — expected here, but
+Then build the site and check every GitHub link on the page. The archive and
+release-page links for `v<version>` answer 404 until step 10 pushes the tag — expected here, but
 every other link must answer 200:
 
 ```bash

@@ -14,13 +14,15 @@ network that cannot reach GitHub, install the shell by hand instead, in the
 place the plugin looks before it downloads anything, and install the plugin from
 a local folder. Nothing is fetched at run time after that.
 
+{% assign sandbox_releases = site.data.downloads.sandbox | map: "release" | uniq %}
+
 <div class="table-wrap" markdown="1">
 
 | What | Version | Where it comes from |
 | --- | --- | --- |
 | AI Plugins — skills, MCP launcher, SQL language server launcher, CLI guard | {{ site.plugin_version }} | [ai-plugins v{{ site.plugin_version }}]({{ site.repo }}/releases/tag/v{{ site.plugin_version }}), source code archive |
 | MariaDB Shell — runs the MCP server and the SQL language server | {{ site.shell_floor }} or newer | [mariadb-shell v{{ site.shell_floor }}](https://github.com/mariadb-corporation/mariadb-shell/releases/tag/v{{ site.shell_floor }}), one package per platform |
-| MariaDB Server sandbox packages (optional) | {{ site.data.downloads.sandbox.versions | join: ", " }} | [mariadb-shell {{ site.data.downloads.sandbox.release }}](https://github.com/mariadb-corporation/mariadb-shell/releases/tag/{{ site.data.downloads.sandbox.release }}) |
+| MariaDB Server sandbox packages (optional) | {{ site.data.downloads.sandbox | map: "version" | join: ", " }} | {% for r in sandbox_releases %}[mariadb-shell {{ r }}](https://github.com/mariadb-corporation/mariadb-shell/releases/tag/{{ r }}){% unless forloop.last %}, {% endunless %}{% endfor %} |
 
 </div>
 
@@ -248,21 +250,26 @@ Each version's folder is named with the full version, `11.8.9` say, and holds
 ### Download links
 
 {% assign sandbox = site.data.downloads.sandbox %}
-{% assign sandbox_dl = "https://github.com/mariadb-corporation/mariadb-shell/releases/download/" | append: sandbox.release | append: "/" %}
+{% assign sandbox_releases = sandbox | map: "release" | uniq %}
+{% assign sandbox_base = "https://github.com/mariadb-corporation/mariadb-shell/releases/download/" %}
 
-These are the newest sandbox packages, from the
-[mariadb-shell {{ sandbox.release }} release](https://github.com/mariadb-corporation/mariadb-shell/releases/tag/{{ sandbox.release }}).
-Their checksums are in [`SERVER_SHA256SUMS`]({{ sandbox_dl }}SERVER_SHA256SUMS).
+These are the sandbox packages MariaDB Shell {{ site.shell_floor }} downloads.
+They come from {% if sandbox_releases.size > 1 %}more than one mariadb-shell
+release, each with its own checksum file{% else %}one mariadb-shell release{% endif %}:
+{% for r in sandbox_releases %}[`SERVER_SHA256SUMS` of {{ r }}]({{ sandbox_base }}{{ r }}/SERVER_SHA256SUMS){% unless forloop.last %}, {% endunless %}{% endfor %}.
 
 <div class="table-wrap" markdown="1">
 
-| Platform |{% for v in sandbox.versions %}{% assign vp = v | split: "." %} MariaDB {{ vp[0] }}.{{ vp[1] }} |{% endfor %}
-| --- |{% for v in sandbox.versions %} --- |{% endfor %}
+| Platform |{% for s in sandbox %}{% assign vp = s.version | split: "." %} MariaDB {{ vp[0] }}.{{ vp[1] }} |{% endfor %}
+| --- |{% for s in sandbox %} --- |{% endfor %}
 {% for p in site.data.downloads.platforms -%}
-| {{ p.name }} |{% for v in sandbox.versions %} [{{ v }}]({{ sandbox_dl }}mariadb-{{ v }}-{{ p.token }}-sandbox.tar.gz) |{% endfor %}
+| {{ p.name }} |{% for s in sandbox %} [{{ s.version }}]({{ sandbox_base }}{{ s.release }}/mariadb-{{ s.version }}-{{ p.token }}-sandbox.tar.gz) |{% endfor %}
 {% endfor %}
 
 </div>
+
+Check each package against the checksum file of its release, kept next to it
+under that file's name:
 
 ```bash
 shasum -a 256 -c SERVER_SHA256SUMS --ignore-missing     # macOS
