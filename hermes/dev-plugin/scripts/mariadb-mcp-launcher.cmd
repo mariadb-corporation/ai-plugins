@@ -95,7 +95,7 @@ if not defined MARIADB_SHELL_TAG set "MARIADB_SHELL_TAG=v%MARIADB_SHELL_VERSION%
 rem The mariadb-shell commit the installer is taken from: fixed, so the script
 rem that runs is the one this launcher was tested with, not whatever main holds.
 rem Move it only when the installers change in a way the launcher needs.
-set "INSTALLER_COMMIT=664993ccbc523cc82218251fcbe9c2fb8a209cdb"
+set "INSTALLER_COMMIT=8107ddba4132762c58170de18b820a89f66a3038"
 set "INSTALLER_URL=https://raw.githubusercontent.com/%MARIADB_SHELL_REPO%/%INSTALLER_COMMIT%/install.ps1"
 set "SUMS_FILE=%~dp0mariadb-shell-%MARIADB_SHELL_TAG%.SHA256SUMS"
 set "LOCAL_BIN=%MARIADB_SHELL_BINDIR%\mariadb-shell.cmd"

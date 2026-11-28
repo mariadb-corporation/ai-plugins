@@ -8,6 +8,10 @@ project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Fixed
 
+- Launchers started together for a first install no longer collide inside the
+  mariadb-shell installer, on any platform: the installer now comes from the
+  mariadb-shell 26.11.3 commit (`8107ddb`), whose `install.sh` and `install.ps1`
+  let only one install into a folder run at a time.
 - On macOS and Linux, a launcher whose install failed because another install
   into the same folder was running now waits for that install and starts the
   shell it put in place, instead of the old shell. A launcher also gives back
