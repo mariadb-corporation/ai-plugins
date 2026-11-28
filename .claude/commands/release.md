@@ -382,6 +382,15 @@ clashed with `browser-harness` in October 2026; installing the `pyproject.toml`
 dependencies without `browser-harness`, then Hermes with `--no-deps`, was enough
 for `validate`. Never submit without a passing local run.
 
+Run the two `validate`s one after the other, never at once, and read each log
+whole, not only its last line. `validate` can leave a background Hermes process
+(`hermes_cli.default_plugins`) holding the dependency lock under
+`<scratch>/hh/installs/*/locks/`. The next run then prints `dependency lock still
+held after 10.0s` and `dependency preparation failed: … another Hermes process is
+installing dependencies`, yet still ends in `Validation passed`. That run does not
+count: stop the leftover process (`pgrep -fl hermes_cli`) and run that plugin's
+`validate` again until its log is clean. Stop any such process when step 12 is done.
+
 **Edit the two entries.** In a scratch clone of `NousResearch/hermes-agent`
 (`--depth 1` is enough), on a branch `catalog-mariadb-<version>`, change in each of
 `plugin-catalog/mariadb-dev.yaml` and `mariadb-guard.yaml`. Edit the files as
@@ -412,6 +421,9 @@ Then run the catalog's own schema check, which must end in `OK`:
 ```bash
 python3 scripts/validate_plugin_catalog.py plugin-catalog/
 ```
+
+It needs `ruamel.yaml` (it names the exact version it wants when missing); run it
+with the scratch venv's Python after `pip install` of that version there.
 
 **Commit and open the PR.** The catalog CI fails commits whose author email is not
 mapped to a GitHub login, and a GitHub noreply address needs no mapping. Commit as
