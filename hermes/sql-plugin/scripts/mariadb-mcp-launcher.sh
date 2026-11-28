@@ -95,7 +95,7 @@ TAG="${MARIADB_SHELL_TAG:-v$VERSION}"
 # The mariadb-shell commit the installer is taken from: fixed, so the script
 # that runs is the one this launcher was tested with, not whatever main holds.
 # Move it only when the installers change in a way the launcher needs.
-INSTALLER_COMMIT="664993ccbc523cc82218251fcbe9c2fb8a209cdb"
+INSTALLER_COMMIT="8107ddba4132762c58170de18b820a89f66a3038"
 INSTALLER_URL="https://raw.githubusercontent.com/$REPO/$INSTALLER_COMMIT/install.sh"
 SUMS_FILE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/mariadb-shell-$TAG.SHA256SUMS"
 

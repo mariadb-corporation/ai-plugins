@@ -17,7 +17,6 @@ What exists and works, and what is known not to. The design behind it is in [arc
 
 ## Known issues and gaps
 
-- **Hermes' pinned `INSTALLER_COMMIT` predates the installers' concurrency fix** (mariadb-shell PR #123), so concurrent first installs can still collide inside install.ps1 / install.sh for Hermes (its `.sh` launchers queue among themselves; its `.cmd` ones don't).
 - **Shared launchers on Windows depend on install.ps1 on `main` for concurrent installs**: with an install.ps1 lacking the mutex, launchers started together race in `tar`, and survive only if one install succeeds (they then start that shell).
 - **Hero code samples are cut off on phones** (scrollable, with a `…` marker); see next steps.
 - **Hermes on native Windows is untested**; its docs give the `.cmd` path unverified.
