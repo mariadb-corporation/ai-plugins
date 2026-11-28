@@ -1,6 +1,6 @@
 # MariaDB SQL plugin for Hermes Agent
 
-Version **26.11.0**
+Version **26.11.1**
 
 This plugin gives [Hermes Agent](https://hermes-agent.nousresearch.com/) first-class
 MariaDB SQL support through two parts:
