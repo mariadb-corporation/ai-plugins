@@ -204,7 +204,8 @@ the project out. For the REST DDL itself (the
    ```
 
    (`DROP REST SERVICE /shop` drops a whole service.) The item's statements
-   and everything on it go from section 180, so drop only the outermost item.
+   and everything on it go from section 180, so dropping the outermost item
+   is enough.
    No `DROP` is written into the project: the next `msm.prepare_release`
    writes it into the update script's section 280.
 5. **Show the endpoints on the diagram** (unless the user doesn't want a
