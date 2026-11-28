@@ -16,7 +16,7 @@ The `msm.*` tools manage database schemas with MariaDB Schema Management (MSM). 
 
 ## Overview
 
-The MCP server serves the following 26 `msm.*` tools. The last three need a connection, so the server offers them only when it also serves the `db.*` group.
+The MCP server serves the following 23 `msm.*` tools. The last three need a connection, so the server offers them only when it also serves the `db.*` group.
 
 | Tool | Description |
 | --- | --- |
@@ -30,10 +30,7 @@ The MCP server serves the following 26 `msm.*` tools. The last three need a conn
 | `msm.get_deployment_script_versions` | Lists the versions of all generated deployment scripts. |
 | `msm.get_section_sql_content` | Reads one section of a script. |
 | `msm.set_section_sql_content` | Writes one section of a script. |
-| `msm.set_schema_statements` | Adds, replaces, or changes schema objects from their `CREATE` statements. |
-| `msm.drop_schema_object` | Removes a schema object from the project. |
-| `msm.set_rest_statements` | Adds or replaces MariaDB REST Service services, schemas, and objects in section 180. |
-| `msm.drop_rest_object` | Removes a REST service, schema, or object from section 180. |
+| `msm.set_schema_statements` | Adds, changes, and drops schema objects and MariaDB REST Service endpoints from plain `CREATE` and `DROP` statements. |
 | `msm.list_schema_diagrams` | Lists the project's schema diagrams. |
 | `msm.get_schema_diagrams` | Returns the schema snapshot and the diagrams. |
 | `msm.create_schema_diagram` | Adds a diagram of the schema's objects, laid out. |
@@ -136,18 +133,19 @@ Writes one section of a script.
 | `section_id` | The section number. |
 | `sql_content` | The new section content. It replaces the whole body of the section. |
 
-Always edit sections with `msm.get_section_sql_content` and `msm.set_section_sql_content`, so the section banners are never corrupted. To add or change a table, use `msm.set_schema_statements` instead. After the first release, a change made to section 140 with `msm.set_section_sql_content` gets no `ALTER TABLE` in the update script.
+Always edit sections with `msm.get_section_sql_content` and `msm.set_section_sql_content`, so the section banners are never corrupted. To add, change, or drop a schema object or a REST endpoint, use `msm.set_schema_statements` instead. After the first release, a change made to section 140 with `msm.set_section_sql_content` gets no `ALTER TABLE` in the update script.
 
 ## msm.set_schema_statements
 
-Puts the `CREATE` statements of schema objects into the project, in the section and the form that each needs. The tool handles tables, sequences, views, procedures, functions, triggers, and events.
+Puts plain SQL statements into the project, in the section and the form that each needs. The tool takes `CREATE` and `DROP` statements of tables, sequences, views, procedures, functions, triggers, and events, and of MariaDB REST Service services, schemas, views, procedures, and functions. Schema objects and REST items can be mixed in one call. Any other statement, such as `ALTER`, `RENAME`, or `SELECT`, is refused, as are `DELIMITER` lines.
 
 | Argument | Description |
 | --- | --- |
-| `statements` | The `CREATE` statements, one object each, with names that aren't qualified with the schema. |
+| `statements` | The SQL statements, one per item, without `DELIMITER` lines. Schema objects are named without the schema. A trailing `;` is optional. |
 | `renames` | Optional. The columns renamed in the new definitions of existing tables, as `{"table": {"old column": "new column"}}`. A renamed column keeps its data. |
 | `dropped_columns` | Optional. The columns whose drop is intended, as `{"table": ["column"]}`, after a call was refused because of a possible rename. |
-| `expect` | Optional. One `{kind, name, table}` entry for each statement, with `table` for a trigger. A statement that creates another object is refused before anything is written. |
+| `expect` | Optional. One `{kind, name, table}` entry or `null` for each statement, with `table` for a trigger. A `CREATE` of a schema object that creates another object is refused before anything is written. |
+| `replaces` | Optional. The REST object that the one `CREATE` of a REST object renames, as `{"kind": "object", "service": ..., "schema": ..., "object": ...}`. A service or schema can't be renamed this way. |
 | `base_hash` | Optional. The `source_hash` of the schema snapshot that the caller knows. The call is refused if the snapshot was made again since. Omit it to work on the project as it is. |
 | `schema_project_path` | The path of the schema project directory. Default: the working directory. Must be in an allowed path. |
 
@@ -157,48 +155,16 @@ The tool works as follows:
 * A view, procedure, function, trigger, or event that the project has is replaced where it stands. An unchanged definition is left as it is.
 * A table that the project has is changed to the definition given. Its columns, keys, checks, and options change where the script defines them. Once the project has a release, the `ALTER TABLE` that a deployed server needs is kept for the next update script.
 * A sequence that the project has is refused.
-* All statements are one edit: either everything is written, or nothing is. Without `base_hash`, the tool first makes the schema snapshot again if the script was edited by hand.
+* A `DROP` of a schema object removes its statements. `DROP TABLE t, u` drops both tables. Once the project has a release, the `DROP` is kept for the next update script. The tool refuses to drop an object that another object needs, such as a table that a foreign key references, a sequence that a table uses, or a trigger that another trigger follows or precedes. With `IF EXISTS`, an object that the project doesn't have is skipped.
+* A `CREATE REST SERVICE`, `SCHEMA`, `VIEW`, `PROCEDURE`, or `FUNCTION` is written into section 180 as `CREATE OR REPLACE`, and `IF NOT EXISTS` is refused. A schema names its service with `ON SERVICE /svc`, and an object its service and schema with `ON SERVICE /svc SCHEMA /p`. A statement that relies on `USE REST` is refused. An item that section 180 already creates is replaced where it stands, and a new item goes after the statements of its service or schema.
+* A `DROP REST SERVICE`, `SCHEMA`, `VIEW`, `PROCEDURE`, or `FUNCTION` names its place in the same way, such as `DROP REST VIEW /o FROM SERVICE /svc SCHEMA /p`. It removes the item from section 180 with everything on it. The tool writes no `DROP`: the next `msm.prepare_release` writes the removal into the update script's section 280.
+* All statements are one edit: either everything is written, or nothing is. A refusal names the statement, such as `Statement 2`. Without `base_hash`, the tool first makes the schema snapshot again if the script was edited by hand.
 
-The result lists each statement with its `kind`, `name`, `file`, `line`, and whether it `replaced` an object and `changed` anything. It also has the `files` written, the `migration` statements kept for the next update script, and `notes` on what couldn't be changed or should be checked.
+The result's `statements` has one entry for each statement, in order, with its `action`: `added`, `replaced`, `unchanged`, `dropped`, or `skipped` (a `DROP ... IF EXISTS` of an object that the project doesn't have). It also has the `files` written, the `migration` statements kept for the next update script, and `notes` on what couldn't be changed or should be checked.
 
 {% hint style="warning" %}
 A `CREATE TABLE` for an existing table must be the complete definition. A column that the definition leaves out is dropped, with its data on a deployed server, and a table option such as `ENGINE` or `DEFAULT CHARSET` that it leaves out is removed. `AUTO_INCREMENT=n` is kept. To rename a column, name it in `renames`. If a dropped column and an added column are alike apart from the name, the call is refused and nothing is written, until `renames` names the rename or `dropped_columns` confirms the drop.
 {% endhint %}
-
-## msm.drop_schema_object
-
-Removes a table, sequence, view, procedure, function, trigger, or event from the project's SQL. Once the project has a release, the `DROP` is kept for the next update script. The tool refuses to drop an object that another object needs, such as a table that a foreign key references, a sequence that a table uses, or a trigger that another trigger follows or precedes.
-
-| Argument | Description |
-| --- | --- |
-| `kind` | `table`, `sequence`, `view`, `procedure`, `function`, `trigger`, or `event`. |
-| `name` | The object's name. |
-| `base_hash` | Optional. As for `msm.set_schema_statements`. |
-| `schema_project_path` | The path of the schema project directory. Default: the working directory. Must be in an allowed path. |
-
-## msm.set_rest_statements
-
-Writes MariaDB REST Service services, schemas, and objects into section 180 of the development script, which every deployment runs in full. Each statement is written as `CREATE OR REPLACE`. An item that section 180 already creates is replaced where it stands, and a new item goes after the statements of its service or schema. The tool checks that nothing but the given items changes, and either writes everything or nothing.
-
-| Argument | Description |
-| --- | --- |
-| `statements` | The `CREATE REST SERVICE`, `SCHEMA`, `VIEW`, `PROCEDURE`, or `FUNCTION` statements, one item each, with a new schema before its objects. A schema names its service with `ON SERVICE`, and an object its service and schema with `ON SERVICE ... SCHEMA ...`. `IF NOT EXISTS` is refused. |
-| `replaces` | Optional. The REST object that the one statement renames, as `{"kind": "object", "service": ..., "schema": ..., "object": ...}`. A service or schema can't be renamed this way. |
-| `base_hash` | Optional. As for `msm.set_schema_statements`. |
-| `schema_project_path` | The path of the schema project directory. Default: the working directory. Must be in an allowed path. |
-
-## msm.drop_rest_object
-
-Removes a REST service, schema, or object from section 180, with everything on it. The tool writes no `DROP`: the next `msm.prepare_release` writes the removal into the update script's section 280.
-
-| Argument | Description |
-| --- | --- |
-| `kind` | `service`, `schema`, or `object`. |
-| `service` | The service's path, as section 180 writes it. |
-| `schema` | The REST schema's path, for a schema or an object. |
-| `object` | The REST object's path, for an object. |
-| `base_hash` | Optional. As for `msm.set_schema_statements`. |
-| `schema_project_path` | The path of the schema project directory. Default: the working directory. Must be in an allowed path. |
 
 ## Schema Diagram Tools
 
@@ -216,7 +182,7 @@ Section 160 of the development script holds the `msm_schema_diagrams` view. It h
 
 ## msm.prepare_release
 
-Takes a snapshot of the development script and, from the second release on, creates the update script from the previous release. The update script receives the migration statements that `msm.set_schema_statements` and `msm.drop_schema_object` kept, and section 280 receives the removal of every REST service, schema, object, and auth app link that the previous release's section 180 created and this release's doesn't. The release fails if the schema snapshot can't be made from the development script.
+Takes a snapshot of the development script and, from the second release on, creates the update script from the previous release. The update script receives the migration statements that `msm.set_schema_statements` kept, and section 280 receives the removal of every REST service, schema, object, and auth app link that the previous release's section 180 created and this release's doesn't. The release fails if the schema snapshot can't be made from the development script.
 
 | Argument | Description |
 | --- | --- |
@@ -237,7 +203,7 @@ Creates the deployment script that creates or upgrades the schema.
 | `overwrite_existing` | Whether to replace an existing script. Default: `False`. |
 
 {% hint style="danger" %}
-Run `msm.prepare_release`, then complete the update script, and only then run `msm.generate_deployment_script`. The update script holds only the changes made with `msm.set_schema_statements` and `msm.drop_schema_object`. Changes made by hand, data backfills, removed procedures and functions (section 260), and revoked privileges (section 270) must be added to it. A script generated before the update script is complete creates the schema correctly on an empty server but doesn't upgrade an existing installation correctly.
+Run `msm.prepare_release`, then complete the update script, and only then run `msm.generate_deployment_script`. The update script holds only the changes made with `msm.set_schema_statements`. Changes made by hand, data backfills, removed procedures and functions (section 260), and revoked privileges (section 270) must be added to it. A script generated before the update script is complete creates the schema correctly on an empty server but doesn't upgrade an existing installation correctly.
 {% endhint %}
 
 ## msm.deploy_schema

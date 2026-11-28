@@ -25,7 +25,7 @@ anything.
 <div class="callout callout--warn" markdown="1">
 **The one rule everyone gets wrong.** Preparing a release creates an update
 script that holds only the statements msm kept for the changes made through
-`msm.set_schema_statements` and `msm.drop_schema_object`. It has to be
+`msm.set_schema_statements`. It has to be
 completed **before** the deployment script is generated, because the deployment
 script *embeds* it.
 
@@ -137,8 +137,8 @@ and `mariadb-schema-management-release` skills:
 **Drops go in 240** — including drops whose only purpose is to unblock a table
 change. Removing a view or routine is the one change section 150 can't express,
 because 150 only re-creates what the new version has; the `DROP … IF EXISTS`
-belongs in 240, or in 260 for a procedure or function. `msm.drop_schema_object`
-keeps these drops for you.
+belongs in 240, or in 260 for a procedure or function. A `DROP` sent to
+`msm.set_schema_statements` keeps these drops for you.
 </div>
 
 Read it back and confirm it is not still the template — the generated template

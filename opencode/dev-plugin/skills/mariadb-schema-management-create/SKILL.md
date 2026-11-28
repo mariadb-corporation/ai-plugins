@@ -127,10 +127,10 @@ deploys it:
   must be re-runnable; create every role before granting to it — a `GRANT` to a
   missing role fails the deployment (error 1133).
 - **Section 180 — optional REST endpoints** (see `mariadb-rest-service-create`).
-  Write them with `msm.set_rest_statements`, not by section: msm places each
+  Write them with `msm.set_schema_statements`, not by section: msm places each
   `CREATE REST ...` and writes it as `CREATE OR REPLACE`, which updates an
-  endpoint in place and keeps its id on every deployment. To remove one, use
-  `msm.drop_rest_object`: on upgrades msm drops it (`msm.prepare_release`
+  endpoint in place and keeps its id on every deployment. To remove one, send
+  its `DROP REST ...` the same way: on upgrades msm drops it (`msm.prepare_release`
   writes the drop into the update script's section 280). See
   `mariadb-schema-management-develop`. The server needs the REST metadata
   schema, and only MariaDB Shell (`msm.deploy_schema`) can run these

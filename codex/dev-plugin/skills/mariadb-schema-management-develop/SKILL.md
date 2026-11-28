@@ -1,24 +1,23 @@
 ---
 name: mariadb-schema-management-develop
-description: "Develop the next version of a MariaDB Schema Management (MSM) schema in development/<schema>_next.sql: add, replace and change tables, views, routines, triggers, events and sequences from their CREATE statements with msm.set_schema_statements (a changed CREATE TABLE becomes the ALTER TABLE of the next update script; renames keeps a renamed column's data), drop objects with msm.drop_schema_object, REST endpoints with msm.set_rest_statements / msm.drop_rest_object, create and lay out schema diagrams, edit data and grants by section, and keep large sections in SOURCE-included files under development/sections/. Use when evolving an existing MSM schema, editing the _next.sql script, adding, renaming, changing or dropping tables, columns, keys or other schema objects, working on an MSM schema diagram, or splitting a growing script. Read mariadb-schema-management first for the section model."
+description: "Develop the next version of a MariaDB Schema Management (MSM) schema in development/<schema>_next.sql: add, change and drop tables, views, routines, triggers, events, sequences and REST endpoints with plain CREATE and DROP statements sent to msm.set_schema_statements (a changed CREATE TABLE becomes the ALTER TABLE of the next update script; renames keeps a renamed column's data), create and lay out schema diagrams, edit data and grants by section, and keep large sections in SOURCE-included files under development/sections/. Use when evolving an existing MSM schema, editing the _next.sql script, adding, renaming, changing or dropping tables, columns, keys or other schema objects, working on an MSM schema diagram, or splitting a growing script. Read mariadb-schema-management first for the section model."
 ---
 
 # MSM — Developing the Next Version
 
 After a release, `prepare_release` has already bumped the development version and
 you continue editing `development/<schema>_next.sql` toward the next release.
-This skill covers changing the schema with `msm.set_schema_statements` and
-`msm.drop_schema_object`, REST endpoints, schema diagrams, editing the other
+This skill covers changing the schema and its REST endpoints with
+`msm.set_schema_statements`, schema diagrams, editing the other
 sections, and the **SOURCE breakout** files that keep the script maintainable. See
 `mariadb-schema-management` for the section model. Assume MariaDB 11.8.
 
 ## Iterating on `_next.sql`
 
-Change schema objects with the tools that place the statements themselves:
-`msm.set_schema_statements` to add, replace or change a table, sequence, view,
-routine, trigger or event, `msm.drop_schema_object` to remove one, and
-`msm.set_rest_statements` / `msm.drop_rest_object` for REST endpoints. Edit the
-rest by section, with `msm.get_section_sql_content` /
+Change schema objects and REST endpoints with `msm.set_schema_statements`,
+which places the statements itself: send a `CREATE` to add, replace or change
+a table, sequence, view, routine, trigger, event or REST item, and a `DROP` to
+remove one. Edit the rest by section, with `msm.get_section_sql_content` /
 `msm.set_section_sql_content`:
 
 - **Tables and sequences** → `msm.set_schema_statements` (it writes section
@@ -29,15 +28,15 @@ rest by section, with `msm.get_section_sql_content` /
 - **Grants/roles** → section 170 (`CREATE ROLE IF NOT EXISTS`, then `GRANT`);
   it also runs on every deployment. Revoking a privilege additionally needs a
   `REVOKE` in the update script's section 270.
-- **REST endpoints** → `msm.set_rest_statements` / `msm.drop_rest_object`,
-  which write section 180 (see "REST endpoints in an MSM project").
+- **REST endpoints** → `msm.set_schema_statements` too, which writes section
+  180 (see "REST endpoints in an MSM project").
 - **Diagrams** → section 160 is written by msm only, through the diagram tools
   (see "Schema diagrams"); never edit it.
 
 The development file always describes the **full, current** schema (not a diff) —
 it is the source for the next version snapshot. The *migration* from the
-previous version is kept separately: what `msm.set_schema_statements` and
-`msm.drop_schema_object` change after the first release is kept for the next
+previous version is kept separately: what `msm.set_schema_statements` changes
+after the first release is kept for the next
 update script, and the rest is written when you prepare the release (see
 `mariadb-schema-management-release`).
 
@@ -46,8 +45,9 @@ Keep the development version in section 910 current with
 
 ## Changing the schema: `msm.set_schema_statements`
 
-Send the CREATE statement of each object as it should be, and msm decides
-where it goes, in what form, and what an upgrade needs:
+Send plain SQL, one statement per list item: the `CREATE` of each object as it
+should be, and a `DROP` for each object to remove. msm decides where each goes,
+in what form, and what an upgrade needs:
 
 ```text
 msm.set_schema_statements(
@@ -55,16 +55,23 @@ msm.set_schema_statements(
         "CREATE TABLE note (id UUID NOT NULL DEFAULT UUID_v7() PRIMARY KEY, headline VARCHAR(255) NOT NULL, body MEDIUMTEXT, author_id INT UNSIGNED NULL, CONSTRAINT fk_note_author FOREIGN KEY (author_id) REFERENCES author (id)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
         "CREATE TABLE author (id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY, name VARCHAR(100) NOT NULL) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
         "CREATE VIEW note_titles AS SELECT id, headline FROM note",
+        "DROP VIEW old_note_list",
     ],
     renames={"note": {"title": "headline"}},     # note.title is now headline
     expect=[{"kind": "table", "name": "note"},   # optional guard
             {"kind": "table", "name": "author"},
-            {"kind": "view", "name": "note_titles"}],
+            {"kind": "view", "name": "note_titles"},
+            None],                               # None for a DROP
 )
 ```
 
-- One CREATE per statement, of a table, sequence, view, procedure, function,
-  trigger or event, **named without its schema**, without `DELIMITER`.
+- One statement per list item, plain SQL, without `DELIMITER` lines: `CREATE`
+  or `DROP` of a table, sequence, view, procedure, function, trigger or event,
+  **named without its schema**, and `CREATE` or `DROP` of a REST service,
+  schema, view, procedure or function (see "REST endpoints in an MSM
+  project"). Schema objects and REST items can be mixed in one call.
+- **Never `ALTER` or `RENAME`**: both are refused. To change a table, send its
+  whole new `CREATE TABLE`.
 - **A new object is added**: a table or sequence to section 140, the others to
   150 in the form that runs again.
 - **A view, routine, trigger or event the project has is replaced** where it
@@ -90,8 +97,8 @@ msm.set_schema_statements(
     Send it again with `renames` when it is a rename, or with
     `dropped_columns={table: [column]}` when dropping the column and its data
     is meant. Ask the user when you can't tell.
-- **A sequence the project has is refused.** Either drop it with
-  `msm.drop_schema_object` and send its new `CREATE SEQUENCE` (after a release
+- **A sequence the project has is refused.** Either send `DROP SEQUENCE s`
+  in one call and its new `CREATE SEQUENCE` in the next (after a release
   the update script then drops and re-creates it, so deployed servers restart
   it from its `START`; the drop is refused while a table uses it), or, to keep
   its current value, change it by hand in section 140 and write an `ALTER
@@ -99,8 +106,11 @@ msm.set_schema_statements(
   `mariadb-schema-management-release`).
 - `expect` (`{kind, name, table?}` per statement, `table` for a trigger)
   refuses a statement that creates another object, before anything is written.
-- All statements are one edit: everything is written, or nothing. The answer
-  has `statements: [{kind, name, file, line, replaced, changed}]`, `files`
+- All statements are one edit: everything is written, or nothing. A refusal
+  names the statement ("Statement 2 ..."): fix that one and send them all
+  again. The answer has `statements`, one entry per statement in order, each
+  with its `action`: `added`, `replaced`, `unchanged`, `dropped`, or `skipped`
+  (a `DROP ... IF EXISTS` of something the project lacks). It also has `files`
   (written), `migration` (the statements kept for the next update script),
   `migration_file` and `notes`. Check every note (`still-referenced`,
   `no-migration`, ...).
@@ -109,12 +119,17 @@ msm.set_schema_statements(
 - It needs a current `mariadb-lsp` (it refuses an older one, saying to update
   it or the MariaDB Shell).
 
-`msm.drop_schema_object(kind, name)` removes a table, sequence, view,
-procedure, function, trigger or event, from `_next.sql` and the breakout files.
-After the first release its `DROP` is kept for the next update script. It is
-refused for an object another one needs (a table a foreign key references, a
-sequence a table uses, a trigger another one `FOLLOWS` or `PRECEDES`): drop
-or change that one first.
+### Dropping an object
+
+Send its `DROP` to `msm.set_schema_statements`: `DROP TABLE t`, `DROP VIEW v`,
+`DROP PROCEDURE p`, `DROP FUNCTION f`, `DROP TRIGGER tr`, `DROP EVENT e`,
+`DROP SEQUENCE s`. `DROP TABLE t, u` drops both, and `IF EXISTS` skips one the
+project lacks (its action is `skipped`) instead of refusing the call. msm
+removes the object's statements from `_next.sql` and the breakout files; after
+the first release its `DROP` is kept for the next update script automatically.
+A `DROP` is refused for an object another one needs (a table a foreign key
+references, a sequence a table uses, a trigger another one `FOLLOWS` or
+`PRECEDES`): drop or change that one first.
 
 ### What the kept migration covers
 
@@ -136,7 +151,7 @@ migration is still yours to write at release time.
 
 An MSM project's REST endpoints live in its section 180, which every
 deployment runs in full. When the user wants endpoints in the project, put
-them there with `msm.set_rest_statements`, not by running them on a server
+them there with `msm.set_schema_statements`, not by running them on a server
 (the project would not know them, and the next deployment would not create
 them) and not with `msm.set_section_sql_content`. Running REST statements on
 a server directly, when the user asks for that, is still fine; it only leaves
@@ -150,14 +165,15 @@ the project out. For the REST DDL itself (the
    `PROCEDURE` or `FUNCTION` exposes a table, view or routine of this schema,
    so add those first (`msm.set_schema_statements`).
 2. **Write the service, its schema and its objects** in one call, parents
-   first. Every statement names its place, as a statement of its own (no `USE
-   REST ...`): a schema `ON SERVICE /svc`, an object `ON SERVICE /svc SCHEMA
-   /p` (one combined clause). Write the database schema's name as the
-   project's schema. Give options such as `PUBLISHED` or `ADD AUTH APP "name"`
-   in the `CREATE` itself, as an `ALTER` can't be passed:
+   first. Every statement names its place, as a statement of its own (one
+   relying on `USE REST ...` is refused): a schema `ON SERVICE /svc`, an
+   object `ON SERVICE /svc SCHEMA /p` (one combined clause). Write the
+   database schema's name as the project's schema. Give options such as
+   `PUBLISHED` or `ADD AUTH APP "name"` in the `CREATE` itself, as an `ALTER`
+   is refused:
 
    ```text
-   msm.set_rest_statements(
+   msm.set_schema_statements(
        statements=[
            'CREATE REST SERVICE /shop PUBLISHED COMMENT "Shop API"',
            'CREATE REST SCHEMA /v1 ON SERVICE /shop FROM `shop` COMMENT "Version 1"',
@@ -176,10 +192,22 @@ the project out. For the REST DDL itself (the
 3. **Change or rename** an endpoint by sending its new `CREATE` the same way;
    `replaces={"kind": "object", "service": ..., "schema": ..., "object":
    ...}` renames a REST object (not a service or schema).
-4. **Remove** one with `msm.drop_rest_object(kind, service, schema=None,
-   object=None)` (`kind`: `service`, `schema` or `object`): its
-   statements and everything on it go. It writes no DROP: the next
-   `msm.prepare_release` writes it into the update script's section 280.
+4. **Remove** one by sending its `DROP`, naming its place the same way:
+
+   ```text
+   msm.set_schema_statements(
+       statements=[
+           'DROP REST VIEW /products FROM SERVICE /shop SCHEMA /v1',
+           'DROP REST SCHEMA /v0 FROM SERVICE /shop',
+       ],
+   )
+   ```
+
+   (`DROP REST SERVICE /shop` drops a whole service.) The item's statements
+   and everything on it go from section 180, so dropping the outermost item
+   is enough.
+   No `DROP` is written into the project: the next `msm.prepare_release`
+   writes it into the update script's section 280.
 5. **Show the endpoints on the diagram** (unless the user doesn't want a
    diagram): read the diagram with `msm.get_schema_diagrams(diagram=)`, add
    one `RestObjectFigure` per REST object (`restService`, `restSchema`,
@@ -188,16 +216,16 @@ the project out. For the REST DDL itself (the
    whole document back with `msm.set_schema_diagram`. Then end with the review
    link (see "Handing the project back" in `mariadb-schema-management`).
 
-Both tools check that nothing but the given items changed, write everything or
-nothing, and make the snapshot again. `base_hash` is optional for both; leave
+msm checks that nothing but the given items changed, writes everything or
+nothing, and makes the snapshot again. `base_hash` is optional; leave
 it out. Paths are compared as the server does:
 case and quotes ignored, `anna, mike@/svc` the same as `mike,anna@/svc`.
 
 ### What stays outside section 180
 
-`msm.set_rest_statements` takes only services, schemas and their views,
-procedures and functions, and section 280 can only remove those and auth app
-links. Keep the rest on the server, not in the project:
+For REST, `msm.set_schema_statements` takes only services, schemas and their
+views, procedures and functions, and section 280 can only remove those and
+auth app links. Keep the rest on the server, not in the project:
 
 - `CONFIGURE REST METADATA`: once per server, before the first deployment
   that has REST endpoints. The deployment account needs its REST role active.
@@ -322,8 +350,8 @@ To break a section out, write each breakout file (copyright header, then the
 statements in the section's form), then replace the section body with its
 `SOURCE ...[lnN:]` lines through `msm.set_section_sql_content`. Move each
 statement with the comments above it, and keep the order the statements had.
-`msm.set_schema_statements` and `msm.drop_schema_object` edit the breakout
-files as well, so a broken-out section stays editable through them.
+`msm.set_schema_statements` edits the breakout files as well, so a broken-out
+section stays editable through it.
 
 ### File naming convention
 

@@ -13,7 +13,10 @@ Assume MariaDB 11.8 if not told otherwise.
 > **Only when the endpoints belong to an MSM project** (a
 > `<schema>.msm.project` folder, see `mariadb-schema-management`): write them
 > into the project, not onto a server, unless the user asks for that; remove a
-> service, schema or endpoint with `msm.drop_rest_object`; the next release
+> service, schema or endpoint by sending its `DROP` to
+> `msm.set_schema_statements`, naming its place (`DROP REST SERVICE /svc`,
+> `DROP REST SCHEMA /p FROM SERVICE /svc`, `DROP REST VIEW /o FROM SERVICE
+> /svc SCHEMA /p`; relying on `USE REST` is refused); the next release
 > drops it from the servers (update script section 280). Outside MSM projects,
 > run the statements on the server as this skill shows. See "REST endpoints in
 > an MSM project" in `mariadb-schema-management-develop`.

@@ -32,10 +32,10 @@ This:
   `releases/versions/<schema>_1.1.0.sql`.
 - If a previous release exists, creates the update script
   `releases/updates/<schema>_<prev>_to_1.1.0.sql` from the template, holding
-  what `msm.set_schema_statements` / `msm.drop_schema_object` kept in the
+  what `msm.set_schema_statements` kept in the
   pending `development/<schema>_update_next.sql` (moved in; the pending script
-  starts over): the `ALTER TABLE`s of the tables they changed and the `DROP`s
-  of what they removed.
+  starts over): the `ALTER TABLE`s of the tables it changed and the `DROP`s
+  of what it removed.
 - Fills the update script's section 280 with the drops of the REST endpoints,
   schemas, auth app links and services the previous release's section 180
   created and this one's does not. A REST schema moved to another database gets
@@ -52,7 +52,7 @@ script.
 
 `prepare_release` only creates the update script; it does **not** know how to
 migrate data. Even where msm filled it, check it: it holds only the changes
-made through `msm.set_schema_statements` and `msm.drop_schema_object`, never
+made through `msm.set_schema_statements`, never
 hand edits (base data, a changed sequence, an edit of section 140) or data
 backfills.
 Write the migration from the previous release to this one into its sections,

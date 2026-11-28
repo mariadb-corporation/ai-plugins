@@ -37,8 +37,8 @@ deploy vX (create fresh OR upgrade)        →  mariadb-schema-management-deploy
 
 > **The one rule everyone gets wrong:** `prepare_release` creates the update
 > script (`releases/updates/<schema>_<prev>_to_<vX>.sql`) holding only what
-> `msm.set_schema_statements` and `msm.drop_schema_object` kept (the `ALTER`s
-> and `DROP`s of the changes made through them). You MUST complete it — data
+> `msm.set_schema_statements` kept (the `ALTER`s and `DROP`s of the changes
+> made through it). You MUST complete it — data
 > backfills, every change made by hand, 260 for removed procedures/functions,
 > 270 for revoked privileges — **before** generating the deployment script:
 > the deployment script embeds it to upgrade existing installs. See
@@ -94,7 +94,7 @@ determines how the deployment script treats it.** Always edit sections with
 | **150** | **Idempotent: VIEWs / PROCEDUREs / FUNCTIONs / TRIGGERs / EVENTs** — run in full on every deployment |
 | 160 | Schema diagrams: the `msm_schema_diagrams` VIEW — **written by msm, never by hand** (see below) |
 | 170 | Authorization: `CREATE ROLE IF NOT EXISTS` / `GRANT` — run in full on every deployment |
-| 180 | Optional MariaDB REST Service endpoints (`CREATE OR REPLACE REST ...`) — run in full on every deployment; updates endpoints in place and keeps their ids, but never removes one (that is the update script's 280). Write it with `msm.set_rest_statements` / `msm.drop_rest_object` (see `-develop`) |
+| 180 | Optional MariaDB REST Service endpoints (`CREATE OR REPLACE REST ...`) — run in full on every deployment; updates endpoints in place and keeps their ids, but never removes one (that is the update script's 280). Write it with `CREATE REST ...` and `DROP REST ...` statements sent to `msm.set_schema_statements` (see `-develop`) |
 | 190 | Removal of the `msm_` helpers |
 | 910 | Final schema version — set via `msm.set_development_version` |
 | 920 | Server-variable restore (provided) |
@@ -148,7 +148,7 @@ a snapshot of the schema objects the CREATE statements define, as the MariaDB SQ
 language server (`mariadb-lsp`) outlines them; and one row per EER diagram
 (format `msm-diagram/1`: layers, figures, connections). **The CREATE statements
 are the source of truth** — never edit section 160.
-`msm.set_schema_statements` and `msm.drop_schema_object` make the snapshot
+`msm.set_schema_statements` makes the snapshot
 again (first, too, when the script was edited by hand), and so does
 `msm.prepare_release`, which **fails without `mariadb-lsp`, or when a
 statement of the development script cannot be parsed** (the snapshot would
@@ -167,18 +167,19 @@ script, sections **140, 240, 170, 270** become the *body of a stored procedure*
 
 ## The `msm.*` MCP tools
 
-An MCP server serves an agent these 26 `msm.*` tools:
+An MCP server serves an agent these 23 `msm.*` tools:
 
 - **Project:** `msm.create_project`, `msm.list_projects` (with each project's
   `development_version` and `last_released_version`),
   `msm.get_project_information`.
 - **Sections:** `msm.get_section_sql_content`, `msm.set_section_sql_content`.
-- **Objects:** `msm.set_schema_statements` (add a table, sequence, view,
-  routine, trigger or event from its CREATE statement, replace a view,
-  routine, trigger or event, or change a table, keeping the `ALTER TABLE` for
-  the next update script), `msm.drop_schema_object`.
-- **REST (section 180):** `msm.set_rest_statements` (add or replace a REST
-  service, schema or object), `msm.drop_rest_object`.
+- **Objects and REST (section 180):** `msm.set_schema_statements` takes
+  plain SQL, one statement per item: `CREATE` or `DROP` of a table, sequence,
+  view, procedure, function, trigger or event, and of a REST service, schema,
+  view, procedure or function, mixed in one call and written all or nothing.
+  A changed `CREATE TABLE` changes the table and keeps the `ALTER TABLE` for
+  the next update script; a released `DROP` is kept for it too. Never use
+  `msm.set_section_sql_content` for objects or REST items.
 - **Diagrams:** `msm.list_schema_diagrams`, `msm.get_schema_diagrams`,
   `msm.create_schema_diagram`, `msm.layout_schema_diagram`,
   `msm.set_schema_diagram`, `msm.rename_schema_diagram`,
@@ -205,7 +206,7 @@ and the tools keep the schema snapshot, the diagrams and the next update
 script in step.
 
 Every tool that reads the structure of the SQL — `msm.set_schema_statements`,
-`msm.drop_schema_object`, the REST and diagram tools, the live-schema import
+the diagram tools, the live-schema import
 and `msm.prepare_release` — needs the MariaDB SQL language server's binary
 `mariadb-lsp`, installed with the MariaDB Shell; without it the call fails.
 
