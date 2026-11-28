@@ -28,7 +28,7 @@ When the plugin starts for the first time, it downloads and extracts MariaDB She
 
 * A supported harness: Claude Code, Codex, OpenCode, Pi, Hermes Agent, Cursor, or GitHub Copilot in VS Code.
 * Linux, macOS, or Windows. The optional migration tooling is available on Linux and macOS only.
-* Network access on first start, unless MariaDB Shell 26.11.2 or later is already installed.
+* Network access on first start, unless MariaDB Shell 26.11.3 or later is already installed.
 
 You don't need a MariaDB Server installation. If you don't have a server, the MCP server can deploy a local [sandbox instance](../features/sandbox-instances.md).
 
