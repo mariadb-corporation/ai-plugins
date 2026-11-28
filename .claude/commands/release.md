@@ -30,9 +30,11 @@ always equal; that is no longer required. With no floor given it stays where it 
 and the release ships on top of the current shell version — unless a newer shell
 release exists, in which case step 2 suggests raising the floor to it.
 
-Read `.claude/PROJECT_CONTEXT.md`, then `.claude/context/release-history.md` and
-`.claude/context/repo-conventions.md` before starting: the previous release's
-notes are the model for this one.
+Read `.claude/PROJECT_CONTEXT.md` and `.claude/context/repo-conventions.md`
+before starting. The previous release is the model for this one: its PR (`gh pr
+list --repo mariadb-corporation/ai-plugins --state merged --search "Release in:title"`),
+its CHANGELOG sections and its tag notes (`gh release view v<previous>`). The
+context records no release history; GitHub does.
 
 Remotes: `origin` = `mariadb-corporation/ai-plugins` (source of truth, where the
 PR goes) and `fork` = `mariadb/ai-plugins`. Check `git remote -v` — the `fork`
@@ -258,10 +260,14 @@ the failure — do not open the PR on a red run.
 
 ## 8. Checkpoint
 
-Run the `/checkpoint` command with `.` as the target, recording the release as
-in progress (PR about to open) in `release-history.md`, `current-state.md` and
-the index's "Latest work streams" and "Git state". Commit it on this branch so it
-ships in the release PR.
+Run the `/checkpoint` command with `.` as the target, and follow its rules: the
+context holds knowledge, not status, so the release itself (in progress, PR
+number, branch, version of the day) is **not** recorded. Record only what this
+release taught or made untrue, in the context file whose area it is: a next step
+or known issue it closed (delete it), a design or process change it brought (for
+example a new kind of entry in `docs/_data/downloads.yml`), a new gotcha met on
+the way. When nothing changed, there is nothing to commit; say so and go on.
+Otherwise commit it on this branch so it ships in the release PR.
 
 ## 9. Open the PR
 
@@ -447,5 +453,7 @@ Tell the user the release is published, with:
 - the Hermes catalog PR (step 12), its pin and the local `validate` result
 - anything that did not go as expected
 
-Then record the finished release with `/checkpoint .` and open a small PR for it,
-as was done after 26.9.3 (#21).
+Then, only if steps 10 to 12 taught something that stays true (a gotcha, a
+changed catalog rule, a next step closed), record it with `/checkpoint .` under
+the same rules as step 8 and open a small PR for it. A published release is
+status, not knowledge, and needs no checkpoint of its own.
